@@ -14,11 +14,7 @@
 
 using namespace std;
 
-MainWindow::MainWindow(int width, int height, const char* title) {
-	m_width = width;
-	m_height = height;
-	m_title = title;
-}
+MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title) {}
 
 bool MainWindow::Initialize() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -51,31 +47,16 @@ bool MainWindow::Initialize() {
 		SDL_GL_CONTEXT_PROFILE_CORE
 	);
 
-	std::string glsl_version = "";
-#ifdef __APPLE__
-	// GL 3.2 Core + GLSL 150
-	glsl_version = "#version 150";
-	SDL_GL_SetAttribute( // required on Mac OS
-		SDL_GL_CONTEXT_FLAGS,
-		SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
-	);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-#elif __linux__
-	// GL 3.2 Core + GLSL 150
-	glsl_version = "#version 150";
+	std::string glsl_version = "#version 130";
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-#elif _WIN32
-	// GL 3.0 + GLSL 130
-	glsl_version = "#version 130";
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#endif
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
 	SDL_GLContext gl_context = SDL_GL_CreateContext(SDLWindow);
+	if (!gl_context) {
+		std::cout << "Unable to create gl context " << SDL_GetError() << std::endl;
+		return false;
+	}
 	SDL_GL_MakeCurrent(SDLWindow, gl_context);
 
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
@@ -156,6 +137,11 @@ void MainWindow::RenderImGui() {
 }
 
 void MainWindow::Render() {
+	// set clearing color, clear gl buffers
+	glClearColor(1, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
 	// start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(MainWindow::SDLWindow);
@@ -167,6 +153,13 @@ void MainWindow::Render() {
 	//render
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	float vertices[] = {
+	-0.5f, -0.5f, 0.0f,
+	 0.5f, -0.5f, 0.0f,
+	 0.0f,  0.5f, 0.0f
+	};
+
 
 	SDL_GL_SwapWindow(MainWindow::SDLWindow);
 }

@@ -19,8 +19,6 @@ int main(int arg, char* args[]) {
 	SDL_Event sdlEvent;
 	bool quit = false;
 	while (!quit) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
 		while (SDL_PollEvent(&sdlEvent) != 0) {
 			ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 			switch (sdlEvent.type) {

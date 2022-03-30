@@ -9,7 +9,7 @@ class Files {
 
 public:
 	static bool VerifyDirectory(const char* directory, bool createIfNotExists = true) {
-		auto path = filesystem::current_path().append(directory);
+		const filesystem::path path = filesystem::current_path().append(directory);
 
 		if (filesystem::is_directory(path)) {
 			return true;
