@@ -2,7 +2,7 @@
 #include <il.h>
 #include <string>
 
-bool LoadTexture::LoadTextureFromFile(std::wstring path) {
+bool LoadTextureFromFile(std::wstring path) {
     bool textureLoaded = false;
 
     //Generate and set current image ID

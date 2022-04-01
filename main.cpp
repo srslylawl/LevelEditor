@@ -32,7 +32,7 @@ int main(int arg, char* args[]) {
 				case SDL_WINDOWEVENT_RESIZED:
 					const int w = sdlEvent.window.data1;
 					const int h = sdlEvent.window.data2;
-					mainWindow.OnResized(h, w);
+					mainWindow.OnResized(w, h);
 					break;
 				}
 				break;
