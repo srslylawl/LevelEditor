@@ -12,15 +12,16 @@
 
 #include "Files.h"
 #include "Shader.h"
+#include "Time.h"
 
 using namespace std;
 
-MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title) {}
+MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
 
 bool MainWindow::Initialize() {
-	InitSDL();
-	InitOpenGL();
-	InitDearImGui();
+	if (!InitSDL()) return false;
+	if (!InitOpenGL()) return false;
+	if (!InitDearImGui()) return false;
 
 	//update while resizing - does not work though, according to google its a backend limitation?
 	SDL_EventFilter filter = [](void* data, SDL_Event* event) -> int {
@@ -38,7 +39,27 @@ bool MainWindow::Initialize() {
 	SDL_AddEventWatch(filter, this);
 	return true;
 }
+bool MainWindow::InitSDL() {
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		return false;
+	}
 
+	SDL_WindowFlags window_flags = (SDL_WindowFlags)(
+		SDL_WINDOW_OPENGL
+		| SDL_WINDOW_RESIZABLE
+		| SDL_WINDOW_ALLOW_HIGHDPI
+		);
+
+	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_width, m_height, window_flags);
+	if (SDLWindow == nullptr) {
+		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+		SDL_DestroyWindow(SDLWindow);
+		return false;
+	}
+
+	return true;
+}
 bool MainWindow::InitOpenGL() {
 	// set OpenGL attributes
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -63,10 +84,12 @@ bool MainWindow::InitOpenGL() {
 
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
 		std::cerr << "[ERROR] Couldn't initialize glad" << std::endl;
+		return false;
 	}
-	else {
-		std::cout << "[INFO] glad initialized\n";
-	}
+
+
+	// set clearing color (background color)p
+	glClearColor(0, 0, 0, 1);
 
 	// __vertex input__
 	// create vertex array object (VAO) and bind it
@@ -116,8 +139,7 @@ bool MainWindow::InitOpenGL() {
 	// (void*)0 is a nullptr?
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-	// enable VAO
-	// 0 = index
+	// enable VAO | 0 = index
 	glEnableVertexAttribArray(0);
 
 	//init shaders
@@ -128,11 +150,41 @@ bool MainWindow::InitOpenGL() {
 
 	return true;
 }
+bool MainWindow::InitDearImGui() {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	// does not seem to do anything rn, so commented out
+	//ImGuiIO& io = ImGui::GetIO();
+	//(void)io;
+	ImGui::StyleColorsDark();
+	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, gl_context);
+	const std::string glsl_version = "#version 460";
+	ImGui_ImplOpenGL3_Init(glsl_version.c_str());
 
-bool MainWindow::RenderOpenGL() {
+	return true;
+}
+
+void MainWindow::Render() {
+	// clear color, depth and stencil buffers
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+	// Order of Render OpenGL and ImGui does not seem to matter?
+	RenderOpenGL();
+	MainWindow::RenderImGui();
+
+	SDL_GL_SwapWindow(MainWindow::SDLWindow);
+}
+
+void MainWindow::RenderOpenGL() {
 	//___ LOOPED RENDERING CODE
 	// use shader program
+
+	float greenValue = (sin(Time::GetTime()) / 2.0f) + 0.5f;
+	int vertexColorLocation = glGetUniformLocation(shaderProgramUPTR->ID, "ourColor");
 	shaderProgramUPTR->use();
+	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+
 
 	// use VAO
 	// EBO is already bound to VAO so it gets bound automatically
@@ -143,59 +195,21 @@ bool MainWindow::RenderOpenGL() {
 
 	//unbind vertex array
 	glBindVertexArray(0);
-
-
-	return true;
 }
-
-bool MainWindow::InitSDL() {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-		return false;
-	}
-
-	SDL_WindowFlags window_flags = (SDL_WindowFlags)(
-		SDL_WINDOW_OPENGL
-		| SDL_WINDOW_RESIZABLE
-		| SDL_WINDOW_ALLOW_HIGHDPI
-		);
-
-	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_width, m_height, window_flags);
-	if (SDLWindow == nullptr) {
-		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-		SDL_DestroyWindow(SDLWindow);
-		return false;
-	}
-
-	std::cout << "\nOpening Window: " << m_title;
-
-	return false;
-}
-
-bool MainWindow::InitDearImGui() {
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	ImGui::StyleColorsDark();
-	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, gl_context);
-	const std::string glsl_version = "#version 460";
-	ImGui_ImplOpenGL3_Init(glsl_version.c_str());
-
-	return true;
-}
-
-void MainWindow::OnResized(int width, int height) {
-	m_height = height;
-	m_width = width;
-	glViewport(0, 0, m_width, m_height);
-	std::cout << "On Resized h: " << height << " w: " << width << endl;
-}
-
 void MainWindow::RenderImGui() {
-	/*ImGui::ShowDemoWindow();*/
+	// Required before ImGui logic
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame(MainWindow::SDLWindow);
+	ImGui::NewFrame();
 
+	// ImGui logic here
+
+	if(showDebugWindow) {
+		ImGui::ShowDemoWindow();
+	}
 	//return;
 
+	// Menu Bar (Top of Window thing)
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New")) {
@@ -205,6 +219,9 @@ void MainWindow::RenderImGui() {
 		}
 
 		if (ImGui::BeginMenu("Debug")) {
+			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
+				showDebugWindow = !showDebugWindow;
+			}
 			if (ImGui::MenuItem("folderstuff")) {
 				std::cout << "Items in Sprites: " << endl;
 				if (VerifyDirectory("Sprites")) {
@@ -226,7 +243,7 @@ void MainWindow::RenderImGui() {
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Rendering")) {
+		if (ImGui::BeginMenu("View")) {
 			if (ImGui::BeginMenu("Render mode")) {
 				bool selected = renderMode == 0;
 				if (ImGui::MenuItem("Default", 0, selected) && !selected) {
@@ -242,38 +259,25 @@ void MainWindow::RenderImGui() {
 				}
 				ImGui::EndMenu();
 			}
-
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
 	}
-}
-
-void MainWindow::Render() {
-	// set clearing color, clear gl buffers
-	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 
-	//start the Dear ImGui frame
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(MainWindow::SDLWindow);
-	ImGui::NewFrame();
-
-	//all ImGui UI stuff goes here
-	MainWindow::RenderImGui();
-
-	//render
+	// Required to render ImGuI
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-	RenderOpenGL();
-
-	SDL_GL_SwapWindow(MainWindow::SDLWindow);
 }
 
+
+void MainWindow::OnResized(int width, int height) {
+	m_height = height;
+	m_width = width;
+	glViewport(0, 0, m_width, m_height);
+	//std::cout << "On Resized h: " << height << " w: " << width << endl;
+}
 void MainWindow::Close() {
-	cout << "Closing window: " << m_title << endl;
 	SDL_DestroyWindow(SDLWindow);
 	SDLWindow = nullptr;
 }

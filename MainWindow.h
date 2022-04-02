@@ -4,7 +4,6 @@
 
 
 class MainWindow {
-private:
 	SDL_Window* SDLWindow = nullptr;
 	SDL_GLContext gl_context = nullptr;
 
@@ -12,15 +11,17 @@ private:
 	int m_height = 600;
 	const char* m_title = "New Window";
 
-	unsigned int VertexArrayObject;
-	unsigned int elementBufferObject;
+	unsigned int VertexArrayObject = 0;
+	unsigned int elementBufferObject = 0;
+
+	bool showDebugWindow = false;
 
 	short renderMode = 0;
 
 	std::unique_ptr<Shader> shaderProgramUPTR;
 
 	void RenderImGui();
-	bool RenderOpenGL();
+	void RenderOpenGL();
 
 	bool InitSDL();
 	bool InitOpenGL();

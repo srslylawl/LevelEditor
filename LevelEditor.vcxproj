@@ -162,6 +162,7 @@
     <ClCompile Include="LoadTexture.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="Time.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Files.h" />
@@ -182,6 +183,7 @@
     <ClInclude Include="LoadTexture.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Time.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\defaultFragShader.frag" />

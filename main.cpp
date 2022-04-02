@@ -4,11 +4,15 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
-#include <glad/glad.h>
 #include <iostream>
+
+#include "Time.h"
 
 
 int main(int arg, char* args[]) {
+	//init time module
+	Time::Init();
+
 	//Create SDL Window
 	MainWindow mainWindow = MainWindow(800, 600, "LevelEditor");
 	if (!mainWindow.Initialize()) {
@@ -19,6 +23,9 @@ int main(int arg, char* args[]) {
 	SDL_Event sdlEvent;
 	bool quit = false;
 	while (!quit) {
+		Time::CalcDeltaTime();
+		std::cout << "MS: " << Time::GetDeltaTimeMS() << endl;
+		std::cout << "FPS: " << (1 / Time::GetDeltaTimeMS() * 1000) << endl;
 		while (SDL_PollEvent(&sdlEvent) != 0) {
 			ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 			switch (sdlEvent.type) {
