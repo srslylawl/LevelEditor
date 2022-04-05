@@ -24,8 +24,8 @@ int main(int arg, char* args[]) {
 	bool quit = false;
 	while (!quit) {
 		Time::CalcDeltaTime();
-		std::cout << "MS: " << Time::GetDeltaTimeMS() << endl;
-		std::cout << "FPS: " << (1 / Time::GetDeltaTimeMS() * 1000) << endl;
+		//std::cout << "MS: " << Time::GetDeltaTimeMS() << endl;
+		//std::cout << "FPS: " << (1 / Time::GetDeltaTimeMS() * 1000) << endl;
 		while (SDL_PollEvent(&sdlEvent) != 0) {
 			ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 			switch (sdlEvent.type) {

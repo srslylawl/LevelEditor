@@ -18,25 +18,69 @@ using namespace std;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
 
+int WindowResizeEvent(void* data, SDL_Event* event) {
+	if (event->type != SDL_WINDOWEVENT
+		|| event->window.event != SDL_WINDOWEVENT_RESIZED) return -1;
+
+	auto win = (MainWindow*)data;
+
+	if (SDL_GetWindowFromID(event->window.windowID) != win->GetSDLWindow()) return -1;
+
+	const int w = event->window.data1;
+	const int h = event->window.data2;
+	win->OnResized(w, h);
+
+	return 0;
+}
+
+void GenTexture(const char* path, MainWindow* mainWindow) {
+	unsigned int texture;
+	glGenTextures(1, &texture);
+
+	int width, height, channelCount;
+	unsigned char* imageData = nullptr;
+	if (!LoadImage(path, imageData, &width, &height, &channelCount)) {
+		cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << endl;
+		return;
+	}
+
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	int colorProfile = 0;
+	switch (channelCount) {
+	case 3:
+		colorProfile = GL_RGB;
+		break;
+	case 4:
+		colorProfile = GL_RGBA;
+		break;
+	default:
+		break;
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, colorProfile, width, height, 0, colorProfile, GL_UNSIGNED_BYTE, imageData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	mainWindow->currentTexture = texture;
+
+	cout << "Image bound to textureID: " << texture << "Channels: " << channelCount << endl;
+
+
+	stbi_image_free(imageData);
+}
+
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
 	if (!InitOpenGL()) return false;
 	if (!InitDearImGui()) return false;
 
 	//update while resizing - does not work though, according to google its a backend limitation?
-	SDL_EventFilter filter = [](void* data, SDL_Event* event) -> int {
-		if (!(event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_RESIZED)) return 0;
-
-		auto win = (MainWindow*)data;
-		if (SDL_GetWindowFromID(event->window.windowID) == win->GetSDLWindow()) {
-			const int w = event->window.data1;
-			const int h = event->window.data2;
-			win->OnResized(w, h);
-		}
-
-		return 0;
-	};
-	SDL_AddEventWatch(filter, this);
+	SDL_AddEventWatch(WindowResizeEvent, this);
 	return true;
 }
 bool MainWindow::InitSDL() {
@@ -87,9 +131,8 @@ bool MainWindow::InitOpenGL() {
 		return false;
 	}
 
-
-	// set clearing color (background color)p
-	glClearColor(0, 0, 0, 1);
+	// set clearing color (background color)
+	glClearColor(0.2f, 0.2f, 0.2f, 1);
 
 	// __vertex input__
 	// create vertex array object (VAO) and bind it
@@ -105,17 +148,12 @@ bool MainWindow::InitOpenGL() {
 	glGenBuffers(1, &elementBufferObject);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
 
-	const float triangleVerts[] = {
-	-0.5f, -0.5f, 0.0f,
-	 0.5f, -0.5f, 0.0f,
-	 0.0f,  0.5f, 0.0f
-	};
-
+	// left side are verts, right side are tex coords
 	const float quadVerts[] = {
-	 0.5f,  0.5f, 0.0f,  // top right
-	 0.5f, -0.5f, 0.0f,  // bottom right
-	-0.5f, -0.5f, 0.0f,  // bottom left
-	-0.5f,  0.5f, 0.0f   // top left 
+	 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, // top right
+	 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, // bottom right
+	-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, // bottom left
+	-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, // top left 
 	};
 
 	const unsigned int indices[] = {  // note that we start from 0!
@@ -126,21 +164,27 @@ bool MainWindow::InitOpenGL() {
 	//assign buffer data to EBO
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//feed verts into array buffer -- since only one buffer was created, it picks that one
+	// feed verts into array buffer -- since only one buffer was created, it picks that one
 	// GL_STATIC_DRAW since we never change the data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
 
-	// specify how to interpret vertex data
-	// 0 = layout, specified in vert shader
-	// 3 = size of vertex attribute, 3 since its a vector3
-	// GL_FLOAT = datatype
-	// GL_FALSE = dont normalize (used for booleans)
-	// 3* size of float is STRIDE, aka space between vertex attributes. since its just packed tightly, exactly size of attribute
-	// (void*)0 is a nullptr?
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-	// enable VAO | 0 = index
+	// specify how to interpret vertex data, in this case vertex position
+	// 1. 0 = layout, specified in vert shader -> in this case refers to ver pos
+	// 2. 3 = size of vertex attribute, 3 since its a vector3 for position
+	// 3. GL_FLOAT = type
+	// 4. GL_FALSE = dont normalize (used for booleans)
+	// 5. STRIDE, aka space between vertex attributes, counting from first, since data is 3x float pos and 2x float texcoord -> stride = 5*float size
+	// 6. (void*)0 is a nullptr?
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
 	glEnableVertexAttribArray(0);
+
+	// inform gl about tex coords
+	// 1. 1 = layout of tex coord in vert shader -> 2
+	// 2. 2d vector, so size of 2
+	// 3-5. same as above
+	// 6. offset, since texcoords are right after the vec3 floats, its 3*sizeof float, cast to a void type pointer
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	//init shaders
 	const filesystem::path vertShaderPath = filesystem::current_path().append("Shaders/defaultVertShader.vert");
@@ -182,10 +226,11 @@ void MainWindow::RenderOpenGL() {
 	float greenValue = (sin(Time::GetTime()) / 2.0f) + 0.5f;
 	int vertexColorLocation = glGetUniformLocation(shaderProgramUPTR->ID, "ourColor");
 	shaderProgramUPTR->use();
+	glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // TODO: dont set this in loop!
 	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
-
-
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, currentTexture);
 	// use VAO
 	// EBO is already bound to VAO so it gets bound automatically
 	glBindVertexArray(VertexArrayObject);
@@ -204,7 +249,7 @@ void MainWindow::RenderImGui() {
 
 	// ImGui logic here
 
-	if(showDebugWindow) {
+	if (showDebugWindow) {
 		ImGui::ShowDemoWindow();
 	}
 	//return;
@@ -235,6 +280,7 @@ void MainWindow::RenderImGui() {
 						string item = entry.path().string();
 						if (ImGui::MenuItem(item.c_str())) {
 							cout << "Item clicked: " << item << endl;
+							GenTexture(item.c_str(), this);
 						}
 					}
 				}
