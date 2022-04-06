@@ -44,7 +44,6 @@ void GenTexture(const char* path, MainWindow* mainWindow) {
 		return;
 	}
 
-
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -69,7 +68,6 @@ void GenTexture(const char* path, MainWindow* mainWindow) {
 	mainWindow->currentTexture = texture;
 
 	cout << "Image bound to textureID: " << texture << "Channels: " << channelCount << endl;
-
 
 	stbi_image_free(imageData);
 }
@@ -151,9 +149,9 @@ bool MainWindow::InitOpenGL() {
 	// left side are verts, right side are tex coords
 	const float quadVerts[] = {
 	 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, // top right
-	 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, // bottom right
+	 0.5f, -0.5f, 0.0f,		1.0f, 0.0f, // top left
 	-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, // bottom left
-	-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, // top left 
+	-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, // bottom right 
 	};
 
 	const unsigned int indices[] = {  // note that we start from 0!

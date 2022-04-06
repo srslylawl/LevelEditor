@@ -33,9 +33,6 @@
     <ClCompile Include="libs\imgui\imgui_draw.cpp">
       <Filter>Source Files\DearImGui</Filter>
     </ClCompile>
-    <ClCompile Include="libs\imgui\backends\imgui_impl_glfw.cpp">
-      <Filter>Source Files\DearImGui</Filter>
-    </ClCompile>
     <ClCompile Include="libs\imgui\backends\imgui_impl_opengl3.cpp">
       <Filter>Source Files\DearImGui</Filter>
     </ClCompile>
@@ -75,9 +72,6 @@
       <Filter>Source Files\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imgui.h">
-      <Filter>Source Files\DearImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="libs\imgui\backends\imgui_impl_glfw.h">
       <Filter>Source Files\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\backends\imgui_impl_opengl3.h">

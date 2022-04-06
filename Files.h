@@ -21,9 +21,9 @@ inline bool VerifyDirectory(const char* directory, bool createIfNotExists = true
 	return false;
 }
 
-inline bool LoadImage(const char* path, unsigned char* OUT_data, int* OUT_width, int* OUT_height, int* OUT_channelCount) {
-	int width, height, channelCount;
-	OUT_data = stbi_load(path, &width, &height, &channelCount, 0);
-
+inline bool LoadImage(const char* path, unsigned char*& OUT_data, int* OUT_width, int* OUT_height, int* OUT_channelCount) {
+	stbi_set_flip_vertically_on_load(true);
+	OUT_data = stbi_load(path, OUT_width, OUT_height, OUT_channelCount, 0);
+	
 	return OUT_data != nullptr;
 }
