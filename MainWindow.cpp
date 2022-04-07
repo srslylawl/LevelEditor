@@ -14,7 +14,13 @@
 #include "Shader.h"
 #include "Time.h"
 
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 using namespace std;
+using namespace glm;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
 
@@ -132,6 +138,9 @@ bool MainWindow::InitOpenGL() {
 	// set clearing color (background color)
 	glClearColor(0.2f, 0.2f, 0.2f, 1);
 
+	// enable z testing
+	glEnable(GL_DEPTH_TEST);
+
 	// __vertex input__
 	// create vertex array object (VAO) and bind it
 	glGenVertexArrays(1, &VertexArrayObject);
@@ -143,8 +152,8 @@ bool MainWindow::InitOpenGL() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	// create element buffer object (EBO) and bind it -> allows reusing of verts, binds it to VAO as well
-	glGenBuffers(1, &elementBufferObject);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
+	//glGenBuffers(1, &elementBufferObject);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
 
 	// left side are verts, right side are tex coords
 	const float quadVerts[] = {
@@ -154,17 +163,61 @@ bool MainWindow::InitOpenGL() {
 	-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, // bottom right 
 	};
 
-	const unsigned int indices[] = {  // note that we start from 0!
-	0, 1, 3,   // first triangle
-	1, 2, 3    // second triangle
+	const float cubeVerts[] = {
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	//assign buffer data to EBO
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//const unsigned int indices[] = {  // note that we start from 0!
+	//0, 1, 3,   // first triangle
+	//1, 2, 3    // second triangle
+	//};
 
-	// feed verts into array buffer -- since only one buffer was created, it picks that one
-	// GL_STATIC_DRAW since we never change the data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
+	////assign buffer data to EBO
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//// feed verts into array buffer -- since only one buffer was created, it picks that one
+	//// GL_STATIC_DRAW since we never change the data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVerts), cubeVerts, GL_STATIC_DRAW);
 
 	// specify how to interpret vertex data, in this case vertex position
 	// 1. 0 = layout, specified in vert shader -> in this case refers to ver pos
@@ -224,17 +277,62 @@ void MainWindow::RenderOpenGL() {
 	float greenValue = (sin(Time::GetTime()) / 2.0f) + 0.5f;
 	int vertexColorLocation = glGetUniformLocation(shaderProgramUPTR->ID, "ourColor");
 	shaderProgramUPTR->use();
-	glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // TODO: dont set this in loop!
+	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // TODO: dont set this in loop! -- redundant?
 	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+	// model matrix transforms coords to world space
+	mat4 modelM = mat4(1.0f);
+	modelM = rotate(modelM, radians(-55.0f), vec3(1.0f, 0, 0));
+
+	// view matrix transforms world space to view (camera) space
+	// moving camera has to be done in inverse, as we are actually moving the scene
+	// openGL is right-handed, meaning positive Z axis goes towards the screen
+	mat4 viewM = mat4(1.0f);
+	viewM = translate(viewM, vec3(0, 0, -3.0f));
+
+	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
+	// in this case we use perspective
+	mat4 projectionM = perspective(radians(45.0f), m_width / (float)m_height, 0.1f, 100.0f);
+
+	// pass matrices to shader
+	//shaderProgramUPTR->setMat4("model", modelM);
+	shaderProgramUPTR->setMat4("view", viewM);
+	shaderProgramUPTR->setMat4("projection", projectionM);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, currentTexture);
+
+	glm::vec3 cubePositions[] = {
+	glm::vec3(0.0f,  0.0f,  0.0f),
+	glm::vec3(2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3(2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3(1.3f, -2.0f, -2.5f),
+	glm::vec3(1.5f,  2.0f, -2.5f),
+	glm::vec3(1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	// use VAO
 	// EBO is already bound to VAO so it gets bound automatically
 	glBindVertexArray(VertexArrayObject);
 
+	for (int i = 0; i < 10; i++) {
+		mat4 modelM = translate(mat4(1.0f), cubePositions[i]);
+		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i+1)), vec3(1.0f, 0.3f, 0.5f));
+		shaderProgramUPTR->setMat4("model", modelM);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+
+
+
 	// draw triangles using EBO, takes from bound element array buffer
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//unbind vertex array
 	glBindVertexArray(0);
