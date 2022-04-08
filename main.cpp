@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
-#include <iostream>
+#include "Input.h"
 
 #include "Time.h"
 
@@ -12,6 +12,11 @@
 int main(int arg, char* args[]) {
 	//init time module
 	Time::Init();
+	Input InputController;
+	InputController.TestAdd(SDLK_d, "whats up");
+	InputController.TestAdd(SDLK_d, "whats up 2");
+	InputController.TestAdd(SDLK_a, "whats up");
+	InputController.TestAdd(SDLK_f, "whats up");
 
 	//Create SDL Window
 	MainWindow mainWindow = MainWindow(800, 600, "LevelEditor");
@@ -24,33 +29,30 @@ int main(int arg, char* args[]) {
 	bool quit = false;
 	while (!quit) {
 		Time::CalcDeltaTime();
-		//std::cout << "MS: " << Time::GetDeltaTimeMS() << endl;
-		//std::cout << "FPS: " << (1 / Time::GetDeltaTimeMS() * 1000) << endl;
 		while (SDL_PollEvent(&sdlEvent) != 0) {
 			ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 			switch (sdlEvent.type) {
-			case SDL_QUIT:
-				quit = true;
-				break;
-
-			case SDL_WINDOWEVENT:
-				
-				switch (sdlEvent.window.event) {
-				case SDL_WINDOWEVENT_RESIZED:
-					const int w = sdlEvent.window.data1;
-					const int h = sdlEvent.window.data2;
-					mainWindow.OnResized(w, h);
+				case SDL_QUIT:
+					quit = true;
 					break;
-				}
-				break;
 
-			case SDL_KEYDOWN:
-				switch (sdlEvent.key.keysym.sym) {
-				case SDLK_ESCAPE:
-					//quit = true;
+				case SDL_WINDOWEVENT:
+					switch (sdlEvent.window.event) {
+						case SDL_WINDOWEVENT_RESIZED:
+							const int w = sdlEvent.window.data1;
+							const int h = sdlEvent.window.data2;
+							mainWindow.OnResized(w, h);
+							break;
+						}
+						break;
+
+				case SDL_KEYDOWN:
+					switch (sdlEvent.key.keysym.sym) {
+						case SDLK_ESCAPE:
+							//quit = true;
+							break;
+						}
 					break;
-				}
-				break;
 			}
 		}
 
