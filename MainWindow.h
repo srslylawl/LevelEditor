@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Camera.h"
 #include "Shader.h"
 
 
@@ -13,6 +14,8 @@ class MainWindow {
 
 	unsigned int VertexArrayObject = 0;
 	unsigned int elementBufferObject = 0;
+
+	Camera mainCamera;
 	
 
 	bool showDebugWindow = false;

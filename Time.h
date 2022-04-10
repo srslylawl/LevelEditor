@@ -2,12 +2,12 @@
 #include <chrono>
 #include <iostream>
 
-class Time;
-using namespace std;
-using namespace chrono;
+
+using namespace std::chrono;
 
 
 class Time {
+
 	inline static bool init;
 	inline static nanoseconds startTime;
 	inline static nanoseconds lastTick;
@@ -24,16 +24,16 @@ public:
 
 	static float GetTime() {
 		if (!init) {
-			cout << "GetTime called but Time not initiated!";
+			std::cout << "GetTime called but Time not initiated!";
 		}
 
 		const auto epoch = high_resolution_clock::now().time_since_epoch();
-		return duration_cast<duration<float, ratio<1>>>(epoch - startTime).count();
+		return duration_cast<duration<float, std::ratio<1>>>(epoch - startTime).count();
 	}
 
 	static void CalcDeltaTime() {
 		if (!init) {
-			cout << "CalcDeltaTime called but Time not initiated!";
+			std::cout << "CalcDeltaTime called but Time not initiated!" << std::endl;
 		}
 		const auto epoch = high_resolution_clock::now().time_since_epoch();
 

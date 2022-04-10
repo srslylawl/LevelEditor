@@ -8,16 +8,9 @@
 
 #include "Time.h"
 
-
 int main(int arg, char* args[]) {
 	//init time module
 	Time::Init();
-	Input InputController;
-	InputController.TestAdd(SDLK_d, "whats up");
-	InputController.TestAdd(SDLK_d, "whats up 2");
-	InputController.TestAdd(SDLK_a, "whats up");
-	InputController.TestAdd(SDLK_f, "whats up");
-
 	//Create SDL Window
 	MainWindow mainWindow = MainWindow(800, 600, "LevelEditor");
 	if (!mainWindow.Initialize()) {
@@ -46,13 +39,8 @@ int main(int arg, char* args[]) {
 						}
 						break;
 
-				case SDL_KEYDOWN:
-					switch (sdlEvent.key.keysym.sym) {
-						case SDLK_ESCAPE:
-							//quit = true;
-							break;
-						}
-					break;
+			case SDL_KEYDOWN:
+				Input::ReceiveInput(sdlEvent.key.keysym.sym);
 			}
 		}
 

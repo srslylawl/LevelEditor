@@ -10,8 +10,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace std;
-
 class Shader
 {
 public:
@@ -21,10 +19,10 @@ public:
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath) {
         // 1. retrieve the vertex/fragment source code from filePath
-        string vertexCode;
-        string fragmentCode;
-        ifstream vShaderFile;
-        ifstream fShaderFile;
+        std::string vertexCode;
+        std::string fragmentCode;
+        std::ifstream vShaderFile;
+        std::ifstream fShaderFile;
         // ensure ifstream objects can throw exceptions:
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);

@@ -19,7 +19,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace std;
+#include "Camera.h"
+
 using namespace glm;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
@@ -45,8 +46,8 @@ void GenTexture(const char* path, MainWindow* mainWindow) {
 
 	int width, height, channelCount;
 	unsigned char* imageData = nullptr;
-	if (!LoadImage(path, imageData, &width, &height, &channelCount)) {
-		cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << endl;
+	if (!Files::LoadImageFile(path, imageData, &width, &height, &channelCount)) {
+		std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
 		return;
 	}
 
@@ -73,7 +74,7 @@ void GenTexture(const char* path, MainWindow* mainWindow) {
 
 	mainWindow->currentTexture = texture;
 
-	cout << "Image bound to textureID: " << texture << "Channels: " << channelCount << endl;
+	std::cout << "Image bound to textureID: " << texture << "Channels: " << channelCount << std::endl;
 
 	stbi_image_free(imageData);
 }
@@ -238,10 +239,10 @@ bool MainWindow::InitOpenGL() {
 	glEnableVertexAttribArray(1);
 
 	//init shaders
-	const filesystem::path vertShaderPath = filesystem::current_path().append("Shaders/defaultVertShader.vert");
-	const filesystem::path fragShaderPath = filesystem::current_path().append("Shaders/defaultFragShader.frag");
+	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
+	const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
 
-	shaderProgramUPTR = make_unique<Shader>(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
+	shaderProgramUPTR = std::make_unique<Shader>(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
 
 	return true;
 }
@@ -287,8 +288,8 @@ void MainWindow::RenderOpenGL() {
 	// view matrix transforms world space to view (camera) space
 	// moving camera has to be done in inverse, as we are actually moving the scene
 	// openGL is right-handed, meaning positive Z axis goes towards the screen
-	mat4 viewM = mat4(1.0f);
-	viewM = translate(viewM, vec3(0, 0, -3.0f));
+	//mat4 viewM = mat4(1.0f);
+	//viewM = translate(viewM, vec3(0, 0, -3.0f));
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
 	// in this case we use perspective
@@ -296,7 +297,7 @@ void MainWindow::RenderOpenGL() {
 
 	// pass matrices to shader
 	//shaderProgramUPTR->setMat4("model", modelM);
-	shaderProgramUPTR->setMat4("view", viewM);
+	shaderProgramUPTR->setMat4("view", mainCamera.GetViewMatrix());
 	shaderProgramUPTR->setMat4("projection", projectionM);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -364,18 +365,18 @@ void MainWindow::RenderImGui() {
 				showDebugWindow = !showDebugWindow;
 			}
 			if (ImGui::MenuItem("folderstuff")) {
-				std::cout << "Items in Sprites: " << endl;
-				if (VerifyDirectory("Sprites")) {
-					for (const auto& entry : filesystem::directory_iterator(filesystem::current_path().append("Sprites")))
+				std::cout << "Items in Sprites: " << std::endl;
+				if (Files::VerifyDirectory("Sprites")) {
+					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites")))
 						std::cout << entry.path() << std::endl;
 				}
 			}
 			if (ImGui::BeginMenu("Sprites")) {
-				if (VerifyDirectory("Sprites")) {
-					for (const auto& entry : filesystem::directory_iterator(filesystem::current_path().append("Sprites"))) {
-						string item = entry.path().string();
+				if (Files::VerifyDirectory("Sprites")) {
+					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
+						std::string item = entry.path().string();
 						if (ImGui::MenuItem(item.c_str())) {
-							cout << "Item clicked: " << item << endl;
+							std::cout << "Item clicked: " << item << std::endl;
 							GenTexture(item.c_str(), this);
 						}
 					}
