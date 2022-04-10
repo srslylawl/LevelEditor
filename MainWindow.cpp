@@ -402,6 +402,10 @@ void MainWindow::RenderImGui() {
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Camera")) {
+				ImGui::SliderFloat("Camera Speed", &Camera::CameraSpeed, 0, 1000.0f);
+				ImGui::EndMenu();
+			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();

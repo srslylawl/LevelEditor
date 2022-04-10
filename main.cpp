@@ -20,6 +20,7 @@ int main(int arg, char* args[]) {
 
 	SDL_Event sdlEvent;
 	bool quit = false;
+	unsigned int frameCount = 0;
 	while (!quit) {
 		Time::CalcDeltaTime();
 		while (SDL_PollEvent(&sdlEvent) != 0) {
@@ -40,11 +41,18 @@ int main(int arg, char* args[]) {
 						break;
 
 			case SDL_KEYDOWN:
-				Input::ReceiveInput(sdlEvent.key.keysym.sym);
+				Input::ReceiveKeyDownInput(sdlEvent.key.keysym.sym);
+				break;
+
+			case SDL_KEYUP:
+				Input::ReceiveKeyUpInput(sdlEvent.key.keysym.sym);
+				break;
 			}
 		}
-
+		Input::DelegateHeldButtons();
+		std::cout << "Frame: " << frameCount << std::endl;;
 		mainWindow.Render();
+		frameCount++;
 	}
 	mainWindow.Close();
 

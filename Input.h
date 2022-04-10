@@ -8,12 +8,20 @@
 #include <SDL_keycode.h>
 #include <unordered_set>
 #include <iostream>
+#include <set>
+#include <xlocmon>
+
+enum class KeyEvent {
+	KeyDown = 1,
+	KeyHold = 2,
+	KeyUp = 4,
+};
 
 struct InputActionBinding {
-	std::function<void()> Action;
+	std::function<void(KeyEvent)> Action;
 	GUID BindingGUID;
 	SDL_Keycode Keycode;
-	InputActionBinding(const GUID guid, std::function<void()> action, SDL_Keycode keycode) : Action(std::move(action)), BindingGUID(guid), Keycode(keycode) { }
+	InputActionBinding(const GUID guid, std::function<void(KeyEvent)> action, SDL_Keycode keycode) : Action(std::move(action)), BindingGUID(guid), Keycode(keycode) { }
 
 	bool operator==(const InputActionBinding& t) const {
 		return (this->BindingGUID == t.BindingGUID);
@@ -28,30 +36,61 @@ struct InputActionBinding {
 
 };
 
+
 /**
  * \brief Handles Input and delegates it to subscribers
  */
 class Input {
 	Input() = default;
-	inline static std::map<SDL_Keycode, std::unordered_set<InputActionBinding, InputActionBinding::HashFunction>> Bindings;
+	inline static std::map<SDL_Keycode, std::unordered_set<InputActionBinding, InputActionBinding::HashFunction>> bindings;
+	inline static std::map<SDL_Keycode, bool> keysHeldDown;
+	inline static std::set<SDL_Keycode> keysPressedThisFrame;
 public:
-	static InputActionBinding AddBinding(const SDL_Keycode keycode, std::function<void()> action) {
+	static InputActionBinding AddBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action) {
 		GUID newGUID;
 		CoCreateGuid(&newGUID);
 		InputActionBinding newBinding(newGUID, action, keycode);
-		Bindings[keycode].insert(newBinding);
+		bindings[keycode].insert(newBinding);
 		return newBinding;
 	}
 	static void RemoveBinding(InputActionBinding* binding) {
-		if(!Bindings[binding->Keycode].erase(*binding)) {
+		if(!bindings[binding->Keycode].erase(*binding)) {
 			std::cout << "Failed to remove binding for keycode: " << binding->Keycode << std::endl;
 		}
 	}
 
-	static void ReceiveInput(const SDL_Keycode keycode) {
-		for (auto binding : Bindings[keycode]) {
-			binding.Action();
+	static void ReceiveKeyDownInput(const SDL_Keycode keycode) {
+		if (keysHeldDown[keycode]) return; //don't care if its already held down
+
+		keysHeldDown[keycode] = true;
+
+		keysPressedThisFrame.insert(keycode);
+
+		for (auto const& binding : bindings[keycode]) {
+			binding.Action(KeyEvent::KeyDown);
 		}
+	}
+
+	static void ReceiveKeyUpInput(const SDL_Keycode keycode) {
+		if(!keysHeldDown[keycode]) {
+			std::cout << "Key " << keycode << " release received, but was not held down?" << std::endl;
+			return;
+		}
+		keysHeldDown.erase(keycode);
+
+		for (auto const& binding : bindings[keycode]) {
+			binding.Action(KeyEvent::KeyUp);
+		}
+	}
+
+	static void DelegateHeldButtons() {
+		for (auto const& [keycode, beingHeld] : keysHeldDown) {
+			for (auto const &binding : bindings[keycode] ) {
+				binding.Action(KeyEvent::KeyHold);
+			}
+		}
+
+		keysPressedThisFrame.clear();
 	}
 };
 

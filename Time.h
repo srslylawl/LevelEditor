@@ -12,7 +12,7 @@ class Time {
 	inline static nanoseconds startTime;
 	inline static nanoseconds lastTick;
 	inline static double deltaTimeMS;
-	inline static double deltaTime;
+	inline static double deltaTimeD;
 	Time() = default;
 
 public:
@@ -40,16 +40,17 @@ public:
 		auto deltaNano = epoch - lastTick;
 		auto deltaNanoCount = deltaNano.count();
 		deltaTimeMS = deltaNanoCount / 1000000.0;
-		deltaTime = deltaTimeMS / 1000.0;
+		deltaTimeD = deltaTimeMS / 1000.0;
 		//std::cout << "StartTime: " << startTime.count() << endl;
 		//std::cout << "DeltaNano: " << deltaNano.count() << endl;
 		//std::cout << "DeltaTimeMS: " << deltaTimeMS << endl;
-		//std::cout << "DeltaTimeSeconds: " << deltaTime << endl;
+		//std::cout << "DeltaTimeSeconds: " << deltaTimeD << endl;
 
 		lastTick = epoch;
 	}
 
-	static double GetDeltaTime() { return deltaTime;  }
+	static double GetDeltaTimeD() { return deltaTimeD;  }
+	static float GetDeltaTime() { return static_cast<float>(deltaTimeD); }
 	static double GetDeltaTimeMS() { return deltaTimeMS; }
 };
 
