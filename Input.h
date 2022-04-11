@@ -59,7 +59,7 @@ public:
 		}
 	}
 
-	static void ReceiveKeyDownInput(const SDL_Keycode keycode) {
+	static void ReceiveKeyDownInput(const SDL_Keycode& keycode) {
 		if (keysHeldDown[keycode]) return; //don't care if its already held down
 
 		keysHeldDown[keycode] = true;
@@ -71,7 +71,7 @@ public:
 		}
 	}
 
-	static void ReceiveKeyUpInput(const SDL_Keycode keycode) {
+	static void ReceiveKeyUpInput(const SDL_Keycode& keycode) {
 		if(!keysHeldDown[keycode]) {
 			std::cout << "Key " << keycode << " release received, but was not held down?" << std::endl;
 			return;
@@ -81,6 +81,24 @@ public:
 		for (auto const& binding : bindings[keycode]) {
 			binding.Action(KeyEvent::KeyUp);
 		}
+	}
+
+	static void ReceiveMouseMotion(const SDL_MouseMotionEvent& e) {
+		int x = e.x;
+		int y = e.y;
+		int xrel = e.xrel;
+		int yrel = e.yrel;
+
+		std::cout << "Mouse: X: " << x << ", Y: " << y << std::endl;
+		std::cout << "MouseRel: XRel: " << xrel << ", YRel: " << yrel << std::endl;
+	}
+
+	static void ReceiveMouseUp(const SDL_MouseButtonEvent e) {
+
+	}
+
+	static void ReceiveMouseDown(const SDL_MouseButtonEvent e) {
+
 	}
 
 	static void DelegateHeldButtons() {

@@ -20,7 +20,6 @@ int main(int arg, char* args[]) {
 
 	SDL_Event sdlEvent;
 	bool quit = false;
-	unsigned int frameCount = 0;
 	while (!quit) {
 		Time::CalcDeltaTime();
 		while (SDL_PollEvent(&sdlEvent) != 0) {
@@ -37,22 +36,31 @@ int main(int arg, char* args[]) {
 							const int h = sdlEvent.window.data2;
 							mainWindow.OnResized(w, h);
 							break;
-						}
+					}
 						break;
 
-			case SDL_KEYDOWN:
-				Input::ReceiveKeyDownInput(sdlEvent.key.keysym.sym);
-				break;
+				case SDL_KEYDOWN:
+					Input::ReceiveKeyDownInput(sdlEvent.key.keysym.sym);
+					break;
 
-			case SDL_KEYUP:
-				Input::ReceiveKeyUpInput(sdlEvent.key.keysym.sym);
-				break;
+				case SDL_KEYUP:
+					Input::ReceiveKeyUpInput(sdlEvent.key.keysym.sym);
+					break;
+
+				case SDL_MOUSEMOTION:
+					Input::ReceiveMouseMotion(sdlEvent.motion);
+					break;
+
+				case SDL_MOUSEBUTTONDOWN:
+					sdlEvent.button.button;
+					break;
+				
+				case SDL_MOUSEBUTTONUP:
+					break;
 			}
 		}
 		Input::DelegateHeldButtons();
-		std::cout << "Frame: " << frameCount << std::endl;;
 		mainWindow.Render();
-		frameCount++;
 	}
 	mainWindow.Close();
 
