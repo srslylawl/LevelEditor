@@ -89,8 +89,8 @@ public:
 		int xrel = e.xrel;
 		int yrel = e.yrel;
 
-		std::cout << "Mouse: X: " << x << ", Y: " << y << std::endl;
-		std::cout << "MouseRel: XRel: " << xrel << ", YRel: " << yrel << std::endl;
+		//std::cout << "Mouse: X: " << x << ", Y: " << y << std::endl;
+		//std::cout << "MouseRel: XRel: " << xrel << ", YRel: " << yrel << std::endl;
 	}
 
 	static void ReceiveMouseUp(const SDL_MouseButtonEvent e) {

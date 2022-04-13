@@ -16,7 +16,6 @@ class MainWindow {
 	unsigned int elementBufferObject = 0;
 
 	Camera mainCamera;
-	
 
 	bool showDebugWindow = false;
 

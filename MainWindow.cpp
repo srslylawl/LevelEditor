@@ -25,6 +25,28 @@ using namespace glm;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
 
+
+void TextCentered(const char* text) {
+	float win_width = ImGui::GetWindowSize().x;
+	float text_width = ImGui::CalcTextSize(text).x;
+
+	// calculate the indentation that centers the text on one line, relative
+	// to window left, regardless of the `ImGuiStyleVar_WindowPadding` value
+	float text_indentation = (win_width - text_width) * 0.5f;
+
+	// if text is too long to be drawn on one line, `text_indentation` can
+	// become too small or even negative, so we check a minimum indentation
+	float min_indentation = 20.0f;
+	if (text_indentation <= min_indentation) {
+		text_indentation = min_indentation;
+	}
+
+	ImGui::SameLine(text_indentation);
+	ImGui::PushTextWrapPos(win_width - text_indentation);
+	ImGui::TextWrapped(text);
+	ImGui::PopTextWrapPos();
+}
+
 int WindowResizeEvent(void* data, SDL_Event* event) {
 	if (event->type != SDL_WINDOWEVENT
 		|| event->window.event != SDL_WINDOWEVENT_RESIZED) return -1;
@@ -88,6 +110,8 @@ bool MainWindow::Initialize() {
 	SDL_AddEventWatch(WindowResizeEvent, this);
 	return true;
 }
+
+static float ObjectOffsetX = 0;
 bool MainWindow::InitSDL() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -293,7 +317,7 @@ void MainWindow::RenderOpenGL() {
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
 	// in this case we use perspective
-	mat4 projectionM = perspective(radians(45.0f), m_width / (float)m_height, 0.1f, 100.0f);
+	mat4 projectionM = perspectiveLH(radians(45.0f), m_width / (float)m_height, 0.1f, 100.0f);
 
 	// pass matrices to shader
 	//shaderProgramUPTR->setMat4("model", modelM);
@@ -303,10 +327,11 @@ void MainWindow::RenderOpenGL() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, currentTexture);
 
+
 	glm::vec3 cubePositions[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
-	glm::vec3(2.0f,  5.0f, -15.0f),
-	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(2.0f,  2.0f, 2.0f),
+	glm::vec3(-2.0f, -2.0f, -2.0f),
 	glm::vec3(-3.8f, -2.0f, -12.3f),
 	glm::vec3(2.4f, -0.4f, -3.5f),
 	glm::vec3(-1.7f,  3.0f, -7.5f),
@@ -320,9 +345,11 @@ void MainWindow::RenderOpenGL() {
 	// EBO is already bound to VAO so it gets bound automatically
 	glBindVertexArray(VertexArrayObject);
 
-	for (int i = 0; i < 10; i++) {
-		mat4 modelM = translate(mat4(1.0f), cubePositions[i]);
-		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i+1)), vec3(1.0f, 0.3f, 0.5f));
+	for (int i = 0; i < 3; i++) {
+		auto pos = cubePositions[i];
+		pos.x += ObjectOffsetX;
+		mat4 modelM = translate(mat4(1.0f), pos);
+		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
 		shaderProgramUPTR->setMat4("model", modelM);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -342,8 +369,10 @@ void MainWindow::RenderImGui() {
 	// Required before ImGui logic
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(MainWindow::SDLWindow);
+	using namespace ImGui;
 	ImGui::NewFrame();
 
+	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 	// ImGui logic here
 
 	if (showDebugWindow) {
@@ -364,12 +393,9 @@ void MainWindow::RenderImGui() {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
 			}
-			if (ImGui::MenuItem("folderstuff")) {
-				std::cout << "Items in Sprites: " << std::endl;
-				if (Files::VerifyDirectory("Sprites")) {
-					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites")))
-						std::cout << entry.path() << std::endl;
-				}
+			if (ImGui::BeginMenu("ObjectOffsetX")) {
+				DragFloat("ObjectOffsetX", &ObjectOffsetX);
+				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Sprites")) {
 				if (Files::VerifyDirectory("Sprites")) {
@@ -402,15 +428,46 @@ void MainWindow::RenderImGui() {
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Camera")) {
-				ImGui::SliderFloat("Camera Speed", &Camera::CameraSpeed, 0, 1000.0f);
-				ImGui::EndMenu();
-			}
+
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
 	}
 
+	// Top right camera bar
+
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration;
+	bool open = true;
+	if (ImGui::Begin("Camera", &open, flags)) {
+		TextCentered("Camera");
+		ImGui::SliderFloat("Speed", &Camera::CameraSpeed, 0, 200);
+		const char* columns[] = { "X:", "Y:", "Z:" };
+		ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
+		ImGui::Text("Transform");
+		if (ImGui::BeginTable("table_Camera_Main_Transform", 3, tableFlags)) {
+			ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
+			ImGui::TableSetupColumn("X", columnFlags);
+			ImGui::TableSetupColumn("Y", columnFlags);
+			ImGui::TableSetupColumn("Z", columnFlags);
+			ImGui::TableNextRow();
+			for (int column = 0; column < 3; column++) {
+				ImGui::TableSetColumnIndex(column);
+				ImGui::AlignTextToFramePadding();
+				Text(columns[column]);
+				SameLine();
+				PushID(column);
+				PushItemWidth(-FLT_MIN);
+				DragFloat("##", &mainCamera.Position[column], 0.05f, 0, 0, "%.6f");
+				PopItemWidth();
+				PopID();
+			}
+			ImGui::EndTable();
+		}
+		const auto size = ImGui::GetWindowSize();
+		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
+		ImGui::End();
+	}
 
 	// Required to render ImGuI
 	ImGui::Render();

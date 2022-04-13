@@ -17,9 +17,10 @@ class Camera {
 public:
 	vec3 Position = vec3(0, 0, -3.0f); //in World Space
 	vec3 Target = vec3(0, 0, 0); // Target location in World Space
-	vec3 Direction = vec3(0, 0, 1.0f); //Direction to Target -- REVERSED
+	vec3 LookDirection = vec3(0, 0, 1.0f); //LookDirection to Target
 	vec3 Right{}; //Relative to Camera
 	vec3 Up{}; //Relative to Camera
+	vec3 Rotation{};
 
 	inline static float CameraSpeed = 50.0f;
 
@@ -31,21 +32,21 @@ public:
 		constexpr auto worldUp = vec3(0, 1.0f, 0);
 
 		Target = Position + vec3(0, 0, 1.0f);
-		Direction = normalize(Target - Position);
-		Right = normalize(cross(worldUp, Direction));
-		Up = cross(Direction, Right);
+		LookDirection = normalize(Target - Position);
+		Right = normalize(cross(worldUp, LookDirection));
+		Up = cross(LookDirection, Right);
 	}
 
 	mat4 GetViewMatrix() {
 		this->Update();
-		return lookAt(Position, Target, Up);
+		return lookAtLH(Position, Target, Up);
 	}
 
 	Camera() {
-		inputBindings.push_back(Input::AddBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->Direction); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_s, [this](KeyEvent e) {this->Move(-this->Direction); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_a, [this](KeyEvent e) {this->Move(this->Right); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_d, [this](KeyEvent e) {this->Move(-this->Right); }));
+		inputBindings.push_back(Input::AddBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->LookDirection); }));
+		inputBindings.push_back(Input::AddBinding(SDLK_s, [this](KeyEvent e) {this->Move(-this->LookDirection); }));
+		inputBindings.push_back(Input::AddBinding(SDLK_a, [this](KeyEvent e) {this->Move(-this->Right); }));
+		inputBindings.push_back(Input::AddBinding(SDLK_d, [this](KeyEvent e) {this->Move(this->Right); }));
 		inputBindings.push_back(Input::AddBinding(SDLK_SPACE, [this](KeyEvent e){this->Move(this->Up); }));
 		inputBindings.push_back(Input::AddBinding(SDLK_x, [this](KeyEvent e) {this->Move(-this->Up); }));
 		Update();
