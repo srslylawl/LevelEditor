@@ -134,6 +134,7 @@ bool MainWindow::InitSDL() {
 	return true;
 }
 bool MainWindow::InitOpenGL() {
+	mainCamera = new Camera();
 	// set OpenGL attributes
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -321,7 +322,7 @@ void MainWindow::RenderOpenGL() {
 
 	// pass matrices to shader
 	//shaderProgramUPTR->setMat4("model", modelM);
-	shaderProgramUPTR->setMat4("view", mainCamera.GetViewMatrix());
+	shaderProgramUPTR->setMat4("view", mainCamera->GetViewMatrix());
 	shaderProgramUPTR->setMat4("projection", projectionM);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -441,7 +442,7 @@ void MainWindow::RenderImGui() {
 	bool open = true;
 	if (ImGui::Begin("Camera", &open, flags)) {
 		TextCentered("Camera");
-		ImGui::SliderFloat("Speed", &Camera::CameraSpeed, 0, 200);
+		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
 		const char* columns[] = { "X:", "Y:", "Z:" };
 		ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
 		ImGui::Text("Transform");
@@ -458,7 +459,7 @@ void MainWindow::RenderImGui() {
 				SameLine();
 				PushID(column);
 				PushItemWidth(-FLT_MIN);
-				DragFloat("##", &mainCamera.Position[column], 0.05f, 0, 0, "%.6f");
+				DragFloat("##", &mainCamera->Position[column], 0.05f, 0, 0, "%.6f");
 				PopItemWidth();
 				PopID();
 			}
@@ -484,4 +485,5 @@ void MainWindow::OnResized(int width, int height) {
 void MainWindow::Close() {
 	SDL_DestroyWindow(SDLWindow);
 	SDLWindow = nullptr;
+	delete mainCamera;
 }

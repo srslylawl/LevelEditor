@@ -15,7 +15,7 @@ class MainWindow {
 	unsigned int VertexArrayObject = 0;
 	unsigned int elementBufferObject = 0;
 
-	Camera mainCamera;
+	Camera* mainCamera;
 
 	bool showDebugWindow = false;
 

@@ -13,7 +13,8 @@
 using namespace glm;
 
 class Camera {
-	std::vector<InputActionBinding> inputBindings;
+	std::vector<InputActionBinding*> inputBindings;
+	InputMouseBinding* mouseBinding = nullptr;
 public:
 	vec3 Position = vec3(0, 0, -3.0f); //in World Space
 	vec3 Target = vec3(0, 0, 0); // Target location in World Space
@@ -22,10 +23,15 @@ public:
 	vec3 Up{}; //Relative to Camera
 	vec3 Rotation{};
 
-	inline static float CameraSpeed = 50.0f;
+	inline static float MoveSpeed = 50.0f;
+	inline static float TurnSpeed = 0.5f;
 
 	void Move(vec3 moveDirection) {
-		Position += moveDirection * CameraSpeed * Time::GetDeltaTime();
+		Position += moveDirection * MoveSpeed * Time::GetDeltaTime();
+	}
+
+	void Rotate(int deltaX, int deltaY) {
+		printf("RotateXY: %i, %i\n", deltaX, deltaY);
 	}
 
 	void Update() {
@@ -43,20 +49,26 @@ public:
 	}
 
 	Camera() {
-		inputBindings.push_back(Input::AddBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->LookDirection); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_s, [this](KeyEvent e) {this->Move(-this->LookDirection); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_a, [this](KeyEvent e) {this->Move(-this->Right); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_d, [this](KeyEvent e) {this->Move(this->Right); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_SPACE, [this](KeyEvent e){this->Move(this->Up); }));
-		inputBindings.push_back(Input::AddBinding(SDLK_x, [this](KeyEvent e) {this->Move(-this->Up); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->LookDirection); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_s, [this](KeyEvent e) {this->Move(-this->LookDirection); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_a, [this](KeyEvent e) {this->Move(-this->Right); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_d, [this](KeyEvent e) {this->Move(this->Right); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_SPACE, [this](KeyEvent e){this->Move(this->Up); }));
+		inputBindings.push_back(Input::AddKeyBinding(SDLK_x, [this](KeyEvent e) {this->Move(-this->Up); }));
+		mouseBinding = Input::AddMouseMovementBinding([this](const MouseMovementEvent* e){
+			if(e->mouseButtonsHeldDown->count(SDL_BUTTON_RIGHT)) {
+				this->Rotate(e->MouseDelta_X, e->MouseDelta_Y);
+			}
+		});
 		Update();
 	}
 
 
 	~Camera() {
 		for (auto binding : inputBindings) {
-			Input::RemoveBinding(&binding);
+			Input::RemoveKeyBinding(binding);
 		}
+		Input::RemoveMouseBinding(mouseBinding);
 	}
 };
 
