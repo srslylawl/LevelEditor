@@ -8,8 +8,8 @@ class MainWindow {
 	SDL_Window* SDLWindow = nullptr;
 	SDL_GLContext gl_context = nullptr;
 
-	int m_width = 800;
-	int m_height = 600;
+	int m_width;
+	int m_height;
 	const char* m_title = "New Window";
 
 	unsigned int VertexArrayObject = 0;

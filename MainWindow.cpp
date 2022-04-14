@@ -318,7 +318,7 @@ void MainWindow::RenderOpenGL() {
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
 	// in this case we use perspective
-	mat4 projectionM = perspectiveLH(radians(45.0f), m_width / (float)m_height, 0.1f, 100.0f);
+	mat4 projectionM = perspectiveLH(radians(mainCamera->FOV), m_width / (float)m_height, 0.1f, 100.0f);
 
 	// pass matrices to shader
 	//shaderProgramUPTR->setMat4("model", modelM);
@@ -438,13 +438,15 @@ void MainWindow::RenderImGui() {
 	// Top right camera bar
 
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration;
+	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 	bool open = true;
 	if (ImGui::Begin("Camera", &open, flags)) {
 		TextCentered("Camera");
 		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
+		ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
+		ImGui::SliderFloat("FOV", &Camera::FOV, 0, 180, "%.0f");
 		const char* columns[] = { "X:", "Y:", "Z:" };
-		ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
+		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
 		ImGui::Text("Transform");
 		if (ImGui::BeginTable("table_Camera_Main_Transform", 3, tableFlags)) {
 			ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
@@ -465,7 +467,7 @@ void MainWindow::RenderImGui() {
 			}
 			ImGui::EndTable();
 		}
-		const auto size = ImGui::GetWindowSize();
+		const auto size = GetWindowSize();
 		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
 		ImGui::End();
 	}

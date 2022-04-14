@@ -1,6 +1,6 @@
 #pragma once
 
-//#define _HAS_STD_BYTE 0 //required to use windows 10 sdk, specifically GUIDs - wtf?
+//#define _HAS_STD_BYTE 0 //required to use windows 10 sdk, when "using namespace std;" - wtf?
 
 #include <combaseapi.h>
 #include <functional>
@@ -12,64 +12,91 @@
 #include <utility>
 
 enum class KeyEvent {
-	KeyDown = 1 << 1,
-	KeyHold = 1 << 2,
-	KeyUp = 1 << 3,
+	KeyDown = 1 << 0,
+	KeyHold = 1 << 1,
+	KeyUp = 1 << 2,
 };
 
-struct InputActionBinding {
+enum class MouseButton {
+	Left	= 1 << 0,
+	Right	= 1 << 1,
+	Middle	= 1 << 2,
+	X1		= 1 << 3,
+	X2		= 1 << 4,
+};
+
+struct InputKeyBinding {
 	std::function<void(KeyEvent)> Action;
 	GUID BindingGUID;
 	SDL_Keycode Keycode;
-	InputActionBinding(const GUID guid, std::function<void(KeyEvent)> action, SDL_Keycode keycode) : Action(std::move(action)), BindingGUID(guid), Keycode(keycode) { }
+	InputKeyBinding(const GUID guid, std::function<void(KeyEvent)> action, SDL_Keycode keycode) : Action(std::move(action)), BindingGUID(guid), Keycode(keycode) { }
 };
 
-struct MouseMovementEvent {
-	MouseMovementEvent(int mouse_pos_x, int mouse_pos_y, int mouse_delta_x, int mouse_delta_y,
-		const std::map<Uint8, bool>* mouse_buttons_held_down)
-		: MousePos_X(mouse_pos_x),
-		  MousePos_Y(mouse_pos_y),
-		  MouseDelta_X(mouse_delta_x),
-		  MouseDelta_Y(mouse_delta_y),
-		  mouseButtonsHeldDown(mouse_buttons_held_down) {}
-
-	const int MousePos_X;
-	const int MousePos_Y;
-	const int MouseDelta_X;
-	const int MouseDelta_Y;
-	const std::map<Uint8, bool>* mouseButtonsHeldDown;
-
+struct MouseMotion {
+	int posX;
+	int posY;
+	int deltaX;
+	int deltaY;
 };
+
+class InputMouseEvent {
+	const std::map<MouseButton, std::unordered_set<KeyEvent>>* keyEvents = nullptr;
+public:
+	const MouseMotion* motion;
+
+	bool GetMouseKey(KeyEvent mouse_key_event, MouseButton button) const {
+		const auto iterator = keyEvents->find(button);
+		if (iterator == keyEvents->end()) return false;
+		return iterator->second.find(mouse_key_event) != iterator->second.end();
+	}
+
+	bool GetMouseKeyDown (MouseButton button) const {
+		return GetMouseKey(KeyEvent::KeyDown, button);
+	}
+
+	bool GetMouseKeyUp(MouseButton button) const {
+		return GetMouseKey(KeyEvent::KeyUp, button);
+	}
+
+	bool GetMouseKeyHold(MouseButton button) const {
+		return GetMouseKey(KeyEvent::KeyHold, button);
+	}
+
+	InputMouseEvent(const std::map<MouseButton, std::unordered_set<KeyEvent>>* key_events, const MouseMotion* motion)
+		: keyEvents(key_events),
+		  motion(motion) {}
+};
+
 
 struct InputMouseBinding {
-	std::function<void(const MouseMovementEvent*)> Action;
+	std::function<void(const InputMouseEvent*)> Action;
 	GUID BindingGUID;
 
-	InputMouseBinding(std::function<void(const MouseMovementEvent*)> action, GUID guid) : Action(std::move(action)), BindingGUID(guid) {}
+	InputMouseBinding(std::function<void(const InputMouseEvent*)> action, GUID guid) : Action(std::move(action)), BindingGUID(guid) {}
 };
-
-
 
 /**
  * \brief Handles Input and delegates it to subscribers
  */
 class Input {
 	Input() = default;
-	inline static std::map<SDL_Keycode, std::unordered_set<InputActionBinding*>> keyBindings;
+	inline static std::map<SDL_Keycode, std::unordered_set<InputKeyBinding*>> keyBindings;
 	inline static std::unordered_set<InputMouseBinding*> mouseBindings;
 	inline static std::map<SDL_Keycode, bool> keysHeldDown;
 	inline static std::set<SDL_Keycode> keysPressedThisFrame;
-	inline static std::map<Uint8, bool> mouseButtonsHeldDown;
+	inline static std::map<MouseButton, std::unordered_set<KeyEvent>> mouseKeyEvents;
+	inline static MouseMotion mouseMotion;
+	inline static std::pair<int, int> savedMousePosition;
 public:
-	static InputActionBinding* AddKeyBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action) {
+	static InputKeyBinding* AddKeyBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action) {
 		GUID newGUID;
 		CoCreateGuid(&newGUID);
-		auto* newBinding = new InputActionBinding(newGUID, action, keycode);
+		auto* newBinding = new InputKeyBinding(newGUID, action, keycode);
 		keyBindings[keycode].insert(newBinding);
 		return newBinding;
 	}
-	static void RemoveKeyBinding(InputActionBinding* binding) {
-		if(!keyBindings[binding->Keycode].erase(binding)) {
+	static void RemoveKeyBinding(InputKeyBinding* binding) {
+		if (!keyBindings[binding->Keycode].erase(binding)) {
 			std::cout << "Failed to remove binding for keycode: " << binding->Keycode << std::endl;
 		}
 		delete binding;
@@ -88,7 +115,7 @@ public:
 	}
 
 	static void ReceiveKeyUpInput(const SDL_Keycode& keycode) {
-		if(!keysHeldDown[keycode]) {
+		if (!keysHeldDown[keycode]) {
 			std::cout << "Key " << keycode << " release received, but was not held down?" << std::endl;
 			return;
 		}
@@ -99,7 +126,7 @@ public:
 		}
 	}
 
-	static InputMouseBinding* AddMouseMovementBinding(const std::function<void(const MouseMovementEvent*)> &action) {
+	static InputMouseBinding* AddMouseBinding(const std::function<void(const InputMouseEvent*)>& action) {
 		GUID newGuid;
 		CoCreateGuid(&newGuid);
 		const auto binding = new InputMouseBinding(action, newGuid);
@@ -110,7 +137,7 @@ public:
 	}
 
 	static void RemoveMouseBinding(InputMouseBinding* binding) {
-		if(!mouseBindings.erase(binding)) {
+		if (!mouseBindings.erase(binding)) {
 			std::cout << "Failed to remove mouseBinding" << std::endl;
 		}
 
@@ -118,36 +145,94 @@ public:
 	}
 
 	static void ReceiveMouseMotion(const SDL_MouseMotionEvent& e) {
-		const MouseMovementEvent mouseEvent = MouseMovementEvent(e.x, e.y, e.xrel, e.yrel, &mouseButtonsHeldDown);
+		mouseMotion.deltaX = e.xrel;
+		mouseMotion.deltaY = e.yrel;
+		mouseMotion.posX = e.x;
+		mouseMotion.posY = e.y;
 
-		for (const auto& mouse_binding : mouseBindings) {
-			mouse_binding->Action(&mouseEvent);
-		}
+		//printf("Mousemotion: x:%i,y:%i, relx:%i,rely:%i\n", mouseMotion.posY, mouseMotion.posY, mouseMotion.deltaX, mouseMotion.deltaY);
 	}
 
-	static void ReceiveMouseUp(const SDL_MouseButtonEvent e) {
-		if (!mouseButtonsHeldDown[e.button]) {
+	static void ReceiveMouseButtonEvent(const SDL_MouseButtonEvent e) {
+		const bool pressed = e.state == SDL_PRESSED;
+		MouseButton button;
+		switch (e.button) {
+		case SDL_BUTTON_LEFT:
+			button = MouseButton::Left;
+			break;
+		case SDL_BUTTON_RIGHT:
+			button = MouseButton::Right;
+			break;
+		case SDL_BUTTON_MIDDLE:
+			button = MouseButton::Middle;
+			break;
+		case SDL_BUTTON_X1:
+			button = MouseButton::X1;
+			break;
+		case SDL_BUTTON_X2:
+			button = MouseButton::X2;
+			break;
+		default:
+			std::cout << "Unknown mouse button event: " << e.button << std::endl;
+		}
+		auto& keyEvents = mouseKeyEvents[button];
+		// key down
+		if (pressed) {
+			if (keyEvents.count(KeyEvent::KeyHold)) return; // if button is already held, we choose to ignore additional press events
+
+			keyEvents.insert(KeyEvent::KeyHold);
+			keyEvents.insert(KeyEvent::KeyDown);
+
 			return;
 		}
-		mouseButtonsHeldDown.erase(e.button);
+
+		// key up
+		keyEvents.clear(); // remove hold and down events
+		keyEvents.insert(KeyEvent::KeyUp);
 	}
 
-	static void ReceiveMouseDown(const SDL_MouseButtonEvent e) {
-		if(mouseButtonsHeldDown[e.button]) {
-			return;
-		}
-		mouseButtonsHeldDown[e.button] = true;
-	}
-
-	static void DelegateHeldButtons() {
+	static void DelegateInputActions() {
+		//Key binds
 		for (auto const& [keycode, beingHeld] : keysHeldDown) {
-			for (auto const &binding : keyBindings[keycode] ) {
+			for (auto const& binding : keyBindings[keycode]) {
 				binding->Action(KeyEvent::KeyHold);
 			}
 		}
-
 		keysPressedThisFrame.clear();
+
+		// mouse binds
+		const auto mouseEvent = InputMouseEvent(&mouseKeyEvents, &mouseMotion);
+		for (auto const& mouse_binding : mouseBindings) {
+			mouse_binding->Action(&mouseEvent);
+		}
+		// clear mouse key events - remove all if keyup, remove only keydown if its present
+		for (auto &[key, e] : mouseKeyEvents) {
+			if (e.count(KeyEvent::KeyUp)) {
+				e.clear();
+				continue;
+			}
+
+			if (e.count(KeyEvent::KeyDown))
+				e.erase(KeyEvent::KeyDown);
+		}
+		// clear mouse motion
+		mouseMotion = {};
 	}
+
+	static void SetMouseCapture(bool set) {
+		if(set) {
+			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
+			std::cout << "Saved mousePos: x:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
+		}
+		SDL_SetRelativeMouseMode(static_cast<SDL_bool>(set));
+
+		if(!set) {
+			SDL_WarpMouseGlobal(savedMousePosition.first, savedMousePosition.second);
+			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
+			std::cout << "mouse warped to X:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
+		}
+	}
+
 
 	static void Cleanup() {
 		for (auto& [key, value] : keyBindings) {

@@ -13,7 +13,7 @@ int main(int arg, char* args[]) {
 	Time::Init();
 	{
 		//Create SDL Window
-		MainWindow mainWindow = MainWindow(800, 600, "LevelEditor");
+		MainWindow mainWindow = MainWindow(1200, 800, "LevelEditor");
 		if (!mainWindow.Initialize()) {
 			printf("Failed to init main window");
 			return 1;
@@ -52,16 +52,13 @@ int main(int arg, char* args[]) {
 					Input::ReceiveMouseMotion(sdlEvent.motion);
 					break;
 
-				case SDL_MOUSEBUTTONDOWN:
-					Input::ReceiveMouseDown(sdlEvent.button);
-					break;
-
 				case SDL_MOUSEBUTTONUP:
-					Input::ReceiveMouseUp(sdlEvent.button);
+				case SDL_MOUSEBUTTONDOWN:
+					Input::ReceiveMouseButtonEvent(sdlEvent.button);
 					break;
 				}
 			}
-			Input::DelegateHeldButtons();
+			Input::DelegateInputActions();
 			mainWindow.Render();
 		}
 		mainWindow.Close();
