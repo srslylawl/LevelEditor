@@ -23,7 +23,8 @@
 
 using namespace glm;
 
-MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title), elementBufferObject(0) {}
+MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title),
+elementBufferObject(0), mainCamera(new Camera(m_width, m_height)) {}
 
 
 void TextCentered(const char* text) {
@@ -134,7 +135,6 @@ bool MainWindow::InitSDL() {
 	return true;
 }
 bool MainWindow::InitOpenGL() {
-	mainCamera = new Camera();
 	// set OpenGL attributes
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -169,13 +169,13 @@ bool MainWindow::InitOpenGL() {
 
 	// __vertex input__
 	// create vertex array object (VAO) and bind it
-	glGenVertexArrays(1, &VertexArrayObject);
-	glBindVertexArray(VertexArrayObject);
+	//glGenVertexArrays(1, &VertexArrayObject);
+	//glBindVertexArray(VertexArrayObject);
 
 	// create vertex buffer object (VBO) and bind it, can only generate one of each type
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//unsigned int VBO;
+	//glGenBuffers(1, &VBO);
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	// create element buffer object (EBO) and bind it -> allows reusing of verts, binds it to VAO as well
 	//glGenBuffers(1, &elementBufferObject);
@@ -189,49 +189,95 @@ bool MainWindow::InitOpenGL() {
 	-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, // bottom right 
 	};
 
-	const float cubeVerts[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	float cubeVerts[] = {
+		-0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f,  0.5f, -0.5f,
+		0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
 
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,
+		0.5f, -0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
 
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
 
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,
+		0.5f,  0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f,
 
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f, -0.5f,
 
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+		-0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f
 	};
+	float cubeTexCoords[] = {
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+		
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 1.0f
+
+	};
+
+	meshes.emplace_back(cubeVerts, cubeTexCoords, 36);
 
 	//const unsigned int indices[] = {  // note that we start from 0!
 	//0, 1, 3,   // first triangle
@@ -243,7 +289,7 @@ bool MainWindow::InitOpenGL() {
 
 	//// feed verts into array buffer -- since only one buffer was created, it picks that one
 	//// GL_STATIC_DRAW since we never change the data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVerts), cubeVerts, GL_STATIC_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVerts), cubeVerts, GL_STATIC_DRAW);
 
 	// specify how to interpret vertex data, in this case vertex position
 	// 1. 0 = layout, specified in vert shader -> in this case refers to ver pos
@@ -252,16 +298,16 @@ bool MainWindow::InitOpenGL() {
 	// 4. GL_FALSE = dont normalize (used for booleans)
 	// 5. STRIDE, aka space between vertex attributes, counting from first, since data is 3x float pos and 2x float texcoord -> stride = 5*float size
 	// 6. (void*)0 is a nullptr?
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
-	glEnableVertexAttribArray(0);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
+	//glEnableVertexAttribArray(0);
 
 	// inform gl about tex coords
 	// 1. 1 = layout of tex coord in vert shader -> 2
 	// 2. 2d vector, so size of 2
 	// 3-5. same as above
 	// 6. offset, since texcoords are right after the vec3 floats, its 3*sizeof float, cast to a void type pointer
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glEnableVertexAttribArray(1);
 
 	//init shaders
 	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
@@ -291,77 +337,58 @@ void MainWindow::Render() {
 
 	// Order of Render OpenGL and ImGui does not seem to matter?
 	RenderOpenGL();
-	MainWindow::RenderImGui();
+	RenderImGui();
 
-	SDL_GL_SwapWindow(MainWindow::SDLWindow);
+	SDL_GL_SwapWindow(SDLWindow);
 }
 
 void MainWindow::RenderOpenGL() {
 	//___ LOOPED RENDERING CODE
 	// use shader program
-
-	float greenValue = (sin(Time::GetTime()) / 2.0f) + 0.5f;
-	int vertexColorLocation = glGetUniformLocation(shaderProgramUPTR->ID, "ourColor");
 	shaderProgramUPTR->use();
-	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // TODO: dont set this in loop! -- redundant?
-	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-	// model matrix transforms coords to world space
-	mat4 modelM = mat4(1.0f);
-	modelM = rotate(modelM, radians(-55.0f), vec3(1.0f, 0, 0));
+	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // -- redundant?
 
 	// view matrix transforms world space to view (camera) space
-	// moving camera has to be done in inverse, as we are actually moving the scene
-	// openGL is right-handed, meaning positive Z axis goes towards the screen
-	//mat4 viewM = mat4(1.0f);
-	//viewM = translate(viewM, vec3(0, 0, -3.0f));
+	shaderProgramUPTR->setMat4("view", *mainCamera->GetViewMatrix());
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
-	// in this case we use perspective
-	mat4 projectionM = perspectiveLH(radians(mainCamera->FOV), m_width / (float)m_height, 0.1f, 100.0f);
-
-	// pass matrices to shader
-	//shaderProgramUPTR->setMat4("model", modelM);
-	shaderProgramUPTR->setMat4("view", mainCamera->GetViewMatrix());
-	shaderProgramUPTR->setMat4("projection", projectionM);
+	shaderProgramUPTR->setMat4("projection", *mainCamera->GetProjectionMatrix());
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, currentTexture);
 
-
-	glm::vec3 cubePositions[] = {
-	glm::vec3(0.0f,  0.0f,  0.0f),
-	glm::vec3(2.0f,  2.0f, 2.0f),
-	glm::vec3(-2.0f, -2.0f, -2.0f),
-	glm::vec3(-3.8f, -2.0f, -12.3f),
-	glm::vec3(2.4f, -0.4f, -3.5f),
-	glm::vec3(-1.7f,  3.0f, -7.5f),
-	glm::vec3(1.3f, -2.0f, -2.5f),
-	glm::vec3(1.5f,  2.0f, -2.5f),
-	glm::vec3(1.5f,  0.2f, -1.5f),
-	glm::vec3(-1.3f,  1.0f, -1.5f)
+	const vec3 cubePositions[] = {
+	vec3(0.0f,  0.0f,  0.0f),
+	vec3(2.0f,  2.0f, 2.0f),
+	vec3(-2.0f, -2.0f, -2.0f),
+	vec3(-3.8f, -2.0f, -12.3f),
+	vec3(2.4f, -0.4f, -3.5f),
+	vec3(-1.7f,  3.0f, -7.5f),
+	vec3(1.3f, -2.0f, -2.5f),
+	vec3(1.5f,  2.0f, -2.5f),
+	vec3(1.5f,  0.2f, -1.5f),
+	vec3(-1.3f,  1.0f, -1.5f)
 	};
 
 	// use VAO
 	// EBO is already bound to VAO so it gets bound automatically
-	glBindVertexArray(VertexArrayObject);
+	//glBindVertexArray(VertexArrayObject);
 
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
 		pos.x += ObjectOffsetX;
+		// model matrix transforms coords to world space
 		mat4 modelM = translate(mat4(1.0f), pos);
 		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
 		shaderProgramUPTR->setMat4("model", modelM);
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		/*glDrawArrays(GL_TRIANGLES, 0, 36);*/
+		meshes[0].Draw();
 	}
-
-
 
 	// draw triangles using EBO, takes from bound element array buffer
 	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//unbind vertex array
 	glBindVertexArray(0);
@@ -435,37 +462,57 @@ void MainWindow::RenderImGui() {
 		ImGui::EndMainMenuBar();
 	}
 
-	// Top right camera bar
-
-
+	// Camera Window -> should be transferred to the camera class
 	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 	bool open = true;
 	if (ImGui::Begin("Camera", &open, flags)) {
 		TextCentered("Camera");
 		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
 		ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
-		ImGui::SliderFloat("FOV", &Camera::FOV, 0, 180, "%.0f");
+
+		float camFOV = mainCamera->GetFOV();
+		if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
+			mainCamera->SetFOV(camFOV);
+		}
+
 		const char* columns[] = { "X:", "Y:", "Z:" };
 		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
 		ImGui::Text("Transform");
+
 		if (ImGui::BeginTable("table_Camera_Main_Transform", 3, tableFlags)) {
 			ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
 			ImGui::TableSetupColumn("X", columnFlags);
 			ImGui::TableSetupColumn("Y", columnFlags);
 			ImGui::TableSetupColumn("Z", columnFlags);
 			ImGui::TableNextRow();
+			vec3 pos = mainCamera->GetPosition();
 			for (int column = 0; column < 3; column++) {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::AlignTextToFramePadding();
 				Text(columns[column]);
 				SameLine();
+				// allow empty label by pushing ID and inputting "##" as label name
 				PushID(column);
 				PushItemWidth(-FLT_MIN);
-				DragFloat("##", &mainCamera->Position[column], 0.05f, 0, 0, "%.6f");
+				if(DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
+					mainCamera->SetPosition(pos);
+				}
 				PopItemWidth();
 				PopID();
 			}
 			ImGui::EndTable();
+		}
+		float zoom = mainCamera->GetZoom();
+		constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
+		if (ImGui::SliderFloat("Zoom", &zoom, 0.5f, 150.0f, "%.1f", zoomFlags)) {
+			mainCamera->SetZoom(zoom);
+		}
+
+		const char* items[] = { "Perspective", "Orthographic" };
+		int current = static_cast<int>(mainCamera->GetViewMode());
+		constexpr int itemCount = std::size(items);
+		if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
+			mainCamera->SetViewMode(static_cast<ViewMode>(current));
 		}
 		const auto size = GetWindowSize();
 		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));

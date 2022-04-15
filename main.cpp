@@ -23,7 +23,7 @@ int main(int arg, char* args[]) {
 		bool quit = false;
 		while (!quit) {
 			Time::CalcDeltaTime();
-			while (SDL_PollEvent(&sdlEvent) != 0) {
+			while (SDL_PollEvent(&sdlEvent)) {
 				ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 				switch (sdlEvent.type) {
 				case SDL_QUIT:

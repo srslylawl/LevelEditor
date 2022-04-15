@@ -222,14 +222,14 @@ public:
 	static void SetMouseCapture(bool set) {
 		if(set) {
 			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
-			std::cout << "Saved mousePos: x:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
+			//std::cout << "Saved mousePos: x:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
 		}
 		SDL_SetRelativeMouseMode(static_cast<SDL_bool>(set));
 
 		if(!set) {
 			SDL_WarpMouseGlobal(savedMousePosition.first, savedMousePosition.second);
 			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
-			std::cout << "mouse warped to X:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
+			//std::cout << "mouse warped to X:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
 		}
 	}
 

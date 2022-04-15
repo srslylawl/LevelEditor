@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "Mesh.h"
 #include "Shader.h"
 
 
@@ -22,6 +23,8 @@ class MainWindow {
 	short renderMode = 0;
 
 	std::unique_ptr<Shader> shaderProgramUPTR;
+
+	std::vector<Mesh> meshes;
 
 	void RenderImGui();
 	void RenderOpenGL();
