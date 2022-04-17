@@ -24,7 +24,7 @@ class MainWindow {
 
 	std::unique_ptr<Shader> shaderProgramUPTR;
 
-	std::vector<Mesh> meshes;
+	std::vector<Mesh::StaticMesh> meshes;
 
 	void RenderImGui();
 	void RenderOpenGL();
@@ -34,7 +34,6 @@ class MainWindow {
 	bool InitDearImGui();
 
 public:
-	unsigned int currentTexture = 0;
 	SDL_Window* GetSDLWindow() { return SDLWindow; }
 	MainWindow(int width, int height, const char* title);
 	bool Initialize();

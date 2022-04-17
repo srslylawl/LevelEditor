@@ -14,14 +14,13 @@
 #include "Shader.h"
 #include "Time.h"
 
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Camera.h"
+#include "Resources.h"
 
-using namespace glm;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title),
 elementBufferObject(0), mainCamera(new Camera(m_width, m_height)) {}
@@ -61,45 +60,6 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 	win->OnResized(w, h);
 
 	return 0;
-}
-
-void GenTexture(const char* path, MainWindow* mainWindow) {
-	unsigned int texture;
-	glGenTextures(1, &texture);
-
-	int width, height, channelCount;
-	unsigned char* imageData = nullptr;
-	if (!Files::LoadImageFile(path, imageData, &width, &height, &channelCount)) {
-		std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
-		return;
-	}
-
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	int colorProfile = 0;
-	switch (channelCount) {
-	case 3:
-		colorProfile = GL_RGB;
-		break;
-	case 4:
-		colorProfile = GL_RGBA;
-		break;
-	default:
-		break;
-	}
-
-	glTexImage2D(GL_TEXTURE_2D, 0, colorProfile, width, height, 0, colorProfile, GL_UNSIGNED_BYTE, imageData);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	mainWindow->currentTexture = texture;
-
-	std::cout << "Image bound to textureID: " << texture << "Channels: " << channelCount << std::endl;
-
-	stbi_image_free(imageData);
 }
 
 bool MainWindow::Initialize() {
@@ -166,28 +126,6 @@ bool MainWindow::InitOpenGL() {
 
 	// enable z testing
 	glEnable(GL_DEPTH_TEST);
-
-	// __vertex input__
-	// create vertex array object (VAO) and bind it
-	//glGenVertexArrays(1, &VertexArrayObject);
-	//glBindVertexArray(VertexArrayObject);
-
-	// create vertex buffer object (VBO) and bind it, can only generate one of each type
-	//unsigned int VBO;
-	//glGenBuffers(1, &VBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	// create element buffer object (EBO) and bind it -> allows reusing of verts, binds it to VAO as well
-	//glGenBuffers(1, &elementBufferObject);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
-
-	// left side are verts, right side are tex coords
-	const float quadVerts[] = {
-	 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, // top right
-	 0.5f, -0.5f, 0.0f,		1.0f, 0.0f, // top left
-	-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, // bottom left
-	-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, // bottom right 
-	};
 
 	float cubeVerts[] = {
 		-0.5f, -0.5f, -0.5f,
@@ -276,38 +214,7 @@ bool MainWindow::InitOpenGL() {
 		0.0f, 1.0f
 
 	};
-
 	meshes.emplace_back(cubeVerts, cubeTexCoords, 36);
-
-	//const unsigned int indices[] = {  // note that we start from 0!
-	//0, 1, 3,   // first triangle
-	//1, 2, 3    // second triangle
-	//};
-
-	////assign buffer data to EBO
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//// feed verts into array buffer -- since only one buffer was created, it picks that one
-	//// GL_STATIC_DRAW since we never change the data
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVerts), cubeVerts, GL_STATIC_DRAW);
-
-	// specify how to interpret vertex data, in this case vertex position
-	// 1. 0 = layout, specified in vert shader -> in this case refers to ver pos
-	// 2. 3 = size of vertex attribute, 3 since its a vector3 for position
-	// 3. GL_FLOAT = type
-	// 4. GL_FALSE = dont normalize (used for booleans)
-	// 5. STRIDE, aka space between vertex attributes, counting from first, since data is 3x float pos and 2x float texcoord -> stride = 5*float size
-	// 6. (void*)0 is a nullptr?
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
-	//glEnableVertexAttribArray(0);
-
-	// inform gl about tex coords
-	// 1. 1 = layout of tex coord in vert shader -> 2
-	// 2. 2d vector, so size of 2
-	// 3-5. same as above
-	// 6. offset, since texcoords are right after the vec3 floats, its 3*sizeof float, cast to a void type pointer
-	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	//glEnableVertexAttribArray(1);
 
 	//init shaders
 	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
@@ -330,7 +237,6 @@ bool MainWindow::InitDearImGui() {
 
 	return true;
 }
-
 void MainWindow::Render() {
 	// clear color, depth and stencil buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -341,8 +247,8 @@ void MainWindow::Render() {
 
 	SDL_GL_SwapWindow(SDLWindow);
 }
-
 void MainWindow::RenderOpenGL() {
+	using namespace glm;
 	//___ LOOPED RENDERING CODE
 	// use shader program
 	shaderProgramUPTR->use();
@@ -355,7 +261,10 @@ void MainWindow::RenderOpenGL() {
 	shaderProgramUPTR->setMat4("projection", *mainCamera->GetProjectionMatrix());
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, currentTexture);
+
+	if(Resources::Textures.begin() != Resources::Textures.end()) {
+		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second.ID);
+	}
 
 	const vec3 cubePositions[] = {
 	vec3(0.0f,  0.0f,  0.0f),
@@ -370,10 +279,6 @@ void MainWindow::RenderOpenGL() {
 	vec3(-1.3f,  1.0f, -1.5f)
 	};
 
-	// use VAO
-	// EBO is already bound to VAO so it gets bound automatically
-	//glBindVertexArray(VertexArrayObject);
-
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
 		pos.x += ObjectOffsetX;
@@ -386,17 +291,13 @@ void MainWindow::RenderOpenGL() {
 		meshes[0].Draw();
 	}
 
-	// draw triangles using EBO, takes from bound element array buffer
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	//glDrawArrays(GL_TRIANGLES, 0, 36);
-
 	//unbind vertex array
 	glBindVertexArray(0);
 }
 void MainWindow::RenderImGui() {
 	// Required before ImGui logic
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(MainWindow::SDLWindow);
+	ImGui_ImplSDL2_NewFrame(SDLWindow);
 	using namespace ImGui;
 	ImGui::NewFrame();
 
@@ -431,7 +332,7 @@ void MainWindow::RenderImGui() {
 						std::string item = entry.path().string();
 						if (ImGui::MenuItem(item.c_str())) {
 							std::cout << "Item clicked: " << item << std::endl;
-							GenTexture(item.c_str(), this);
+							Resources::LoadTexture(item);
 						}
 					}
 				}
@@ -463,9 +364,9 @@ void MainWindow::RenderImGui() {
 	}
 
 	// Camera Window -> should be transferred to the camera class
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
+	constexpr ImGuiWindowFlags camFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 	bool open = true;
-	if (ImGui::Begin("Camera", &open, flags)) {
+	if (ImGui::Begin("Camera", &open, camFlags)) {
 		TextCentered("Camera");
 		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
 		ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
@@ -516,9 +417,19 @@ void MainWindow::RenderImGui() {
 		}
 		const auto size = GetWindowSize();
 		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
-		ImGui::End();
 	}
+	ImGui::End();
 
+	constexpr ImGuiWindowFlags explorerFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
+	bool fexOpen = true;
+	if(Begin("File Explorer", &fexOpen, explorerFlags)) {
+		//loaded images
+		for(auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
+			const auto& tex = it->second;
+			Image((void*)tex.ID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
+		}
+	}
+	End();
 	// Required to render ImGuI
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

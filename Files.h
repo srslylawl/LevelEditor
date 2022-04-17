@@ -1,9 +1,8 @@
 #pragma once
 #include <filesystem>
 
-#define STB_IMAGE_IMPLEMENTATION //required by stb lib
 #include "stb_image.h"
-
+#include <iostream>
 
 namespace Files {
 	using namespace std;
@@ -26,7 +25,11 @@ namespace Files {
 		stbi_set_flip_vertically_on_load(true);
 		OUT_data = stbi_load(path, OUT_width, OUT_height, OUT_channelCount, 0);
 
-		return OUT_data != nullptr;
+		const bool success = OUT_data != nullptr;
+
+		if(!success) std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
+
+		return success;
 	}
 
 }
