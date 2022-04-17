@@ -19,11 +19,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Camera.h"
+#include "Renderer.h"
 #include "Resources.h"
 
 
-MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title),
-elementBufferObject(0), mainCamera(new Camera(m_width, m_height)) {}
+MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title) {}
 
 
 void TextCentered(const char* text) {
@@ -64,7 +64,7 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
-	if (!InitOpenGL()) return false;
+	if (!Renderer::Init(this)) return false;
 	if (!InitDearImGui()) return false;
 
 	//update while resizing - does not work though, according to google its a backend limitation?
@@ -94,136 +94,6 @@ bool MainWindow::InitSDL() {
 
 	return true;
 }
-bool MainWindow::InitOpenGL() {
-	// set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-	SDL_GL_SetAttribute(
-		SDL_GL_CONTEXT_PROFILE_MASK,
-		SDL_GL_CONTEXT_PROFILE_CORE
-	);
-
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-
-	gl_context = SDL_GL_CreateContext(SDLWindow);
-	if (!gl_context) {
-		std::cout << "Unable to create gl context " << SDL_GetError() << std::endl;
-		return false;
-	}
-	SDL_GL_MakeCurrent(SDLWindow, gl_context);
-
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-		std::cerr << "[ERROR] Couldn't initialize glad" << std::endl;
-		return false;
-	}
-
-	// set clearing color (background color)
-	glClearColor(0.2f, 0.2f, 0.2f, 1);
-
-	// enable z testing
-	glEnable(GL_DEPTH_TEST);
-
-	float cubeVerts[] = {
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-
-		-0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f, -0.5f,
-
-		-0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f
-	};
-	float cubeTexCoords[] = {
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 1.0f,
-		
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 1.0f
-
-	};
-	meshes.emplace_back(cubeVerts, cubeTexCoords, 36);
-
-	//init shaders
-	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
-	const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
-
-	shaderProgramUPTR = std::make_unique<Shader>(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
-
-	return true;
-}
 bool MainWindow::InitDearImGui() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -231,7 +101,7 @@ bool MainWindow::InitDearImGui() {
 	//ImGuiIO& io = ImGui::GetIO();
 	//(void)io;
 	ImGui::StyleColorsDark();
-	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, gl_context);
+	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, Renderer::gl_context); //Renderer needs to be initialized first
 	const std::string glsl_version = "#version 460";
 	ImGui_ImplOpenGL3_Init(glsl_version.c_str());
 
@@ -242,58 +112,12 @@ void MainWindow::Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Order of Render OpenGL and ImGui does not seem to matter?
-	RenderOpenGL();
+	Renderer::Render();
 	RenderImGui();
 
 	SDL_GL_SwapWindow(SDLWindow);
 }
-void MainWindow::RenderOpenGL() {
-	using namespace glm;
-	//___ LOOPED RENDERING CODE
-	// use shader program
-	shaderProgramUPTR->use();
-	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // -- redundant?
 
-	// view matrix transforms world space to view (camera) space
-	shaderProgramUPTR->setMat4("view", *mainCamera->GetViewMatrix());
-
-	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
-	shaderProgramUPTR->setMat4("projection", *mainCamera->GetProjectionMatrix());
-
-	glActiveTexture(GL_TEXTURE0);
-
-	if(Resources::Textures.begin() != Resources::Textures.end()) {
-		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second.ID);
-	}
-
-	const vec3 cubePositions[] = {
-	vec3(0.0f,  0.0f,  0.0f),
-	vec3(2.0f,  2.0f, 2.0f),
-	vec3(-2.0f, -2.0f, -2.0f),
-	vec3(-3.8f, -2.0f, -12.3f),
-	vec3(2.4f, -0.4f, -3.5f),
-	vec3(-1.7f,  3.0f, -7.5f),
-	vec3(1.3f, -2.0f, -2.5f),
-	vec3(1.5f,  2.0f, -2.5f),
-	vec3(1.5f,  0.2f, -1.5f),
-	vec3(-1.3f,  1.0f, -1.5f)
-	};
-
-	for (int i = 0; i < 3; i++) {
-		auto pos = cubePositions[i];
-		pos.x += ObjectOffsetX;
-		// model matrix transforms coords to world space
-		mat4 modelM = translate(mat4(1.0f), pos);
-		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
-		shaderProgramUPTR->setMat4("model", modelM);
-
-		/*glDrawArrays(GL_TRIANGLES, 0, 36);*/
-		meshes[0].Draw();
-	}
-
-	//unbind vertex array
-	glBindVertexArray(0);
-}
 void MainWindow::RenderImGui() {
 	// Required before ImGui logic
 	ImGui_ImplOpenGL3_NewFrame();
@@ -307,9 +131,8 @@ void MainWindow::RenderImGui() {
 	if (showDebugWindow) {
 		ImGui::ShowDemoWindow();
 	}
-	//return;
 
-	// Menu Bar (Top of Window thing)
+	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New")) {
@@ -371,9 +194,9 @@ void MainWindow::RenderImGui() {
 		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
 		ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
 
-		float camFOV = mainCamera->GetFOV();
+		float camFOV = Camera::Main->GetFOV();
 		if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
-			mainCamera->SetFOV(camFOV);
+			Camera::Main->SetFOV(camFOV);
 		}
 
 		const char* columns[] = { "X:", "Y:", "Z:" };
@@ -386,7 +209,7 @@ void MainWindow::RenderImGui() {
 			ImGui::TableSetupColumn("Y", columnFlags);
 			ImGui::TableSetupColumn("Z", columnFlags);
 			ImGui::TableNextRow();
-			vec3 pos = mainCamera->GetPosition();
+			vec3 pos = Camera::Main->GetPosition();
 			for (int column = 0; column < 3; column++) {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::AlignTextToFramePadding();
@@ -396,24 +219,24 @@ void MainWindow::RenderImGui() {
 				PushID(column);
 				PushItemWidth(-FLT_MIN);
 				if(DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
-					mainCamera->SetPosition(pos);
+					Camera::Main->SetPosition(pos);
 				}
 				PopItemWidth();
 				PopID();
 			}
 			ImGui::EndTable();
 		}
-		float zoom = mainCamera->GetZoom();
+		float zoom = Camera::Main->GetZoom();
 		constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
 		if (ImGui::SliderFloat("Zoom", &zoom, 0.5f, 150.0f, "%.1f", zoomFlags)) {
-			mainCamera->SetZoom(zoom);
+			Camera::Main->SetZoom(zoom);
 		}
 
 		const char* items[] = { "Perspective", "Orthographic" };
-		int current = static_cast<int>(mainCamera->GetViewMode());
+		int current = static_cast<int>(Camera::Main->GetViewMode());
 		constexpr int itemCount = std::size(items);
 		if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
-			mainCamera->SetViewMode(static_cast<ViewMode>(current));
+			Camera::Main->SetViewMode(static_cast<ViewMode>(current));
 		}
 		const auto size = GetWindowSize();
 		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
@@ -440,10 +263,13 @@ void MainWindow::OnResized(int width, int height) {
 	m_height = height;
 	m_width = width;
 	glViewport(0, 0, m_width, m_height);
+	if(Camera::Main != nullptr) {
+		Camera::Main->SetSize(width, height);
+	}
 	//std::cout << "On Resized h: " << height << " w: " << width << endl;
 }
 void MainWindow::Close() {
+	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
 	SDLWindow = nullptr;
-	delete mainCamera;
 }

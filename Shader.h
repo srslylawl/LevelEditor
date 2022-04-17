@@ -7,11 +7,9 @@
 #include <sstream>
 #include <iostream>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Shader
-{
+class Shader {
 public:
     // the program ID
     unsigned int ID;
@@ -26,8 +24,7 @@ public:
         // ensure ifstream objects can throw exceptions:
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        try
-        {
+        try {
             // open files
             vShaderFile.open(vertexPath);
             fShaderFile.open(fragmentPath);
@@ -42,8 +39,7 @@ public:
             vertexCode = vShaderStream.str();
             fragmentCode = fShaderStream.str();
         }
-        catch (std::ifstream::failure e)
-        {
+        catch (std::ifstream::failure e) {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
         }
         const char* vShaderCode = vertexCode.c_str();

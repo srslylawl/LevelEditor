@@ -1,11 +1,9 @@
 #pragma once
 
-//#define _HAS_STD_BYTE 0 //required to use windows 10 sdk, when "using namespace std;" - wtf?
-
 #include <combaseapi.h>
 #include <functional>
 #include <map>
-#include <SDL_keycode.h>
+#include <SDL.h>
 #include <unordered_set>
 #include <iostream>
 #include <set>

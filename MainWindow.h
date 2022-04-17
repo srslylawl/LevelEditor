@@ -7,16 +7,10 @@
 
 class MainWindow {
 	SDL_Window* SDLWindow = nullptr;
-	SDL_GLContext gl_context = nullptr;
 
 	int m_width;
 	int m_height;
 	const char* m_title = "New Window";
-
-	unsigned int VertexArrayObject = 0;
-	unsigned int elementBufferObject = 0;
-
-	Camera* mainCamera;
 
 	bool showDebugWindow = false;
 
@@ -27,10 +21,7 @@ class MainWindow {
 	std::vector<Mesh::StaticMesh> meshes;
 
 	void RenderImGui();
-	void RenderOpenGL();
-
 	bool InitSDL();
-	bool InitOpenGL();
 	bool InitDearImGui();
 
 public:
@@ -41,4 +32,8 @@ public:
 	
 	void OnResized(int width, int height);
 	void Close();
+	void GetSize(int& out_width, int& out_height) const {
+		out_width = m_width;
+		out_height = m_height;
+	}
 };

@@ -1,8 +1,8 @@
 #pragma once
 #include <map>
 
-//#include "Files.h"
 #include "Files.h"
+#include "Mesh.h"
 #include "Texture.h"
 
 
@@ -11,5 +11,6 @@ public:
 	inline static std::map<std::string, Texture> Textures;
 	static void LoadTexture(std::string path, bool refresh = false);
 
+	inline static std::vector<Mesh::StaticMesh> Meshes;
 };
 

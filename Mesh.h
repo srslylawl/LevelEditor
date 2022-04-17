@@ -37,7 +37,6 @@ namespace std {
 }
 
 namespace Mesh {
-
 	inline void PackVertexData(const float* in_vertPos, const float* in_texCoords, int in_vertCount, std::vector<Vertex>& out_vertices) {
 		for (int vertex = 0; vertex < in_vertCount; vertex++) {
 			const int currVertPos = vertex * 3;

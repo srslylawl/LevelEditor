@@ -40,6 +40,7 @@ class Camera {
 
 	void UpdateProjectionMatrix() {
 		if ( viewMode == ViewMode::Perspective) {
+			aspectRatio = width / static_cast<float>(height);
 			projectionMatrix = perspectiveLH(radians(fov/zoom), aspectRatio, zNear, zFar);
 			return;
 		}
@@ -54,6 +55,7 @@ class Camera {
 
 	vec3 position = vec3(0, 0, -3.0f); //in World Space
 public:
+	inline static Camera* Main = nullptr;
 	vec3 Forward = vec3(0, 0, 1.0f);
 	vec3 Right{}; //Relative to Camera
 	vec3 Up{}; //Relative to Camera
@@ -158,7 +160,7 @@ public:
 		return &projectionMatrix;
 	}
 
-	Camera(int width, int height) : width(width), height(height), aspectRatio(width / static_cast<float>(height)) {
+	Camera(int width, int height, bool setMain = false) : width(width), height(height) {
 		UpdateProjectionMatrix();
 
 		inputBindings.push_back(Input::AddKeyBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->Forward); }));
@@ -183,6 +185,10 @@ public:
 				this->Rotate(e->motion->deltaX, e->motion->deltaY);
 			}
 		});
+
+		if(setMain) {
+			Main = this;
+		}
 	}
 
 
