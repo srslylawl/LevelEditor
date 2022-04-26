@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <xhash>
 
@@ -17,7 +18,7 @@ struct Vertex {
 		return lhs.Position == rhs.Position
 			&& lhs.TexCoords == rhs.TexCoords;
 	}
-	 
+
 
 };
 
@@ -49,7 +50,7 @@ namespace Mesh {
 		}
 	}
 
-	inline bool GetSimilarVertexIndex(const Vertex& vert, std::unordered_map<Vertex, unsigned short>& VertexToOutIndex, unsigned short& result) {
+	inline bool GetSimilarVertexIndex(const Vertex& vert, std::unordered_map<Vertex, unsigned int>& VertexToOutIndex, unsigned int& result) {
 		auto it = VertexToOutIndex.find(vert);
 		if (it == VertexToOutIndex.end()) {
 			return false;
@@ -59,13 +60,13 @@ namespace Mesh {
 		return true;
 	}
 
-	inline void GenIndices(std::vector<Vertex>& in_vertices, std::vector<unsigned short>& out_indices, std::vector<Vertex>& out_vertices) {
-		std::unordered_map<Vertex, unsigned short> VertexToOutIndex;
+	inline void GenIndices(std::vector<Vertex>& in_vertices, std::vector<unsigned int>& out_indices, std::vector<Vertex>& out_vertices) {
+		std::unordered_map<Vertex, unsigned int> VertexToOutIndex;
 
 		// For each input vertex
 		for (auto& vertex : in_vertices) {
 			// Try to find a similar vertex in out_XXXX
-			unsigned short index;
+			unsigned int index;
 			bool found = GetSimilarVertexIndex(vertex, VertexToOutIndex, index);
 
 			if (found) { // A similar vertex is already in the VBO, use it instead !
@@ -82,8 +83,8 @@ namespace Mesh {
 
 	class StaticMesh {
 		std::vector<Vertex> vertices;
-		std::vector<unsigned short> indices;
-		unsigned int vertexArrayObjectIndex = -1;
+		std::vector<unsigned int> indices;
+		unsigned int vertexArrayObject = -1;
 		unsigned int elementBufferObject = -1;
 
 	public:
@@ -96,70 +97,65 @@ namespace Mesh {
 		}
 		StaticMesh(std::vector<Vertex> new_vertices) {
 			GenIndices(new_vertices, indices, vertices);
+			BindMeshDataToGPU();
+		}
+		StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned int> new_indices) :
+			vertices(new_vertices),
+			indices(new_indices) {
 
 			BindMeshDataToGPU();
 		}
 
 		void BindMeshDataToGPU() {
 			// Create VAO to store all object data in
-			glGenVertexArrays(1, &vertexArrayObjectIndex);
-			glBindVertexArray(vertexArrayObjectIndex);
+			glGenVertexArrays(1, &vertexArrayObject);
+			glBindVertexArray(vertexArrayObject);
 
 			//Create Buffers to store vertex data in
 			GLuint VBO;
 			glGenBuffers(1, &VBO);
+			glGenBuffers(1, &elementBufferObject);
 
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
 
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
 			// Vertex Pos Data is VertexAttribute 0
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
 			glEnableVertexAttribArray(0);
 
 			// TexCoord Data is VertexAttribute 1
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offsetof(Vertex, TexCoords)));
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, TexCoords)));
 			glEnableVertexAttribArray(1);
 
-			glGenBuffers(1, &elementBufferObject);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
-
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+			glBindVertexArray(0);
 		}
 
 		void Draw() const {
-			glBindVertexArray(vertexArrayObjectIndex);
-			glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
+			glBindVertexArray(vertexArrayObject);
+			glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
 		}
 
 		static StaticMesh DefaultQuad() {
-			// left side are verts, right side are tex coords
-			constexpr float quadVertPos[] = {
-			 0.5f,  0.5f, 0.0f,
-			 0.5f, -0.5f, 0.0f,
-			-0.5f, -0.5f, 0.0f,
-			-0.5f,  0.5f, 0.0f
-			};
-			constexpr float texCoords[] = {
-				1.0f, 1.0f, // top right
-				1.0f, 0.0f, // top left
-				0.0f, 0.0f, // bottom left
-				0.0f, 1.0f // bottom right 
+			std::vector temp_vertices = {
+				Vertex(-0.5f, 0.5f, 0, 0.0f, 1.0f), //top left
+				Vertex(0.5f, 0.5f, 0, 1.0f, 1.0f), //top right
+				Vertex(-0.5f, -0.5f, 0, 0.0f, 0.0f), //bot left
+				Vertex(0.5f, -0.5f, 0, 1.0f, 0.0f) //bot right
 			};
 
-			const unsigned int indices[] = {  // note that we start from 0!
-				0, 1, 3,   // first triangle
-				1, 2, 3    // second triangle
-			};
+			std::vector<unsigned int> temp_indices = { 0, 3, 1, 0, 2, 3 };
 
-			std::vector<glm::vec3> temp_indices = {
-				glm::vec3(0, 1, 2), glm::vec3(1,2,3)
-			};
+			auto quad = StaticMesh(temp_vertices, temp_indices);
 
-			auto quadMesh = StaticMesh(quadVertPos, texCoords, 4);
+			return quad;
 		}
 
-		~StaticMesh() {
-			glDeleteVertexArrays(1, &vertexArrayObjectIndex);
+		void UnloadFromGPU() {
+			glDeleteVertexArrays(1, &vertexArrayObject);
 		}
 	};
 

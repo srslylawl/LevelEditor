@@ -5,6 +5,7 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "Input.h"
+#include "Resources.h"
 #include "Time.h"
 
 int main(int arg, char* args[]) {
@@ -64,6 +65,7 @@ int main(int arg, char* args[]) {
 	}
 
 	Input::Cleanup();
+	Resources::FreeAll();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();

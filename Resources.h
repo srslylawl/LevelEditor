@@ -12,5 +12,11 @@ public:
 	static void LoadTexture(std::string path, bool refresh = false);
 
 	inline static std::vector<Mesh::StaticMesh> Meshes;
+
+	static void FreeAll() {
+		for ( auto& mesh : Meshes) {
+			mesh.UnloadFromGPU();
+		}
+	}
 };
 

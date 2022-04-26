@@ -42,94 +42,55 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 	// enable z testing
 	glEnable(GL_DEPTH_TEST);
 
-	float cubeVerts[] = {
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+	glEnable(GL_CULL_FACE);
 
-		-0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f, -0.5f,
-
-		-0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f
+	std::vector cubeVerts = {
+		// back face (CCW winding)
+		Vertex(0.5f, -0.5f,  0.5f,  0.0f, 0.0f), // bottom-left
+		Vertex(-0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
+		Vertex(-0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		Vertex( 0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
+		Vertex( 0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
+		// front face (CCW winding)
+		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
+		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
+		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 1.0f), // top-left
+		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
+		// left face (CCW)
+		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
+		Vertex(-0.5f, -0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
+		Vertex(-0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
+		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
+		// right face (CCW)
+		 Vertex(0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
+		 Vertex(0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
+		 Vertex(0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		 Vertex(0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		 Vertex(0.5f,  0.5f,  -0.5f,  0.0f, 1.0f), // top-left
+		 Vertex(0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
+		// bottom face (CCW)      
+		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
+		Vertex( 0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
+		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 1.0f), // top-left
+		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
+		// top face (CCW)
+		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
+		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
+		Vertex( 0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		Vertex( 0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
+		Vertex(-0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
+		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 0.0f) // bottom-left
 	};
-	float cubeTexCoords[] = {
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-
-		1.0f, 0.0f,
-		1.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 1.0f,
-
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 1.0f
-
-	};
-	Resources::Meshes.emplace_back(cubeVerts, cubeTexCoords, 36);
+	Resources::Meshes.emplace_back(cubeVerts);
+	auto quad = Mesh::StaticMesh::DefaultQuad();
+	Resources::Meshes.push_back(quad);
 
 	//init shaders
 	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
@@ -170,26 +131,21 @@ void Renderer::Render() {
 	const vec3 cubePositions[] = {
 	vec3(0.0f,  0.0f,  0.0f),
 	vec3(2.0f,  2.0f, 2.0f),
-	vec3(-2.0f, -2.0f, -2.0f),
-	vec3(-3.8f, -2.0f, -12.3f),
-	vec3(2.4f, -0.4f, -3.5f),
-	vec3(-1.7f,  3.0f, -7.5f),
-	vec3(1.3f, -2.0f, -2.5f),
-	vec3(1.5f,  2.0f, -2.5f),
-	vec3(1.5f,  0.2f, -1.5f),
-	vec3(-1.3f,  1.0f, -1.5f)
+	vec3(-2.0f, -2.0f, -2.0f)
 	};
 
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
 		// model matrix transforms coords to world space
 		mat4 modelM = translate(mat4(1.0f), pos);
-		modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
+		//modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
 		shader->setMat4("model", modelM);
 
-		/*glDrawArrays(GL_TRIANGLES, 0, 36);*/
 		Resources::Meshes[0].Draw();
 	}
+	
+	shader->setMat4("model", translate(mat4(1.0f), vec3(0, 0, -2.0f)));
+	Resources::Meshes[1].Draw();
 
 	//unbind vertex array
 	glBindVertexArray(0);

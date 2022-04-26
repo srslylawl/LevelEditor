@@ -3,7 +3,7 @@
 #include <iostream>
 #include "glad.h"
 #define STB_IMAGE_IMPLEMENTATION //required by stb lib
-#include "stb_image.h"
+#include "stb_image.h" //DONT REMOVE THIS
 
 void Resources::LoadTexture(std::string path, bool refresh) {
 	const bool exists = Textures.count(path);
@@ -55,3 +55,4 @@ void Resources::LoadTexture(std::string path, bool refresh) {
 
 	free(imageData);
 }
+
