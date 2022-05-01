@@ -39,6 +39,10 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 	// set clearing color (background color)
 	glClearColor(0.2f, 0.2f, 0.2f, 1);
 
+	//enable alpha blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	// enable z testing
 	glEnable(GL_DEPTH_TEST);
 
@@ -91,12 +95,18 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 	Resources::Meshes.emplace_back(cubeVerts);
 	auto quad = Mesh::StaticMesh::DefaultQuad();
 	Resources::Meshes.push_back(quad);
+	//auto quadDS = Mesh::StaticMesh::DefaultQuadDoubleSided();
+	//Resources::Meshes.push_back(quadDS);
 
 	//init shaders
 	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
 	const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
 
-	shader = new Shader(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
+	defaultShader = new Shader(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
+
+	gridShader = new Shader(std::filesystem::current_path().append("Shaders/gridVertShader.vert").string().c_str(), 
+		std::filesystem::current_path().append("Shaders/gridFragShader.frag").string().c_str());
+
 	int width, height;
 	mainWindow->GetSize(width, height);
 	camera = new Camera(width, height, true);
@@ -109,18 +119,20 @@ bool Renderer::Init(MainWindow* window) {
 	return InitOpenGL(window->GetSDLWindow());
 }
 
+
+
 void Renderer::Render() {
 	using namespace glm;
 	//___ LOOPED RENDERING CODE
 	// use shader program
-	shader->use();
+	defaultShader->use();
 	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // -- redundant?
 
 	// view matrix transforms world space to view (camera) space
-	shader->setMat4("view", *Camera::Main->GetViewMatrix());
+	defaultShader->setMat4("view", *Camera::Main->GetViewMatrix());
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
-	shader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
+	defaultShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
 
 	glActiveTexture(GL_TEXTURE0);
 
@@ -139,12 +151,23 @@ void Renderer::Render() {
 		// model matrix transforms coords to world space
 		mat4 modelM = translate(mat4(1.0f), pos);
 		//modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
-		shader->setMat4("model", modelM);
+		defaultShader->setMat4("model", modelM);
 
 		Resources::Meshes[0].Draw();
 	}
-	
-	shader->setMat4("model", translate(mat4(1.0f), vec3(0, 0, -2.0f)));
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	gridShader->use();
+	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
+	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
+	gridShader->setMat4("model", 
+		scale(
+			translate(
+				mat4(1.0f), 
+				vec3(0, 0, -2.0f)
+			)
+			, vec3(10, 10, 10)));
 	Resources::Meshes[1].Draw();
 
 	//unbind vertex array

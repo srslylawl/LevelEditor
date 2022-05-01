@@ -19,6 +19,9 @@
     <Filter Include="Source Files\OpenGL">
       <UniqueIdentifier>{80abd802-d27b-4c34-a841-39197054fab2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shader">
+      <UniqueIdentifier>{ed2091e7-d352-48eb-8644-6792213a6078}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -143,10 +146,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\defaultFragShader.frag">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Shader</Filter>
     </None>
     <None Include="Shaders\defaultVertShader.vert">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="Shaders\gridFragShader.frag">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="Shaders\gridVertShader.vert">
+      <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -243,6 +243,24 @@ void MainWindow::RenderImGui() {
 	}
 	ImGui::End();
 
+	bool mouseOpen = true;
+	
+	auto mousePos = Input::GetMousePosition();
+	auto mouseCoords = Camera::Main->ScreenToWorldCoordinates(mousePos.x, mousePos.y);
+	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
+	if(ImGui::Begin("MouseCoordinates", &mouseOpen)) {
+		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
+		if(ImGui::BeginTable("table_MouseCoords", 2, tableFlags)) {
+			ImGui::TableNextRow();
+			TableSetColumnIndex(0);
+			Text(std::string("X: " + std::to_string(mouseCoords.x)).c_str());
+			TableSetColumnIndex(1);
+			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
+		}
+		ImGui::EndTable();
+	}
+	ImGui::End();
+
 	constexpr ImGuiWindowFlags explorerFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 	bool fexOpen = true;
 	if(Begin("File Explorer", &fexOpen, explorerFlags)) {

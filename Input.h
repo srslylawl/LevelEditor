@@ -8,6 +8,7 @@
 #include <iostream>
 #include <set>
 #include <utility>
+#include <glm/vec2.hpp>
 
 
 enum class KeyEvent {
@@ -230,6 +231,14 @@ public:
 			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
 			//std::cout << "mouse warped to X:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
 		}
+	}
+
+	static glm::vec2 GetMousePosition() {
+		int x = 0;
+		int y = 0;
+		SDL_GetMouseState(&x, &y);
+
+		return glm::vec2(x, y);
 	}
 
 

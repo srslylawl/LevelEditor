@@ -160,6 +160,27 @@ public:
 		return &projectionMatrix;
 	}
 
+	const vec3 ScreenToWorldCoordinates(int x_pos, int y_pos) {
+		mat4 inverseMat = inverse(projectionMatrix*viewMat);
+
+		float normalizedX = static_cast<float>(x_pos) / width;
+		float normalizedY = static_cast<float>(y_pos) / height;
+		//set range from -1 to 1;
+
+		float screenNormalizedX = normalizedX * 2 - 1;
+		float screenNormalizedY = normalizedY * 2 - 1;
+
+		auto screenPos = vec4(screenNormalizedX, screenNormalizedY, position.z, 1);
+		vec4 pos = inverseMat * screenPos;
+		
+		pos.w = 1.0f / pos.w;
+		pos.x *= pos.w;
+		pos.y *= pos.w;
+		pos.z *= pos.w;
+
+		return vec3(pos.x, pos.y, pos.z);
+	}
+
 	Camera(int width, int height, bool setMain = false) : width(width), height(height) {
 		UpdateProjectionMatrix();
 

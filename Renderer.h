@@ -6,7 +6,8 @@
 
 class Renderer {
 	inline static MainWindow* mainWindow;
-	inline static Shader* shader = nullptr;
+	inline static Shader* defaultShader = nullptr;
+	inline static Shader* gridShader = nullptr;
 	inline static Camera* camera = nullptr;
 
 	static bool InitOpenGL(SDL_Window* window);
@@ -16,7 +17,7 @@ public:
 	static void Render();
 
 	static void Exit() {
-		delete shader;
+		delete defaultShader;
 		delete camera;
 	}
 };

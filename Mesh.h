@@ -154,6 +154,22 @@ namespace Mesh {
 			return quad;
 		}
 
+		static StaticMesh DefaultQuadDoubleSided() {
+			std::vector temp_vertices = {
+			Vertex(-0.5f, 0.5f, 0, 0.0f, 1.0f), //top left
+			Vertex(0.5f, 0.5f, 0, 1.0f, 1.0f), //top right
+			Vertex(-0.5f, -0.5f, 0, 0.0f, 0.0f), //bot left
+			Vertex(0.5f, -0.5f, 0, 1.0f, 0.0f) //bot right
+			};
+
+			std::vector<unsigned int> temp_indices = {
+				0, 3, 1, 0, 2, 3, //front
+				0, 1, 3, 0, 3, 2 // back
+				};
+
+			return StaticMesh(temp_vertices, temp_indices);
+		}
+
 		void UnloadFromGPU() {
 			glDeleteVertexArrays(1, &vertexArrayObject);
 		}
