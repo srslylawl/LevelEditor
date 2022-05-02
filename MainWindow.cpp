@@ -218,7 +218,7 @@ void MainWindow::RenderImGui() {
 				// allow empty label by pushing ID and inputting "##" as label name
 				PushID(column);
 				PushItemWidth(-FLT_MIN);
-				if(DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
+				if (DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
 					Camera::Main->SetPosition(pos);
 				}
 				PopItemWidth();
@@ -244,18 +244,21 @@ void MainWindow::RenderImGui() {
 	ImGui::End();
 
 	bool mouseOpen = true;
-	
+
 	auto mousePos = Input::GetMousePosition();
-	auto mouseCoords = Camera::Main->ScreenToWorldCoordinates(mousePos.x, mousePos.y);
+	//auto mouseCoords = Camera::Main->ScreenToWorldCoordinates(mousePos.x, mousePos.y);
+	auto mouseCoords = Camera::Main->ScreenToWorldCoordinatesDepth(mousePos.x, mousePos.y, 0);
 	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
-	if(ImGui::Begin("MouseCoordinates", &mouseOpen)) {
+	if (ImGui::Begin("MouseCoordinates", &mouseOpen)) {
 		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-		if(ImGui::BeginTable("table_MouseCoords", 2, tableFlags)) {
+		if (ImGui::BeginTable("table_MouseCoords", 3, tableFlags)) {
 			ImGui::TableNextRow();
 			TableSetColumnIndex(0);
 			Text(std::string("X: " + std::to_string(mouseCoords.x)).c_str());
 			TableSetColumnIndex(1);
 			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
+			TableSetColumnIndex(2);
+			Text(std::string("Z: " + std::to_string(mouseCoords.z)).c_str());
 		}
 		ImGui::EndTable();
 	}
@@ -263,9 +266,9 @@ void MainWindow::RenderImGui() {
 
 	constexpr ImGuiWindowFlags explorerFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 	bool fexOpen = true;
-	if(Begin("File Explorer", &fexOpen, explorerFlags)) {
+	if (Begin("File Explorer", &fexOpen, explorerFlags)) {
 		//loaded images
-		for(auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
+		for (auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
 			const auto& tex = it->second;
 			Image((void*)tex.ID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
 		}
@@ -281,7 +284,7 @@ void MainWindow::OnResized(int width, int height) {
 	m_height = height;
 	m_width = width;
 	glViewport(0, 0, m_width, m_height);
-	if(Camera::Main != nullptr) {
+	if (Camera::Main != nullptr) {
 		Camera::Main->SetSize(width, height);
 	}
 	//std::cout << "On Resized h: " << height << " w: " << width << endl;

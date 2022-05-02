@@ -32,8 +32,8 @@ class Camera {
 	int width;
 	int height;
 	float aspectRatio;
-	float zNear = 0.1f;
-	float zFar = 100.0f;
+	float zNear = 0.0001f; // HAS to be >0
+	float zFar = 200.0f;
 	float fov = 45.0f;
 
 	float zoom = 1;
@@ -179,6 +179,42 @@ public:
 		pos.z *= pos.w;
 
 		return vec3(pos.x, pos.y, pos.z);
+	}
+
+	const vec3 ScreenToWorldCoordinatesDepth(int x_pos, int y_pos, int z_pos) {
+		mat inverseMat = inverse(projectionMatrix);
+
+		auto temp = vec4(x_pos, y_pos, z_pos, 1);
+		int viewport[] = {0, 0, width, height};
+		temp.x = (temp.x - viewport[0]) / viewport[2];
+		temp.y = (temp.y - viewport[1]) / viewport[3];
+		temp.z = (temp.z - zNear) / zFar; // normalize?
+		temp = 2.0f * temp - temp;
+
+		vec4 obj = inverseMat * temp;
+		obj /= obj.w;
+
+		return obj;
+		//mat4 inverseMat = inverse(projectionMatrix);
+
+		//float normalizedX = static_cast<float>(x_pos) / width;
+		//float normalizedY = static_cast<float>(y_pos) / height;
+		////set range from -1 to 1;
+
+		//float screenNormalizedX = normalizedX * 2 - 1;
+		//float screenNormalizedY = normalizedY * 2 - 1;
+
+		//auto screenPos = vec4(screenNormalizedX, screenNormalizedY, z_pos, 1);
+		//auto pos = inverseMat * screenPos;
+
+		//std::cout << "x:" << pos.x << " y:" << pos.y << " z:" << pos.z << " w: " << pos.w << std::endl;
+
+		//pos.w = 1.0f / pos.w;
+		//pos.x *= pos.w;
+		//pos.y *= pos.w;
+		//pos.z *= pos.w;
+
+		//return vec3(pos.x, pos.y, pos.z);
 	}
 
 	Camera(int width, int height, bool setMain = false) : width(width), height(height) {
