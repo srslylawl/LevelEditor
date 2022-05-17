@@ -22,9 +22,9 @@
 #include "Renderer.h"
 #include "Resources.h"
 
+using namespace Rendering;
 
 MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title) {}
-
 
 void TextCentered(const char* text) {
 	float win_width = ImGui::GetWindowSize().x;
@@ -72,7 +72,6 @@ bool MainWindow::Initialize() {
 	return true;
 }
 
-static float ObjectOffsetX = 0;
 bool MainWindow::InitSDL() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -144,10 +143,6 @@ void MainWindow::RenderImGui() {
 		if (ImGui::BeginMenu("Debug")) {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
-			}
-			if (ImGui::BeginMenu("ObjectOffsetX")) {
-				DragFloat("ObjectOffsetX", &ObjectOffsetX);
-				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Sprites")) {
 				if (Files::VerifyDirectory("Sprites")) {
@@ -228,7 +223,8 @@ void MainWindow::RenderImGui() {
 		}
 		float zoom = Camera::Main->GetZoom();
 		constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
-		if (ImGui::SliderFloat("Zoom", &zoom, 0.5f, 150.0f, "%.1f", zoomFlags)) {
+		constexpr float minZoom = 1 / 100.0f;
+		if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
 			Camera::Main->SetZoom(zoom);
 		}
 
@@ -247,7 +243,7 @@ void MainWindow::RenderImGui() {
 
 	auto mousePos = Input::GetMousePosition();
 	//auto mouseCoords = Camera::Main->ScreenToWorldCoordinates(mousePos.x, mousePos.y);
-	auto mouseCoords = Camera::Main->ScreenToWorldCoordinatesDepth(mousePos.x, mousePos.y, 0);
+	auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 	if (ImGui::Begin("MouseCoordinates", &mouseOpen)) {
 		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
@@ -258,7 +254,8 @@ void MainWindow::RenderImGui() {
 			TableSetColumnIndex(1);
 			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
 			TableSetColumnIndex(2);
-			Text(std::string("Z: " + std::to_string(mouseCoords.z)).c_str());
+			/// SET TO ZERO
+			Text(std::string("Z: " + std::to_string(0)).c_str());
 		}
 		ImGui::EndTable();
 	}

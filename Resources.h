@@ -8,7 +8,7 @@
 
 class Resources {
 public:
-	inline static std::map<std::string, Texture> Textures;
+	inline static std::map<std::string, Rendering::Texture> Textures;
 	static void LoadTexture(std::string path, bool refresh = false);
 
 	inline static std::vector<Mesh::StaticMesh> Meshes;

@@ -4,7 +4,8 @@
 #include "Mesh.h"
 #include "Shader.h"
 
-
+namespace Rendering {
+	
 class MainWindow {
 	SDL_Window* SDLWindow = nullptr;
 
@@ -37,3 +38,4 @@ public:
 		out_height = m_height;
 	}
 };
+}

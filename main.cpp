@@ -8,6 +8,8 @@
 #include "Resources.h"
 #include "Time.h"
 
+using namespace Rendering;
+
 int main(int arg, char* args[]) {
 	//init time module
 	Time::Init();

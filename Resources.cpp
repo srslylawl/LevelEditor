@@ -31,7 +31,7 @@ void Resources::LoadTexture(std::string path, bool refresh) {
 	}
 
 	if(!exists) {
-		const auto newTexture = Texture(textureID, path, width, height, channelCount);;
+		const auto newTexture = Rendering::Texture(textureID, path, width, height, channelCount);;
 		Textures[path] = newTexture;
 	}
 

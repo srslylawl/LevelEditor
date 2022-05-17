@@ -7,7 +7,9 @@
 #include "glad.h"
 #include "Resources.h"
 #include "Shader.h"
-#include "Time.h"
+#include "Time.h"+
+
+using namespace Rendering;
 
 bool Renderer::InitOpenGL(SDL_Window* window) {
 	// set OpenGL attributes
@@ -122,7 +124,6 @@ bool Renderer::Init(MainWindow* window) {
 
 
 void Renderer::Render() {
-	using namespace glm;
 	//___ LOOPED RENDERING CODE
 	// use shader program
 	defaultShader->use();
