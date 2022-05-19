@@ -162,7 +162,7 @@ void Renderer::Render() {
 	gridShader->use();
 	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
 	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
-	gridShader->setMat4("model", scale(mat4(1.0f), vec3(10, 10, 10)));
+	gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
 	Resources::Meshes[1].Draw();
 
 	//unbind vertex array

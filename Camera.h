@@ -23,6 +23,11 @@ namespace Rendering {
 		Orthographic = 1
 	};
 
+	enum class DimensionMode {
+		ThreeDimensional = 0,
+		TwoDimensional = 1
+	};
+
 	class Camera {
 		std::vector<InputKeyBinding*> inputBindings;
 		InputMouseBinding* mouseBinding = nullptr;
@@ -34,6 +39,7 @@ namespace Rendering {
 		mat4 viewMat = {};
 
 		ViewMode viewMode = ViewMode::Perspective;
+		DimensionMode dimensionMode = DimensionMode::ThreeDimensional;
 
 		int width;
 		int height;
@@ -43,6 +49,7 @@ namespace Rendering {
 		float fov = 45.0f;
 
 		float zoom = 1;
+		float orthoSize = 270.0f/32.0f; // resolution height divided by 2x pixel per unit size
 
 		void UpdateProjectionMatrix() {
 			if (viewMode == ViewMode::Perspective) {
@@ -53,26 +60,125 @@ namespace Rendering {
 
 			if (viewMode == ViewMode::Orthographic) {
 				aspectRatio = width / static_cast<float>(height);
-				const float halfW = 1 / zoom;
-				const float halfH = 1 / aspectRatio / zoom;
+				const float halfW = orthoSize * aspectRatio;
+				const float halfH = orthoSize;
 				projectionMatrix = orthoLH(-halfW, halfW, -halfH, halfH, zNear, zFar);
 				return;
 			}
 		}
 
+		void UpdateForwardAxis() {
+			Forward.x = cos(radians(rotation.y)) * cos(radians(rotation.x));
+			Forward.y = sin(radians(rotation.x));
+			Forward.z = sin(radians(rotation.y)) * cos(radians(rotation.x));
+
+			Forward = -normalize(Forward);
+
+			viewMatrixDirty = true;
+		}
+
+		void HandleMoveInput(SDL_KeyCode keyCode) {
+			switch (dimensionMode) {
+			case DimensionMode::ThreeDimensional:
+				HandleMoveInput3D(keyCode);
+				break;
+			case DimensionMode::TwoDimensional:
+				HandleMoveInput2D(keyCode);
+				break;
+			}
+		}
+		void HandleMoveInput2D(SDL_KeyCode keyCode) {
+			switch (keyCode) {
+			case SDLK_w:
+				Move(Up);
+				break;
+			case SDLK_s:
+				Move(-Up);
+				break;
+			case SDLK_a:
+				Move(-Right);
+				break;
+			case SDLK_d:
+				Move(Right);
+				break;
+			}
+		}
+		void HandleMoveInput3D(SDL_KeyCode keyCode) {
+			switch (keyCode) {
+			case SDLK_w:
+				Move(Forward);
+				break;
+			case SDLK_s:
+				Move(-Forward);
+				break;
+			case SDLK_a:
+				Move(-Right);
+				break;
+			case SDLK_d:
+				Move(Right);
+				break;
+			case SDLK_SPACE:
+				Move(Up);
+				break;
+			case SDLK_x:
+				Move(-Up);
+				break;
+			}
+		}
 		vec3 position = vec3(0, 0, -3.0f); //in World Space
+		vec3 rotation = vec3(0, -90, 0);
 	public:
 		inline static Camera* Main = nullptr;
 		vec3 Forward = vec3(0, 0, 1.0f);
 		vec3 Right{}; //Relative to Camera
 		vec3 Up{}; //Relative to Camera
-		vec3 Rotation{};
-
-		float yaw = -90;
-		float pitch = 0;
 
 		inline static float MoveSpeed = 50.0f;
 		inline static float TurnSpeed = 50.0f;
+
+		~Camera() {
+			for (auto binding : inputBindings) {
+				Input::RemoveKeyBinding(binding);
+			}
+			Input::RemoveMouseBinding(mouseBinding);
+
+			if (relativeMouseModeActive) {
+				SDL_SetRelativeMouseMode(SDL_FALSE);
+			}
+		}
+
+		Camera(int width, int height, bool setMain = false) : width(width), height(height) {
+			UpdateProjectionMatrix();
+
+			inputBindings = { 
+				Input::AddKeyBinding(SDLK_w, [this](KeyEvent e) {this->HandleMoveInput(SDLK_w); }),
+				Input::AddKeyBinding(SDLK_s, [this](KeyEvent e) {this->HandleMoveInput(SDLK_s); }),
+				Input::AddKeyBinding(SDLK_a, [this](KeyEvent e) {this->HandleMoveInput(SDLK_a); }),
+				Input::AddKeyBinding(SDLK_d, [this](KeyEvent e) {this->HandleMoveInput(SDLK_d); }),
+				Input::AddKeyBinding(SDLK_SPACE, [this](KeyEvent e) {this->HandleMoveInput(SDLK_SPACE); }),
+				Input::AddKeyBinding(SDLK_x, [this](KeyEvent e) {this->HandleMoveInput(SDLK_x); })
+			};
+			mouseBinding = Input::AddMouseBinding([this](const InputMouseEvent* e)
+				{
+					if (e->GetMouseKeyDown(MouseButton::Right)) {
+						Input::SetMouseCapture(true);
+						relativeMouseModeActive = true;
+					}
+
+					if (e->GetMouseKeyUp(MouseButton::Right)) {
+						Input::SetMouseCapture(false);
+						relativeMouseModeActive = false;
+					}
+
+					if (e->GetMouseKeyHold(MouseButton::Right)) {
+						this->Rotate(e->motion->deltaX, e->motion->deltaY);
+					}
+				});
+
+			if (setMain) {
+				Main = this;
+			}
+		};
 
 		void Move(vec3 moveDirection) {
 			position += moveDirection * MoveSpeed * Time::GetDeltaTime();
@@ -82,22 +188,12 @@ namespace Rendering {
 
 		void Rotate(int deltaX, int deltaY) {
 			const auto relative = TurnSpeed * Time::GetDeltaTime();
-			yaw -= deltaX * relative;
-			pitch += deltaY * relative;
+			rotation.y -= deltaX * relative;
+			rotation.x += deltaY * relative;
 
-			if (pitch > 89.0f)
-				pitch = 89.0f;
-			if (pitch < -89.0f)
-				pitch = -89.0f;
+			rotation.x = clamp(rotation.x, -89.0f, 89.0f);
 
-			Forward.x = cos(radians(yaw)) * cos(radians(pitch));
-			Forward.y = sin(radians(pitch));
-			Forward.z = sin(radians(yaw)) * cos(radians(pitch));
-
-			Forward = -normalize(Forward);
-			//printf("Forward: (%f,%f,%f)\n", Forward.x, Forward.y, Forward.z);
-
-			viewMatrixDirty = true;
+			UpdateForwardAxis();
 		}
 
 		void Update() {
@@ -113,6 +209,33 @@ namespace Rendering {
 		void SetPosition(vec3 new_position) {
 			position = new_position;
 			viewMatrixDirty = true;
+		}
+
+		void SetRotation(vec3 new_rotation) {
+			rotation = new_rotation;
+			UpdateForwardAxis();
+		}
+
+		void SetDimensionMode(DimensionMode dimension_mode) {
+
+			switch (dimension_mode) {
+			case DimensionMode::ThreeDimensional:
+				SetViewMode(ViewMode::Perspective);
+				break;
+			case DimensionMode::TwoDimensional:
+				SetViewMode(ViewMode::Orthographic);
+				SetRotation({ 0, -90, 0 });
+				SetPosition({ position.x, position.y, -5 });
+				break;
+			}
+
+			dimensionMode = dimension_mode;
+		}
+
+		DimensionMode GetDimensionMode() const { return dimensionMode; }
+
+		const vec3 GetRotation() const {
+			return rotation;
 		}
 
 		const vec3 GetPosition() const {
@@ -136,6 +259,13 @@ namespace Rendering {
 		float GetZoom() const {
 			return zoom;
 		}
+
+		void SetOrthoSize(const float new_size) {
+			orthoSize = new_size;
+			UpdateProjectionMatrix();
+		}
+
+		float GetOrthoSize() const { return orthoSize; }
 
 		void SetViewMode(ViewMode view_mode) {
 			viewMode = view_mode;
@@ -234,48 +364,6 @@ namespace Rendering {
 			return results[0] + (dir * deltaZ);
 		}
 
-		Camera(int width, int height, bool setMain = false) : width(width), height(height) {
-			UpdateProjectionMatrix();
-
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_w, [this](KeyEvent e) {this->Move(this->Forward); }));
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_s, [this](KeyEvent e) {this->Move(-this->Forward); }));
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_a, [this](KeyEvent e) {this->Move(-this->Right); }));
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_d, [this](KeyEvent e) {this->Move(this->Right); }));
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_SPACE, [this](KeyEvent e) {this->Move(this->Up); }));
-			inputBindings.push_back(Input::AddKeyBinding(SDLK_x, [this](KeyEvent e) {this->Move(-this->Up); }));
-			mouseBinding = Input::AddMouseBinding([this](const InputMouseEvent* e)
-				{
-					if (e->GetMouseKeyDown(MouseButton::Right)) {
-						Input::SetMouseCapture(true);
-						relativeMouseModeActive = true;
-					}
-
-					if (e->GetMouseKeyUp(MouseButton::Right)) {
-						Input::SetMouseCapture(false);
-						relativeMouseModeActive = false;
-					}
-
-					if (e->GetMouseKeyHold(MouseButton::Right)) {
-						this->Rotate(e->motion->deltaX, e->motion->deltaY);
-					}
-				});
-
-			if (setMain) {
-				Main = this;
-			}
-		}
-
-
-		~Camera() {
-			for (auto binding : inputBindings) {
-				Input::RemoveKeyBinding(binding);
-			}
-			Input::RemoveMouseBinding(mouseBinding);
-
-			if (relativeMouseModeActive) {
-				SDL_SetRelativeMouseMode(SDL_FALSE);
-			}
-		}
 	};
 }
 
