@@ -118,10 +118,9 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 
 bool Renderer::Init(MainWindow* window) {
 	mainWindow = window;
+
 	return InitOpenGL(window->GetSDLWindow());
 }
-
-
 
 void Renderer::Render() {
 	//___ LOOPED RENDERING CODE
@@ -147,6 +146,7 @@ void Renderer::Render() {
 	vec3(-2.0f, -2.0f, -2.0f)
 	};
 
+
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
 		// model matrix transforms coords to world space
@@ -159,9 +159,13 @@ void Renderer::Render() {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	auto mousePos = Input::GetMousePosition();
+	auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
+
 	gridShader->use();
 	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
 	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
+	//glUniform2fv(glGetUniformLocation(gridShader->ID, "mousePos"), &mousePos[0]);
 	gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
 	Resources::Meshes[1].Draw();
 

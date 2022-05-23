@@ -3,6 +3,7 @@ out vec4 FragColor;
 
 in vec3 vertexPos;
 in vec2 texCoord;
+in vec2 mousePos;
 
 float drawGridLine(float thickness, float pos, float p) {
 	float f = fract(pos+(thickness/2)) / thickness;
@@ -20,6 +21,13 @@ void main() {
 	float gridX = drawGridLine(max(thickness, gridDvX), vertexPos.x, exponent);
 	float gridY = drawGridLine(max(thickness, gridDvY), vertexPos.y, exponent);
 	col.a = max(gridX, gridY);
+
+	vec2 vertPos = vec2(vertexPos.x, vertexPos.y);
+	float diff = length(abs(vertPos - mousePos));
+	if(diff < 2) {
+	col.a = 1-diff;
+	col.r = 1-diff;
+	}
 
 	FragColor = col;
 }

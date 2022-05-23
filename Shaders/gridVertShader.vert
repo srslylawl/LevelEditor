@@ -1,9 +1,11 @@
 #version 460 core
 layout (location = 0) in vec3 in_vertexPos;
 layout (location = 1) in vec2 in_texCoord;
+layout in vec2 in_MousePos;
 
 out vec3 vertexPos;
 out vec2 texCoord;
+out vec2 mousePos;
 
 uniform mat4 model;
 uniform mat4 view;
