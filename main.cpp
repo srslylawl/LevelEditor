@@ -58,6 +58,9 @@ int main(int arg, char* args[]) {
 				case SDL_MOUSEBUTTONDOWN:
 					Input::ReceiveMouseButtonEvent(sdlEvent.button);
 					break;
+
+				case SDL_MOUSEWHEEL:
+					Input::ReceiveMouseWheelEvent(sdlEvent.wheel);
 				}
 			}
 			Input::DelegateInputActions();

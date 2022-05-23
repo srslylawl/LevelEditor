@@ -18,11 +18,11 @@ enum class KeyEvent {
 };
 
 enum class MouseButton {
-	Left	= 1 << 0,
-	Right	= 1 << 1,
-	Middle	= 1 << 2,
-	X1		= 1 << 3,
-	X2		= 1 << 4,
+	Left = 1 << 0,
+	Right = 1 << 1,
+	Middle = 1 << 2,
+	X1 = 1 << 3,
+	X2 = 1 << 4
 };
 
 struct InputKeyBinding {
@@ -39,8 +39,14 @@ struct MouseMotion {
 	int deltaY;
 };
 
+struct MouseWheel {
+	Uint32 scrollDelta;
+	float scrollDeltaPrecise;
+};
+
 class InputMouseEvent {
 	const std::map<MouseButton, std::unordered_set<KeyEvent>>* keyEvents = nullptr;
+	const MouseWheel* wheel;
 public:
 	const MouseMotion* motion;
 
@@ -50,7 +56,7 @@ public:
 		return iterator->second.find(mouse_key_event) != iterator->second.end();
 	}
 
-	bool GetMouseKeyDown (MouseButton button) const {
+	bool GetMouseKeyDown(MouseButton button) const {
 		return GetMouseKey(KeyEvent::KeyDown, button);
 	}
 
@@ -62,9 +68,18 @@ public:
 		return GetMouseKey(KeyEvent::KeyHold, button);
 	}
 
-	InputMouseEvent(const std::map<MouseButton, std::unordered_set<KeyEvent>>* key_events, const MouseMotion* motion)
+	int GetMouseWheelDelta() const {
+		return wheel->scrollDelta;
+	}
+
+	float GetMouseWheelDeltaPrecise() const {
+		return wheel->scrollDeltaPrecise;
+	}
+
+	InputMouseEvent(const std::map<MouseButton, std::unordered_set<KeyEvent>>* key_events, const MouseMotion* motion, const MouseWheel* wheel)
 		: keyEvents(key_events),
-		  motion(motion) {}
+		motion(motion),
+		wheel(wheel) {}
 };
 
 
@@ -86,6 +101,7 @@ class Input {
 	inline static std::set<SDL_Keycode> keysPressedThisFrame;
 	inline static std::map<MouseButton, std::unordered_set<KeyEvent>> mouseKeyEvents;
 	inline static MouseMotion mouseMotion;
+	inline static MouseWheel mouseWheel;
 	inline static std::pair<int, int> savedMousePosition;
 public:
 	static InputKeyBinding* AddKeyBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action) {
@@ -168,9 +184,11 @@ public:
 			break;
 		case SDL_BUTTON_X1:
 			button = MouseButton::X1;
+			std::cout << "Mouse Button X1" << e.button << std::endl;
 			break;
 		case SDL_BUTTON_X2:
 			button = MouseButton::X2;
+			std::cout << "Mouse Button X2" << e.button << std::endl;
 			break;
 		default:
 			std::cout << "Unknown mouse button event: " << e.button << std::endl;
@@ -191,6 +209,14 @@ public:
 		keyEvents.insert(KeyEvent::KeyUp);
 	}
 
+	static void ReceiveMouseWheelEvent(const SDL_MouseWheelEvent e) {
+		MouseWheel wheel;
+		wheel.scrollDelta = e.y;
+		wheel.scrollDeltaPrecise = e.preciseY;
+
+		mouseWheel = wheel;
+	}
+
 	static void DelegateInputActions() {
 		//Key binds
 		for (auto const& [keycode, beingHeld] : keysHeldDown) {
@@ -201,12 +227,12 @@ public:
 		keysPressedThisFrame.clear();
 
 		// mouse binds
-		const auto mouseEvent = InputMouseEvent(&mouseKeyEvents, &mouseMotion);
+		const auto mouseEvent = InputMouseEvent(&mouseKeyEvents, &mouseMotion, &mouseWheel);
 		for (auto const& mouse_binding : mouseBindings) {
 			mouse_binding->Action(&mouseEvent);
 		}
 		// clear mouse key events - remove all if keyup, remove only keydown if its present
-		for (auto &[key, e] : mouseKeyEvents) {
+		for (auto& [key, e] : mouseKeyEvents) {
 			if (e.count(KeyEvent::KeyUp)) {
 				e.clear();
 				continue;
@@ -215,18 +241,19 @@ public:
 			if (e.count(KeyEvent::KeyDown))
 				e.erase(KeyEvent::KeyDown);
 		}
-		// clear mouse motion
+		// clear mouse motion and wheel
 		mouseMotion = {};
+		mouseWheel = {};
 	}
 
 	static void SetMouseCapture(bool set) {
-		if(set) {
+		if (set) {
 			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
 			//std::cout << "Saved mousePos: x:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;
 		}
 		SDL_SetRelativeMouseMode(static_cast<SDL_bool>(set));
 
-		if(!set) {
+		if (!set) {
 			SDL_WarpMouseGlobal(savedMousePosition.first, savedMousePosition.second);
 			SDL_GetGlobalMouseState(&savedMousePosition.first, &savedMousePosition.second);
 			//std::cout << "mouse warped to X:" << savedMousePosition.first << ", y:" << savedMousePosition.second << std::endl;

@@ -125,6 +125,54 @@ namespace Rendering {
 				break;
 			}
 		}
+		void HandleMouseInput(const InputMouseEvent* e) {
+			switch (dimensionMode) {
+			case DimensionMode::ThreeDimensional:
+				HandleMouseInput3D(e);
+				break;
+			case DimensionMode::TwoDimensional:
+				HandleMouseInput2D(e);
+				break;
+			}
+		}
+		void HandleMouseInput2D(const InputMouseEvent* e) {
+			if (e->GetMouseKeyHold(MouseButton::Right)) {
+
+				auto screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
+				auto currentScreenPos = vec2(e->motion->posX, e->motion->deltaY);
+				auto oldScreenPos = currentScreenPos - screenPosDelta;
+
+				auto oldWorldPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
+				auto currWorldPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
+				auto deltaWorldPos =  currWorldPos - oldWorldPos;
+				SetPosition(position + vec3(deltaWorldPos.x, deltaWorldPos.y, 0));
+			}
+
+			auto wheelDelta = e->GetMouseWheelDelta();
+			if (wheelDelta != 0) {
+				SetOrthoSize(orthoSize - wheelDelta);
+			}
+		}
+		void HandleMouseInput3D(const InputMouseEvent* e) {
+			if (e->GetMouseKeyDown(MouseButton::Right)) {
+				Input::SetMouseCapture(true);
+				relativeMouseModeActive = true;
+			}
+
+			if (e->GetMouseKeyUp(MouseButton::Right)) {
+				Input::SetMouseCapture(false);
+				relativeMouseModeActive = false;
+			}
+
+			if (e->GetMouseKeyHold(MouseButton::Right)) {
+				this->Rotate(e->motion->deltaX, e->motion->deltaY);
+			}
+
+			auto wheelDelta = e->GetMouseWheelDelta();
+			if (wheelDelta != 0) {
+				SetZoom(zoom + wheelDelta);
+			}
+		}
 		vec3 position = vec3(0, 0, -3.0f); //in World Space
 		vec3 rotation = vec3(0, -90, 0);
 	public:
@@ -158,22 +206,7 @@ namespace Rendering {
 				Input::AddKeyBinding(SDLK_SPACE, [this](KeyEvent e) {this->HandleMoveInput(SDLK_SPACE); }),
 				Input::AddKeyBinding(SDLK_x, [this](KeyEvent e) {this->HandleMoveInput(SDLK_x); })
 			};
-			mouseBinding = Input::AddMouseBinding([this](const InputMouseEvent* e)
-				{
-					if (e->GetMouseKeyDown(MouseButton::Right)) {
-						Input::SetMouseCapture(true);
-						relativeMouseModeActive = true;
-					}
-
-					if (e->GetMouseKeyUp(MouseButton::Right)) {
-						Input::SetMouseCapture(false);
-						relativeMouseModeActive = false;
-					}
-
-					if (e->GetMouseKeyHold(MouseButton::Right)) {
-						this->Rotate(e->motion->deltaX, e->motion->deltaY);
-					}
-				});
+			mouseBinding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->HandleMouseInput(e); });
 
 			if (setMain) {
 				Main = this;
@@ -252,7 +285,7 @@ namespace Rendering {
 		}
 
 		void SetZoom(const float new_zoom) {
-			zoom = new_zoom;
+			zoom = glm::max(new_zoom, 1.0f);
 			UpdateProjectionMatrix();
 		}
 
@@ -261,7 +294,7 @@ namespace Rendering {
 		}
 
 		void SetOrthoSize(const float new_size) {
-			orthoSize = new_size;
+			orthoSize = glm::max(new_size, 0.0001f);
 			UpdateProjectionMatrix();
 		}
 

@@ -186,53 +186,28 @@ void MainWindow::RenderImGui() {
 	bool open = true;
 	if (ImGui::Begin("Camera", &open, camFlags)) {
 		TextCentered("Camera");
-
 		bool twoDEnabled = Camera::Main->GetDimensionMode() == DimensionMode::TwoDimensional;
 
 		// 2D Checkbox
 		if (ImGui::Checkbox("2D", &twoDEnabled)) {
 			Camera::Main->SetDimensionMode(static_cast<DimensionMode>(twoDEnabled));
 		}
-		// Movespeed Slider
-		ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
-		if (!twoDEnabled) {
-			// Rotation Speed Slider
-			ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
-
-			// FOV Slider
-			float camFOV = Camera::Main->GetFOV();
-			if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
-				Camera::Main->SetFOV(camFOV);
-			}
-
-			// ViewMode (perspective)
-			const char* items[] = { "Perspective", "Orthographic" };
-			int current = static_cast<int>(Camera::Main->GetViewMode());
-			constexpr int itemCount = std::size(items);
-			if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
-				Camera::Main->SetViewMode(static_cast<ViewMode>(current));
-			}
-		}
-		else {
-			// 2D mode active
-			float orthoSize = Camera::Main->GetOrthoSize();
-			if (ImGui::SliderFloat("Size", &orthoSize, 1, 100, "%.5f")) {
-				Camera::Main->SetOrthoSize(orthoSize);
-			}
-		}
 
 		// Transform Position
 		const char* columns[] = { "X:", "Y:", "Z:" };
+		const int columnCount = twoDEnabled ? 2 : 3;
 		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-		ImGui::Text("Transform");
-		if (ImGui::BeginTable("table_Camera_Main_Transform", 3, tableFlags)) {
+		ImGui::Text("Transform Position");
+		if (ImGui::BeginTable("table_Camera_Main_Transform", columnCount, tableFlags)) {
 			ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
 			ImGui::TableSetupColumn("X", columnFlags);
 			ImGui::TableSetupColumn("Y", columnFlags);
-			ImGui::TableSetupColumn("Z", columnFlags);
+			if (!twoDEnabled) {
+				ImGui::TableSetupColumn("Z", columnFlags);
+			}
 			ImGui::TableNextRow();
 			vec3 pos = Camera::Main->GetPosition();
-			for (int column = 0; column < 3; column++) {
+			for (int column = 0; column < columnCount; column++) {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::AlignTextToFramePadding();
 				Text(columns[column]);
@@ -249,12 +224,66 @@ void MainWindow::RenderImGui() {
 			ImGui::EndTable();
 		}
 
-		// Zoom
-		float zoom = Camera::Main->GetZoom();
-		constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
-		constexpr float minZoom = 1 / 100.0f;
-		if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
-			Camera::Main->SetZoom(zoom);
+		if (!twoDEnabled) {
+			// Rotation
+			ImGui::Text("Transform Rotation");
+			if (ImGui::BeginTable("table_Camera_Main_Rotation", 3, tableFlags)) {
+				ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
+				ImGui::TableSetupColumn("X", columnFlags);
+				ImGui::TableSetupColumn("Y", columnFlags);
+				ImGui::TableSetupColumn("Z", columnFlags);
+				ImGui::TableNextRow();
+				vec3 rotation = Camera::Main->GetRotation();
+				for (int column = 0; column < 3; column++) {
+					ImGui::TableSetColumnIndex(column);
+					ImGui::AlignTextToFramePadding();
+					Text(columns[column]);
+					SameLine();
+					// allow empty label by pushing ID and inputting "##" as label name
+					PushID(column);
+					PushItemWidth(-FLT_MIN);
+					if (DragFloat("##", &rotation[column], 0.05f, 0, 0, "%.6f")) {
+						Camera::Main->SetRotation(rotation);
+					}
+					PopItemWidth();
+					PopID();
+				}
+				ImGui::EndTable();
+			}
+			// Movespeed Slider
+			ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
+
+			// Rotation Speed Slider
+			ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
+
+			// FOV Slider
+			float camFOV = Camera::Main->GetFOV();
+			if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
+				Camera::Main->SetFOV(camFOV);
+			}
+
+			// Zoom
+			float zoom = Camera::Main->GetZoom();
+			constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
+			constexpr float minZoom = 1 / 100.0f;
+			if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
+				Camera::Main->SetZoom(zoom);
+			}
+
+			// ViewMode (perspective)
+			const char* items[] = { "Perspective", "Orthographic" };
+			int current = static_cast<int>(Camera::Main->GetViewMode());
+			constexpr int itemCount = std::size(items);
+			if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
+				Camera::Main->SetViewMode(static_cast<ViewMode>(current));
+			}
+		}
+		else {
+			// 2D mode active
+			float orthoSize = Camera::Main->GetOrthoSize();
+			if (ImGui::SliderFloat("Size", &orthoSize, 1, 100, "%.5f")) {
+				Camera::Main->SetOrthoSize(orthoSize);
+			}
 		}
 
 
