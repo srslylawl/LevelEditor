@@ -137,15 +137,14 @@ namespace Rendering {
 		}
 		void HandleMouseInput2D(const InputMouseEvent* e) {
 			if (e->GetMouseKeyHold(MouseButton::Right)) {
-
 				vec2 screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
-				vec2 currentScreenPos = vec2(e->motion->posX, e->motion->deltaY);
+				vec2 currentScreenPos = vec2(e->motion->posX, e->motion->posY);
 				vec2 oldScreenPos = currentScreenPos - screenPosDelta;
 
-				vec2 oldWorldPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
-				vec2 currWorldPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
-				vec2 deltaWorldPos = currWorldPos - oldWorldPos;
-				SetPosition(position + vec3(deltaWorldPos.x, deltaWorldPos.y, 0));
+				vec2 oldGridPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
+				vec2 currGridPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
+				vec2 deltaGridPos = currGridPos - oldGridPos;
+				SetPosition(position + vec3(deltaGridPos.x, deltaGridPos.y, 0));
 			}
 
 			auto wheelDelta = e->GetMouseWheelDelta();
@@ -250,7 +249,6 @@ namespace Rendering {
 		}
 
 		void SetDimensionMode(DimensionMode dimension_mode) {
-
 			switch (dimension_mode) {
 			case DimensionMode::ThreeDimensional:
 				SetViewMode(ViewMode::Perspective);
@@ -267,11 +265,11 @@ namespace Rendering {
 
 		DimensionMode GetDimensionMode() const { return dimensionMode; }
 
-		const vec3 GetRotation() const {
+		vec3 GetRotation() const {
 			return rotation;
 		}
 
-		const vec3 GetPosition() const {
+		vec3 GetPosition() const {
 			return position;
 		}
 
@@ -280,7 +278,7 @@ namespace Rendering {
 			UpdateProjectionMatrix();
 		}
 
-		const float GetFOV() const {
+		float GetFOV() const {
 			return fov;
 		}
 

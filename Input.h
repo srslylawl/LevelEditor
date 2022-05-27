@@ -161,12 +161,10 @@ public:
 	}
 
 	static void ReceiveMouseMotion(const SDL_MouseMotionEvent& e) {
-		mouseMotion.deltaX = e.xrel;
-		mouseMotion.deltaY = e.yrel;
-		mouseMotion.posX = e.x;
-		mouseMotion.posY = e.y;
-
-		//printf("Mousemotion: x:%i,y:%i, relx:%i,rely:%i\n", mouseMotion.posY, mouseMotion.posY, mouseMotion.deltaX, mouseMotion.deltaY);
+		// only setting relative here as motion should always contain actual pos which would be missing when no motion occurs
+		// making sure to add to delta, as multiple updates may happen per frame
+		mouseMotion.deltaX += e.xrel;
+		mouseMotion.deltaY += e.yrel;
 	}
 
 	static void ReceiveMouseButtonEvent(const SDL_MouseButtonEvent e) {
@@ -227,6 +225,8 @@ public:
 		keysPressedThisFrame.clear();
 
 		// mouse binds
+		// make sure total mouse pos is always accurate
+		GetMousePosition(mouseMotion.posX, mouseMotion.posY);
 		const auto mouseEvent = InputMouseEvent(&mouseKeyEvents, &mouseMotion, &mouseWheel);
 		for (auto const& mouse_binding : mouseBindings) {
 			mouse_binding->Action(&mouseEvent);
@@ -261,6 +261,7 @@ public:
 	}
 
 	static glm::vec2 GetMousePosition();
+	static void GetMousePosition(int& x, int& y);
 
 
 	static void Cleanup() {

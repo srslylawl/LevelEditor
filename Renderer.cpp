@@ -150,8 +150,19 @@ void Renderer::Render() {
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
 		// model matrix transforms coords to world space
+		auto xPos = sin(Time::GetTime()) * 3.0f;
+		auto yPos = cos(Time::GetTime()) * 3.0f;
+		if(i == 0) {
+			xPos = -xPos;
+		}
+
+		if(i == 2) {
+			yPos = -yPos;
+		}
+		pos.x += xPos;
+		pos.y += yPos;
 		mat4 modelM = translate(mat4(1.0f), pos);
-		//modelM = rotate(modelM, radians(90.0f * Time::GetTime() * (i + 1)), vec3(1.0f, 0.3f, 0.5f));
+
 		defaultShader->setMat4("model", modelM);
 
 		Resources::Meshes[0].Draw();
