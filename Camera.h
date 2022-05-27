@@ -49,7 +49,7 @@ namespace Rendering {
 		float fov = 45.0f;
 
 		float zoom = 1;
-		float orthoSize = 270.0f/32.0f; // resolution height divided by 2x pixel per unit size
+		float orthoSize = 270.0f / 32.0f; // resolution height divided by 2x pixel per unit size
 
 		void UpdateProjectionMatrix() {
 			if (viewMode == ViewMode::Perspective) {
@@ -138,13 +138,13 @@ namespace Rendering {
 		void HandleMouseInput2D(const InputMouseEvent* e) {
 			if (e->GetMouseKeyHold(MouseButton::Right)) {
 
-				auto screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
-				auto currentScreenPos = vec2(e->motion->posX, e->motion->deltaY);
-				auto oldScreenPos = currentScreenPos - screenPosDelta;
+				vec2 screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
+				vec2 currentScreenPos = vec2(e->motion->posX, e->motion->deltaY);
+				vec2 oldScreenPos = currentScreenPos - screenPosDelta;
 
-				auto oldWorldPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
-				auto currWorldPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
-				auto deltaWorldPos =  currWorldPos - oldWorldPos;
+				vec2 oldWorldPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
+				vec2 currWorldPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
+				vec2 deltaWorldPos = currWorldPos - oldWorldPos;
 				SetPosition(position + vec3(deltaWorldPos.x, deltaWorldPos.y, 0));
 			}
 
@@ -198,7 +198,7 @@ namespace Rendering {
 		Camera(int width, int height, bool setMain = false) : width(width), height(height) {
 			UpdateProjectionMatrix();
 
-			inputBindings = { 
+			inputBindings = {
 				Input::AddKeyBinding(SDLK_w, [this](KeyEvent e) {this->HandleMoveInput(SDLK_w); }),
 				Input::AddKeyBinding(SDLK_s, [this](KeyEvent e) {this->HandleMoveInput(SDLK_s); }),
 				Input::AddKeyBinding(SDLK_a, [this](KeyEvent e) {this->HandleMoveInput(SDLK_a); }),

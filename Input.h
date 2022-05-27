@@ -260,13 +260,7 @@ public:
 		}
 	}
 
-	static glm::vec2 GetMousePosition() {
-		int x = 0;
-		int y = 0;
-		SDL_GetMouseState(&x, &y);
-
-		return glm::vec2(x, y);
-	}
+	static glm::vec2 GetMousePosition();
 
 
 	static void Cleanup() {

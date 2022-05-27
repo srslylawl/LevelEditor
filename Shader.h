@@ -107,5 +107,11 @@ namespace Rendering {
 		void setMat4(const std::string& name, glm::mat4 value) const {
 			glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, value_ptr(value));
 		}
+		void setVec(const std::string& name, glm::vec3 value) {
+			glUniform3f(glGetUniformLocation(ID, name.c_str()), value.x, value.y, value.z);
+		}
+		void setVec(const std::string& name, glm::vec2 value) {
+			glUniform2f(glGetUniformLocation(ID, name.c_str()), value.x, value.y);
+		}
 	};
 }

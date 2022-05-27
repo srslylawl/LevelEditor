@@ -7,7 +7,7 @@
 #include "glad.h"
 #include "Resources.h"
 #include "Shader.h"
-#include "Time.h"+
+#include "Time.h"
 
 using namespace Rendering;
 
@@ -165,7 +165,7 @@ void Renderer::Render() {
 	gridShader->use();
 	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
 	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
-	//glUniform2fv(glGetUniformLocation(gridShader->ID, "mousePos"), &mousePos[0]);
+	gridShader->setVec("mousePos", mouseGridPos);
 	gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
 	Resources::Meshes[1].Draw();
 

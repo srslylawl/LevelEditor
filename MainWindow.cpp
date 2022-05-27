@@ -24,7 +24,13 @@
 
 using namespace Rendering;
 
-MainWindow::MainWindow(int width, int height, const char* title) : m_width(width), m_height(height), m_title(title) {}
+MainWindow::MainWindow(int width, int height, const char* title) : m_title(title) {
+	this->width = width;
+	this->height = height;
+}
+
+int MainWindow::width = 0;
+int MainWindow::height = 0;
 
 void TextCentered(const char* text) {
 	float win_width = ImGui::GetWindowSize().x;
@@ -84,7 +90,7 @@ bool MainWindow::InitSDL() {
 		| SDL_WINDOW_ALLOW_HIGHDPI
 		);
 
-	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_width, m_height, window_flags);
+	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, window_flags);
 	if (SDLWindow == nullptr) {
 		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 		SDL_DestroyWindow(SDLWindow);
@@ -273,7 +279,7 @@ void MainWindow::RenderImGui() {
 			// ViewMode (perspective)
 			const char* items[] = { "Perspective", "Orthographic" };
 			int current = static_cast<int>(Camera::Main->GetViewMode());
-			constexpr int itemCount = std::size(items);
+			constexpr int itemCount = static_cast<int>(std::size(items));
 			if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
 				Camera::Main->SetViewMode(static_cast<ViewMode>(current));
 			}
@@ -310,7 +316,17 @@ void MainWindow::RenderImGui() {
 			/// SET TO ZERO
 			Text(std::string("Z: " + std::to_string(0)).c_str());
 		}
+		Text("ScreenPos:");
 		ImGui::EndTable();
+		if (ImGui::BeginTable("table_MouseCoordsScreen", 2, tableFlags)) {
+			TableNextRow();
+			TableSetColumnIndex(0);
+			Text(std::string("X: " + std::to_string(mousePos.x)).c_str());
+			TableSetColumnIndex(1);
+			Text(std::string("X: " + std::to_string(mousePos.y)).c_str());
+		}
+		EndTable();
+
 	}
 	ImGui::End();
 
@@ -331,9 +347,9 @@ void MainWindow::RenderImGui() {
 
 
 void MainWindow::OnResized(int width, int height) {
-	m_height = height;
-	m_width = width;
-	glViewport(0, 0, m_width, m_height);
+	this->height = height;
+	this->width = width;
+	glViewport(0, 0, width, height);
 	if (Camera::Main != nullptr) {
 		Camera::Main->SetSize(width, height);
 	}
