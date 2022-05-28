@@ -16,9 +16,11 @@ namespace Rendering {
 		inline static SDL_GLContext gl_context = nullptr;
 		static bool Init(MainWindow* mainWindow);
 		static void Render();
+		static void CompileShader();
 
 		static void Exit() {
 			delete defaultShader;
+			delete gridShader;
 			delete camera;
 		}
 	};

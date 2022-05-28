@@ -3,6 +3,7 @@ out vec4 FragColor;
 
 in vec3 vertexPos;
 in vec2 texCoord;
+
 uniform vec2 mousePos;
 
 float drawGridLine(float thickness, float pos, float p) {
@@ -13,7 +14,11 @@ float drawGridLine(float thickness, float pos, float p) {
 }
 
 void main() {
-	vec4 col = vec4(0, 0, 0, 1);
+
+	// Grid Display
+	float gridGradient = .65;
+	vec4 col;
+	col.rgb = gridGradient.xxx;
 	float thickness = 0.01f;
 	float exponent = 1;
 	float gridDvX = length(vec2(dFdx(vertexPos.x), dFdy(vertexPos.x))) + 0.01;
@@ -22,12 +27,18 @@ void main() {
 	float gridY = drawGridLine(max(thickness, gridDvY), vertexPos.y, exponent);
 	col.a = max(gridX, gridY);
 
-	vec2 vertPos = vec2(vertexPos.x, vertexPos.y);
-	float diff = length(abs(vertPos - mousePos));
-	float threshold = 0.02f;
-	if(diff < threshold) {
-	col.a = 1-diff;
-	col.r = 1-diff;
+	// Is Mouse is same grid cell as vertex?
+	vec2 cellDiff = min(vec2(1), abs(floor(vertexPos.xy) - floor(mousePos)));
+	float isSame = 1-length(cellDiff); // + gridX + gridY;
+    if (isSame == 1) {
+		// Highlight Cell
+		vec2 closeToEdge = abs(fract(vertexPos.xy) * 2 - (1).xx);
+		float exponent = 20;
+		closeToEdge.x = pow(closeToEdge.x, exponent);
+		closeToEdge.y = pow(closeToEdge.y, exponent);
+		col.a = length(closeToEdge);
+
+		col.rgb = (1).xxx;
 	}
 
 	FragColor = col;

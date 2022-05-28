@@ -137,17 +137,18 @@ namespace Rendering {
 		}
 		void HandleMouseInput2D(const InputMouseEvent* e) {
 			if (e->GetMouseKeyHold(MouseButton::Right)) {
-				vec2 screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
-				vec2 currentScreenPos = vec2(e->motion->posX, e->motion->posY);
-				vec2 oldScreenPos = currentScreenPos - screenPosDelta;
+				const vec2 screenPosDelta = vec2(-e->motion->deltaX, e->motion->deltaY);
+				const vec2 currentScreenPos = vec2(e->motion->posX, e->motion->posY);
+				const vec2 oldScreenPos = currentScreenPos - screenPosDelta;
 
-				vec2 oldGridPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
-				vec2 currGridPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
-				vec2 deltaGridPos = currGridPos - oldGridPos;
+
+				const vec2 oldGridPos = ScreenToGridPosition(oldScreenPos.x, oldScreenPos.y);
+				const vec2 currGridPos = ScreenToGridPosition(currentScreenPos.x, currentScreenPos.y);
+				const vec2 deltaGridPos = currGridPos - oldGridPos;
 				SetPosition(position + vec3(deltaGridPos.x, deltaGridPos.y, 0));
 			}
 
-			auto wheelDelta = e->GetMouseWheelDelta();
+			const auto wheelDelta = e->GetMouseWheelDelta();
 			if (wheelDelta != 0) {
 				SetOrthoSize(orthoSize - wheelDelta);
 			}
@@ -167,7 +168,7 @@ namespace Rendering {
 				this->Rotate(e->motion->deltaX, e->motion->deltaY);
 			}
 
-			auto wheelDelta = e->GetMouseWheelDelta();
+			const auto wheelDelta = e->GetMouseWheelDelta();
 			if (wheelDelta != 0) {
 				SetZoom(zoom + wheelDelta);
 			}
@@ -329,6 +330,7 @@ namespace Rendering {
 		}
 
 		Ray ScreenPointToRay(int x_pos, int y_pos) const {
+			// is NOT accurate in 3D!
 			const mat inverseMat = inverse(projectionMatrix * viewMat);
 
 			const auto normalizedX = x_pos / static_cast<float>(width);

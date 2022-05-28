@@ -101,6 +101,21 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 	//Resources::Meshes.push_back(quadDS);
 
 	//init shaders
+	CompileShader();
+	
+
+	int width, height;
+	mainWindow->GetSize(width, height);
+	camera = new Camera(width, height, true);
+
+	return true;
+}
+
+void Renderer::CompileShader() {
+	if (defaultShader != nullptr) delete defaultShader;
+	if (gridShader != nullptr) delete gridShader;
+
+
 	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
 	const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
 
@@ -108,12 +123,6 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 
 	gridShader = new Shader(std::filesystem::current_path().append("Shaders/gridVertShader.vert").string().c_str(), 
 		std::filesystem::current_path().append("Shaders/gridFragShader.frag").string().c_str());
-
-	int width, height;
-	mainWindow->GetSize(width, height);
-	camera = new Camera(width, height, true);
-
-	return true;
 }
 
 bool Renderer::Init(MainWindow* window) {
@@ -183,3 +192,5 @@ void Renderer::Render() {
 	//unbind vertex array
 	glBindVertexArray(0);
 }
+
+

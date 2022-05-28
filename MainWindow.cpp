@@ -146,6 +146,10 @@ void MainWindow::RenderImGui() {
 			ImGui::EndMenu();
 		}
 
+		if(MenuItem("Recompile Shader")) {
+			Renderer::CompileShader();
+		}
+
 		if (ImGui::BeginMenu("Debug")) {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
