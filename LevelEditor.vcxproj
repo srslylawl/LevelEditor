@@ -125,7 +125,7 @@
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -203,6 +203,7 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="MathExt.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Shader.h" />
@@ -212,10 +213,10 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
     <ClInclude Include="VisualGrid.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultFragShader.frag" />
-    <None Include="Shaders\defaultVertShader.vert" />
-    <None Include="Shaders\gridFragShader.frag" />
-    <None Include="Shaders\gridVertShader.vert" />
+    <None Include="Shaders\default.frag" />
+    <None Include="Shaders\default.vert" />
+    <None Include="Shaders\2DGrid.frag" />
+    <None Include="Shaders\2DGrid.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

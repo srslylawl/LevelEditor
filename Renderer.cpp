@@ -116,13 +116,16 @@ void Renderer::CompileShader() {
 	if (gridShader != nullptr) delete gridShader;
 
 
-	const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
-	const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
+	//const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
+	//const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
 
-	defaultShader = new Shader(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
+	//defaultShader = new Shader(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
 
-	gridShader = new Shader(std::filesystem::current_path().append("Shaders/gridVertShader.vert").string().c_str(), 
-		std::filesystem::current_path().append("Shaders/gridFragShader.frag").string().c_str());
+	//gridShader = new Shader(std::filesystem::current_path().append("Shaders/gridVertShader.vert").string().c_str(), 
+	//	std::filesystem::current_path().append("Shaders/gridFragShader.frag").string().c_str());
+
+	defaultShader = new Shader("default");
+	gridShader = new Shader("2DGrid");
 }
 
 bool Renderer::Init(MainWindow* window) {
@@ -134,7 +137,7 @@ bool Renderer::Init(MainWindow* window) {
 void Renderer::Render() {
 	//___ LOOPED RENDERING CODE
 	// use shader program
-	defaultShader->use();
+	defaultShader->Use();
 	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // -- redundant?
 
 	// view matrix transforms world space to view (camera) space
@@ -182,7 +185,7 @@ void Renderer::Render() {
 	auto mousePos = Input::GetMousePosition();
 	auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
 
-	gridShader->use();
+	gridShader->Use();
 	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
 	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
 	gridShader->setVec("mousePos", mouseGridPos);

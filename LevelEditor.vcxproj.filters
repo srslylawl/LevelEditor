@@ -149,18 +149,21 @@
     <ClInclude Include="MathExt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MeshRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultFragShader.frag">
+    <None Include="Shaders\default.frag">
       <Filter>Source Files\Shader</Filter>
     </None>
-    <None Include="Shaders\defaultVertShader.vert">
+    <None Include="Shaders\default.vert">
       <Filter>Source Files\Shader</Filter>
     </None>
-    <None Include="Shaders\gridFragShader.frag">
+    <None Include="Shaders\2DGrid.frag">
       <Filter>Source Files\Shader</Filter>
     </None>
-    <None Include="Shaders\gridVertShader.vert">
+    <None Include="Shaders\2DGrid.vert">
       <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>
