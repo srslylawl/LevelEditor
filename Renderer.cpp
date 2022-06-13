@@ -8,6 +8,7 @@
 #include "Resources.h"
 #include "Shader.h"
 #include "Time.h"
+#include "Renderable.h"
 
 using namespace Rendering;
 
@@ -112,9 +113,8 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 }
 
 void Renderer::CompileShader() {
-	if (defaultShader != nullptr) delete defaultShader;
-	if (gridShader != nullptr) delete gridShader;
-
+	delete defaultShader;
+	delete gridShader;
 
 	//const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
 	//const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
@@ -130,7 +130,6 @@ void Renderer::CompileShader() {
 
 bool Renderer::Init(MainWindow* window) {
 	mainWindow = window;
-
 	return InitOpenGL(window->GetSDLWindow());
 }
 
@@ -145,6 +144,9 @@ void Renderer::Render() {
 
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
 	defaultShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
+
+	for (const auto & render_object : RenderObjects)
+		render_object->Render();
 
 	glActiveTexture(GL_TEXTURE0);
 
@@ -182,6 +184,9 @@ void Renderer::Render() {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	// Draw 2D Grid
+	// clear depth buffer to always draw grid on top
+	glClear(GL_DEPTH_BUFFER_BIT);
 	auto mousePos = Input::GetMousePosition();
 	auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
 

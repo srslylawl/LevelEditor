@@ -68,13 +68,42 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 	return 0;
 }
 
+void MainWindow::OnMouseDown(const InputMouseEvent* event) {
+	if(event->GetMouseKeyHold(MouseButton::Left)) {
+		static ivec2 oldGridCoords;
+
+		auto mousePos = Input::GetMousePosition();
+		auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
+		auto gridCoords = ivec2(floor(mouseCoords.x), floor(mouseCoords.y));
+
+		if(oldGridCoords == gridCoords) {
+			return;
+		}
+
+		if(!Resources::Textures.empty()) {
+			auto tex = (--Resources::Textures.end())->first;
+			Tiles::Tile t;
+			t.Texture = tex;
+			tileData->SetTile(t, gridCoords);
+		}
+
+		oldGridCoords = gridCoords;
+	}
+}
+
+
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
 	if (!Renderer::Init(this)) return false;
 	if (!InitDearImGui()) return false;
 
+	tileData = new Tiles::TileMap();
+	tileData->shader = Renderer::defaultShader;
+	Renderer::RenderObjects.push_back(tileData);
 	//update while resizing - does not work though, according to google its a backend limitation?
 	SDL_AddEventWatch(WindowResizeEvent, this);
+	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseDown(e);});
+
 	return true;
 }
 
@@ -102,9 +131,7 @@ bool MainWindow::InitSDL() {
 bool MainWindow::InitDearImGui() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	// does not seem to do anything rn, so commented out
-	//ImGuiIO& io = ImGui::GetIO();
-	//(void)io;
+
 	ImGui::StyleColorsDark();
 	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, Renderer::gl_context); //Renderer needs to be initialized first
 	const std::string glsl_version = "#version 460";
@@ -229,7 +256,7 @@ void MainWindow::RenderImGui() {
 					Camera::Main->SetPosition(pos);
 				}
 				PopItemWidth();
-				PopID();
+				ImGui::PopID();
 			}
 			ImGui::EndTable();
 		}
@@ -256,7 +283,7 @@ void MainWindow::RenderImGui() {
 						Camera::Main->SetRotation(rotation);
 					}
 					PopItemWidth();
-					PopID();
+					ImGui::PopID();
 				}
 				ImGui::EndTable();
 			}
@@ -303,34 +330,29 @@ void MainWindow::RenderImGui() {
 	ImGui::End();
 
 	bool mouseOpen = true;
-
 	auto mousePos = Input::GetMousePosition();
-	//auto mouseCoords = Camera::Main->ScreenToWorldCoordinates(mousePos.x, mousePos.y);
 	auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
+	auto gridCoords = floor(mouseCoords);
 	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
-	if (ImGui::Begin("MouseCoordinates", &mouseOpen)) {
+	if (ImGui::Begin("MouseCoordinates", &mouseOpen, mouseCoordFlags)) {
 		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-		if (ImGui::BeginTable("table_MouseCoords", 3, tableFlags)) {
+		if (ImGui::BeginTable("table_MouseGridCoords", 2)) {
 			ImGui::TableNextRow();
 			TableSetColumnIndex(0);
 			Text(std::string("X: " + std::to_string(mouseCoords.x)).c_str());
 			TableSetColumnIndex(1);
 			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
-			TableSetColumnIndex(2);
-			/// SET TO ZERO
-			Text(std::string("Z: " + std::to_string(0)).c_str());
-		}
-		Text("ScreenPos:");
-		ImGui::EndTable();
-		if (ImGui::BeginTable("table_MouseCoordsScreen", 2, tableFlags)) {
-			TableNextRow();
-			TableSetColumnIndex(0);
-			Text(std::string("X: " + std::to_string(mousePos.x)).c_str());
-			TableSetColumnIndex(1);
-			Text(std::string("X: " + std::to_string(mousePos.y)).c_str());
 		}
 		EndTable();
 
+		if(ImGui::BeginTable("table_MouseCoords", 2)) {
+			ImGui::TableNextRow();
+			TableSetColumnIndex(0);
+			Text(std::string("X: " + std::to_string(gridCoords.x)).c_str());
+			TableSetColumnIndex(1);
+			Text(std::string("Y: " + std::to_string(gridCoords.y)).c_str());
+		}
+		EndTable();
 	}
 	ImGui::End();
 
@@ -360,6 +382,9 @@ void MainWindow::OnResized(int width, int height) {
 	//std::cout << "On Resized h: " << height << " w: " << width << endl;
 }
 void MainWindow::Close() {
+	Input::RemoveMouseBinding(binding);
+	binding = nullptr;
+	delete tileData;
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
 	SDLWindow = nullptr;

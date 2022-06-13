@@ -96,9 +96,10 @@ struct InputMouseBinding {
 class Input {
 	Input() = default;
 	inline static std::map<SDL_Keycode, std::unordered_set<InputKeyBinding*>> keyBindings;
+	inline static std::unordered_set<SDL_Keycode> keysDownThisFrame;
+	inline static std::unordered_set<SDL_Keycode> keysUpThisFrame;
 	inline static std::unordered_set<InputMouseBinding*> mouseBindings;
 	inline static std::map<SDL_Keycode, bool> keysHeldDown;
-	inline static std::set<SDL_Keycode> keysPressedThisFrame;
 	inline static std::map<MouseButton, std::unordered_set<KeyEvent>> mouseKeyEvents;
 	inline static MouseMotion mouseMotion;
 	inline static MouseWheel mouseWheel;
@@ -120,14 +121,8 @@ public:
 
 	static void ReceiveKeyDownInput(const SDL_Keycode& keycode) {
 		if (keysHeldDown[keycode]) return; //don't care if its already held down
-
 		keysHeldDown[keycode] = true;
-
-		keysPressedThisFrame.insert(keycode);
-
-		for (auto const& binding : keyBindings[keycode]) {
-			binding->Action(KeyEvent::KeyDown);
-		}
+		keysDownThisFrame.insert(keycode);
 	}
 
 	static void ReceiveKeyUpInput(const SDL_Keycode& keycode) {
@@ -136,10 +131,7 @@ public:
 			return;
 		}
 		keysHeldDown.erase(keycode);
-
-		for (auto const& binding : keyBindings[keycode]) {
-			binding->Action(KeyEvent::KeyUp);
-		}
+		keysUpThisFrame.insert(keycode);
 	}
 
 	static InputMouseBinding* AddMouseBinding(const std::function<void(const InputMouseEvent*)>& action) {
@@ -215,16 +207,7 @@ public:
 		mouseWheel = wheel;
 	}
 
-	static void DelegateInputActions() {
-		//Key binds
-		for (auto const& [keycode, beingHeld] : keysHeldDown) {
-			for (auto const& binding : keyBindings[keycode]) {
-				binding->Action(KeyEvent::KeyHold);
-			}
-		}
-		keysPressedThisFrame.clear();
-
-		// mouse binds
+	static void DelegateMouseActions() {
 		// make sure total mouse pos is always accurate
 		GetMousePosition(mouseMotion.posX, mouseMotion.posY);
 		const auto mouseEvent = InputMouseEvent(&mouseKeyEvents, &mouseMotion, &mouseWheel);
@@ -241,9 +224,42 @@ public:
 			if (e.count(KeyEvent::KeyDown))
 				e.erase(KeyEvent::KeyDown);
 		}
+		ClearMouseActions();
+	}
+	static void DelegateKeyboardActions() {
+		// Pressed Keys
+		for (auto const& key : keysDownThisFrame) {
+			for (auto const& binding : keyBindings[key]) {
+				binding->Action(KeyEvent::KeyDown);
+			}
+		}
+
+		// Held Keys
+		for (auto const& [keycode, beingHeld] : keysHeldDown) {
+			for (auto const& binding : keyBindings[keycode]) {
+				binding->Action(KeyEvent::KeyHold);
+			}
+		}
+
+		// Released Keys
+		for (auto const& key : keysUpThisFrame) {
+			for (auto const& binding : keyBindings[key]) {
+				binding->Action(KeyEvent::KeyUp);
+			}
+		}
+
+		ClearKeyboardActions();
+	}
+
+	static void ClearMouseActions() {
 		// clear mouse motion and wheel
 		mouseMotion = {};
 		mouseWheel = {};
+	}
+
+	static void ClearKeyboardActions() {
+		keysDownThisFrame.clear();
+		keysUpThisFrame.clear();
 	}
 
 	static void SetMouseCapture(bool set) {

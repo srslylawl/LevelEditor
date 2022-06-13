@@ -79,6 +79,11 @@ namespace Rendering {
 		// the program ID
 		unsigned int ID;
 		std::string name;
+
+		~Shader() {
+			Delete();
+			std::cout << "Shader " << name << " destructor called and deleted" << std::endl;
+		}
 		Shader(const char* name) {
 			this->name = name;
 			auto shaderPath = std::filesystem::current_path().append("Shaders/").append(name);

@@ -135,7 +135,8 @@
       </Message>
       <Command>xcopy /y /d  "$(ProjectDir)DLL\*.dll" "$(TargetDir)"
 @echo "Moved all DLLs from "$(ProjectDir)DLL\*.dll" to "$(TargetDir)".
-xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
+xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
+@echo "Moved all Shaders from "$(ProjectDir)Shaders\*.*" to "$(TargetDir)Shaders".</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -163,7 +164,8 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
       </Message>
       <Command>xcopy /y /d  "$(ProjectDir)DLL\*.dll" "$(TargetDir)"
 @echo "Moved all DLLs from "$(ProjectDir)DLL\*.dll" to "$(TargetDir)".
-xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
+xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
+@echo "Moved all Shaders from "$(ProjectDir)Shaders\*.*" to "$(TargetDir)Shaders".</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -204,11 +206,13 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
     <ClInclude Include="MathExt.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="Renderable.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TileMap.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="VisualGrid.h" />
   </ItemGroup>

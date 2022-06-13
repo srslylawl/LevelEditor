@@ -21,6 +21,7 @@ int main(int arg, char* args[]) {
 			return 1;
 		}
 
+		ImGuiIO& imgui_io = ImGui::GetIO();
 		SDL_Event sdlEvent;
 		bool quit = false;
 		while (!quit) {
@@ -63,7 +64,19 @@ int main(int arg, char* args[]) {
 					Input::ReceiveMouseWheelEvent(sdlEvent.wheel);
 				}
 			}
-			Input::DelegateInputActions();
+			if(!imgui_io.WantCaptureMouse) {
+				Input::DelegateMouseActions();
+			}
+			else {
+				Input::ClearMouseActions();
+			}
+
+			if(!imgui_io.WantCaptureKeyboard) {
+				Input::DelegateKeyboardActions();
+			}
+			else {
+				Input::ClearKeyboardActions();
+			}
 			mainWindow.Render();
 		}
 		mainWindow.Close();
