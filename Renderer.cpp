@@ -116,14 +116,6 @@ void Renderer::CompileShader() {
 	delete defaultShader;
 	delete gridShader;
 
-	//const std::filesystem::path vertShaderPath = std::filesystem::current_path().append("Shaders/defaultVertShader.vert");
-	//const std::filesystem::path fragShaderPath = std::filesystem::current_path().append("Shaders/defaultFragShader.frag");
-
-	//defaultShader = new Shader(vertShaderPath.string().c_str(), fragShaderPath.string().c_str());
-
-	//gridShader = new Shader(std::filesystem::current_path().append("Shaders/gridVertShader.vert").string().c_str(), 
-	//	std::filesystem::current_path().append("Shaders/gridFragShader.frag").string().c_str());
-
 	defaultShader = new Shader("default");
 	gridShader = new Shader("2DGrid");
 }

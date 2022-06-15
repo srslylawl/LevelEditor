@@ -76,6 +76,8 @@ void MainWindow::OnMouseDown(const InputMouseEvent* event) {
 		auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 		auto gridCoords = ivec2(floor(mouseCoords.x), floor(mouseCoords.y));
 
+		// Don't do anything if we didn't change grid pos
+		// TODO: clean this up
 		if(oldGridCoords == gridCoords) {
 			return;
 		}
@@ -333,10 +335,10 @@ void MainWindow::RenderImGui() {
 	auto mousePos = Input::GetMousePosition();
 	auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 	auto gridCoords = floor(mouseCoords);
-	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
+	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 	if (ImGui::Begin("MouseCoordinates", &mouseOpen, mouseCoordFlags)) {
-		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-		if (ImGui::BeginTable("table_MouseGridCoords", 2)) {
+		ImGui::Text("Mouse/Grid Debug");
+		if (ImGui::BeginTable("table_RawMouseCoords", 2)) {
 			ImGui::TableNextRow();
 			TableSetColumnIndex(0);
 			Text(std::string("X: " + std::to_string(mouseCoords.x)).c_str());
@@ -344,17 +346,38 @@ void MainWindow::RenderImGui() {
 			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
 		}
 		EndTable();
-
-		if(ImGui::BeginTable("table_MouseCoords", 2)) {
+		ImGui::Text("Grid Coords:");
+		if(ImGui::BeginTable("table_MouseGridCoords", 2)) {
 			ImGui::TableNextRow();
 			TableSetColumnIndex(0);
-			Text(std::string("X: " + std::to_string(gridCoords.x)).c_str());
+			Text(std::string("X: " + std::to_string((int)gridCoords.x)).c_str());
 			TableSetColumnIndex(1);
-			Text(std::string("Y: " + std::to_string(gridCoords.y)).c_str());
+			Text(std::string("Y: " + std::to_string((int)gridCoords.y)).c_str());
 		}
 		EndTable();
+
+		const auto size = GetWindowSize();
 	}
 	ImGui::End();
+
+	// Grid Tool Window
+	bool toolWindowOpen = true;
+	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_AlwaysAutoResize;
+	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
+		int selected = -1;
+		int toolCount = 3;
+		auto buttonSize = ImVec2(32, 32);
+		for (int i = 0; i < toolCount; ++i) {
+			SameLine();
+			ImGui::PushID(i);
+			if (ImageButton((void*)0, buttonSize)) {
+				std::cout << "Selected: " << i << std::endl;
+			}
+			PopID();
+		}
+
+	}
+	End();
 
 	constexpr ImGuiWindowFlags explorerFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 	bool fexOpen = true;

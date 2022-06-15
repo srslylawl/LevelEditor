@@ -82,7 +82,7 @@ namespace Rendering {
 
 		~Shader() {
 			Delete();
-			std::cout << "Shader " << name << " destructor called and deleted" << std::endl;
+			//std::cout << "Shader " << name << " destructor called and deleted" << std::endl;
 		}
 		Shader(const char* name) {
 			this->name = name;
