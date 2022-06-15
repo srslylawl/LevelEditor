@@ -10,6 +10,8 @@
 
 using namespace Rendering;
 
+void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow);
+
 int main(int arg, char* args[]) {
 	//init time module
 	Time::Init();
@@ -26,52 +28,16 @@ int main(int arg, char* args[]) {
 		bool quit = false;
 		while (!quit) {
 			Time::CalcDeltaTime();
-			while (SDL_PollEvent(&sdlEvent)) {
-				ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
-				switch (sdlEvent.type) {
-				case SDL_QUIT:
-					quit = true;
-					break;
+			HandleSDLEvents(sdlEvent, quit, mainWindow);
 
-				case SDL_WINDOWEVENT:
-					switch (sdlEvent.window.event) {
-					case SDL_WINDOWEVENT_RESIZED:
-						const int w = sdlEvent.window.data1;
-						const int h = sdlEvent.window.data2;
-						mainWindow.OnResized(w, h);
-						break;
-					}
-					break;
-
-				case SDL_KEYDOWN:
-					Input::ReceiveKeyDownInput(sdlEvent.key.keysym.sym);
-					break;
-
-				case SDL_KEYUP:
-					Input::ReceiveKeyUpInput(sdlEvent.key.keysym.sym);
-					break;
-
-				case SDL_MOUSEMOTION:
-					Input::ReceiveMouseMotion(sdlEvent.motion);
-					break;
-
-				case SDL_MOUSEBUTTONUP:
-				case SDL_MOUSEBUTTONDOWN:
-					Input::ReceiveMouseButtonEvent(sdlEvent.button);
-					break;
-
-				case SDL_MOUSEWHEEL:
-					Input::ReceiveMouseWheelEvent(sdlEvent.wheel);
-				}
-			}
-			if(!imgui_io.WantCaptureMouse) {
+			if (!imgui_io.WantCaptureMouse) {
 				Input::DelegateMouseActions();
 			}
 			else {
 				Input::ClearMouseActions();
 			}
 
-			if(!imgui_io.WantCaptureKeyboard) {
+			if (!imgui_io.WantCaptureKeyboard) {
 				Input::DelegateKeyboardActions();
 			}
 			else {
@@ -92,3 +58,45 @@ int main(int arg, char* args[]) {
 
 	return 0;
 }
+
+void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow) {
+	while (SDL_PollEvent(&sdlEvent)) {
+		ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
+		switch (sdlEvent.type) {
+		case SDL_QUIT:
+			quit = true;
+			break;
+
+		case SDL_WINDOWEVENT:
+			switch (sdlEvent.window.event) {
+			case SDL_WINDOWEVENT_RESIZED:
+				const int w = sdlEvent.window.data1;
+				const int h = sdlEvent.window.data2;
+				mainWindow.OnResized(w, h);
+				break;
+			}
+			break;
+
+		case SDL_KEYDOWN:
+			Input::ReceiveKeyDownInput(sdlEvent.key.keysym.sym);
+			break;
+
+		case SDL_KEYUP:
+			Input::ReceiveKeyUpInput(sdlEvent.key.keysym.sym);
+			break;
+
+		case SDL_MOUSEMOTION:
+			Input::ReceiveMouseMotion(sdlEvent.motion);
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEBUTTONDOWN:
+			Input::ReceiveMouseButtonEvent(sdlEvent.button);
+			break;
+
+		case SDL_MOUSEWHEEL:
+			Input::ReceiveMouseWheelEvent(sdlEvent.wheel);
+		}
+	}
+}
+

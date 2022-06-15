@@ -22,6 +22,9 @@
     <Filter Include="Source Files\Shader">
       <UniqueIdentifier>{ed2091e7-d352-48eb-8644-6792213a6078}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GridTools">
+      <UniqueIdentifier>{bbdb572d-2f5c-427f-b348-4e7ecf4b6a65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -65,6 +68,12 @@
     </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GridTool.cpp">
+      <Filter>Source Files\GridTools</Filter>
+    </ClCompile>
+    <ClCompile Include="GridToolBar.cpp">
+      <Filter>Source Files\GridTools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +166,15 @@
     </ClInclude>
     <ClInclude Include="Renderable.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GridToolType.h">
+      <Filter>Source Files\GridTools</Filter>
+    </ClInclude>
+    <ClInclude Include="GridTool.h">
+      <Filter>Source Files\GridTools</Filter>
+    </ClInclude>
+    <ClInclude Include="GridToolBar.h">
+      <Filter>Source Files\GridTools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -11,12 +11,8 @@
 #include "MainWindow.h"
 
 #include "Files.h"
-#include "Shader.h"
-#include "Time.h"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "Camera.h"
 #include "Renderer.h"
@@ -68,43 +64,23 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 	return 0;
 }
 
-void MainWindow::OnMouseDown(const InputMouseEvent* event) {
-	if(event->GetMouseKeyHold(MouseButton::Left)) {
-		static ivec2 oldGridCoords;
+void MainWindow::OnMouseInput(const InputMouseEvent* event) {
 
-		auto mousePos = Input::GetMousePosition();
-		auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
-		auto gridCoords = ivec2(floor(mouseCoords.x), floor(mouseCoords.y));
-
-		// Don't do anything if we didn't change grid pos
-		// TODO: clean this up
-		if(oldGridCoords == gridCoords) {
-			return;
-		}
-
-		if(!Resources::Textures.empty()) {
-			auto tex = (--Resources::Textures.end())->first;
-			Tiles::Tile t;
-			t.Texture = tex;
-			tileData->SetTile(t, gridCoords);
-		}
-
-		oldGridCoords = gridCoords;
-	}
 }
-
 
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
 	if (!Renderer::Init(this)) return false;
 	if (!InitDearImGui()) return false;
 
-	tileData = new Tiles::TileMap();
-	tileData->shader = Renderer::defaultShader;
-	Renderer::RenderObjects.push_back(tileData);
+	tileMap = new Tiles::TileMap();
+	tileMap->shader = Renderer::defaultShader;
+	gridToolBar = new GridTools::GridToolBar(tileMap);
+
+	Renderer::RenderObjects.push_back(tileMap);
 	//update while resizing - does not work though, according to google its a backend limitation?
 	SDL_AddEventWatch(WindowResizeEvent, this);
-	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseDown(e);});
+	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
 
 	return true;
 }
@@ -175,7 +151,7 @@ void MainWindow::RenderImGui() {
 			ImGui::EndMenu();
 		}
 
-		if(MenuItem("Recompile Shader")) {
+		if (MenuItem("Recompile Shader")) {
 			Renderer::CompileShader();
 		}
 
@@ -347,7 +323,7 @@ void MainWindow::RenderImGui() {
 		}
 		EndTable();
 		ImGui::Text("Grid Coords:");
-		if(ImGui::BeginTable("table_MouseGridCoords", 2)) {
+		if (ImGui::BeginTable("table_MouseGridCoords", 2)) {
 			ImGui::TableNextRow();
 			TableSetColumnIndex(0);
 			Text(std::string("X: " + std::to_string((int)gridCoords.x)).c_str());
@@ -364,14 +340,15 @@ void MainWindow::RenderImGui() {
 	bool toolWindowOpen = true;
 	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
-		int selected = -1;
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
 		for (int i = 0; i < toolCount; ++i) {
 			SameLine();
 			ImGui::PushID(i);
 			if (ImageButton((void*)0, buttonSize)) {
+				auto toolType = static_cast<GridTools::GridToolType>(i);
 				std::cout << "Selected: " << i << std::endl;
+				gridToolBar->SelectTool(toolType);
 			}
 			PopID();
 		}
@@ -407,7 +384,7 @@ void MainWindow::OnResized(int width, int height) {
 void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
 	binding = nullptr;
-	delete tileData;
+	delete tileMap;
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
 	SDLWindow = nullptr;

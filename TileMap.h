@@ -19,12 +19,12 @@ namespace Tiles {
 	};
 
 	class TileMap : public Rendering::Renderable {
-		std::unordered_map<glm::ivec2, Tile> data;
+		std::unordered_map<glm::ivec2, const Tile*> data;
 	public:
 		Rendering::Shader* shader;
 
-		void SetTile(Tile tile, glm::ivec2 grid_position) {
-			data[grid_position] = std::move(tile);
+		void SetTile(const Tile* tile, glm::ivec2 grid_position) {
+			data[grid_position] = tile;
 		}
 
 		void RemoveTile(glm::ivec2 grid_position) {
@@ -38,7 +38,7 @@ namespace Tiles {
 				auto offset = glm::vec3(floor(pair.first.x) + 0.5f, floor(pair.first.y) + 0.5f, 0.01);
 				glm::mat4 modelM = translate(glm::mat4(1.0f), offset);
 				shader->setMat4("model", modelM);
-				auto tex = Resources::Textures[pair.second.Texture];
+				auto tex = Resources::Textures[pair.second->Texture];
 				if (tex.ID == 0) {
 					std::cout << "TEXTURE invalid: " << glm::to_string(pair.first) << std::endl;
 					continue;

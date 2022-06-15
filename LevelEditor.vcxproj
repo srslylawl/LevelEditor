@@ -169,6 +169,8 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GridTool.cpp" />
+    <ClCompile Include="GridToolBar.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="libs\glad\src\glad.c" />
     <ClCompile Include="libs\imgui\backends\imgui_impl_opengl3.cpp" />
@@ -188,6 +190,9 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
     <ClInclude Include="Bounds.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Files.h" />
+    <ClInclude Include="GridTool.h" />
+    <ClInclude Include="GridToolBar.h" />
+    <ClInclude Include="GridToolType.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="libs\glad\include\glad\glad.h" />
     <ClInclude Include="libs\glad\include\KHR\khrplatform.h" />
