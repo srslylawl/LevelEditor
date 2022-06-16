@@ -1,5 +1,4 @@
 #pragma once
-
 #include <combaseapi.h>
 #include <functional>
 #include <map>

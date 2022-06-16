@@ -5,7 +5,12 @@
 namespace GridTools {
 	void PlacerTool::OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) {
 		if (event->GetMouseKeyHold(MouseButton::Left) && !isStale) {
-			toolBar->tileMap->SetTile(toolBar->GetSelectedTile(), position);
+			auto t = toolBar->GetSelectedTile();
+			if(t == nullptr) {
+				std::cout << "Selected Tile is NULL!" << std::endl;
+				return;
+			}
+			toolBar->tileMap->SetTile(t, position);
 			isStale = true;
 		}
 	}

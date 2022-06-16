@@ -1,9 +1,7 @@
 #pragma once
 #include <filesystem>
-
 #include "stb_image.h"
 #include <iostream>
-
 namespace Files {
 	using namespace std;
 	inline bool VerifyDirectory(const char* directory, bool createIfNotExists = true) {
@@ -27,9 +25,11 @@ namespace Files {
 
 		const bool success = OUT_data != nullptr;
 
-		if(!success) std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
+		if (!success) std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
 
 		return success;
 	}
+
+	bool OpenFileDialog(std::string& filePath, const char* filter);
 
 }

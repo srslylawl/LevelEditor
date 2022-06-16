@@ -5,8 +5,8 @@
 namespace GridTools {
 	GridToolBar::GridToolBar(TileMap* tile_map) : tileMap(tile_map){
 		tools = {
-			{GridToolType::Place, new PlacerTool()},
-			{GridToolType::Erase, new EraserTool()}
+			{GridToolType::Place, new PlacerTool(this)},
+			{GridToolType::Erase, new EraserTool(this)}
 		};
 	}
 
@@ -30,7 +30,7 @@ namespace GridTools {
 		activeTool = type;
 		isStale = false;
 	}
-	void GridToolBar::OnInteract(const InputMouseEvent* event) {
+	void GridToolBar::OnMouseEvent(const InputMouseEvent* event) {
 		const auto gridPos = GetMouseGridPos();
 		if(gridPos != lastMouseGridPos) isStale = false;
 
@@ -43,6 +43,7 @@ namespace GridTools {
 		const auto mouseCoords = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 		return { floor(mouseCoords.x), floor(mouseCoords.y) };
 	}
+
 	const Tile* GridToolBar::GetSelectedTile() const {
 		return selectedTile;
 	}

@@ -70,7 +70,8 @@ namespace Rendering {
 				result = stringStream.str();
 			}
 			catch (std::ifstream::failure e) {
-				std::cout << "ERROR: SHADER '" << name << " 'FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+				std::cout << "ERROR: SHADER '" << name << " 'FILE_NOT_SUCCESSFULLY_READ " << e.what() << std::endl;
+				std::cout << "PATH: " << path << std::endl;
 			}
 			return result;
 		}
@@ -86,7 +87,7 @@ namespace Rendering {
 		}
 		Shader(const char* name) {
 			this->name = name;
-			auto shaderPath = std::filesystem::current_path().append("Shaders/").append(name);
+			auto shaderPath = std::filesystem::current_path().append("Shaders\\").append(name);
 			auto vertPath = shaderPath.string().append(".vert");
 			auto fragPath = shaderPath.string().append(".frag");
 			CompileShader(GetShaderCodeFromPath(vertPath.c_str()).c_str(), GetShaderCodeFromPath(fragPath.c_str()).c_str());

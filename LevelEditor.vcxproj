@@ -169,6 +169,7 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Files.cpp" />
     <ClCompile Include="GridTool.cpp" />
     <ClCompile Include="GridToolBar.cpp" />
     <ClCompile Include="Input.cpp" />

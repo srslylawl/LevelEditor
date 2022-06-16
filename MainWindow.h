@@ -1,8 +1,6 @@
 #pragma once
-
 #include "Camera.h"
 #include "GridToolBar.h"
-#include "Mesh.h"
 #include "TileMap.h"
 
 namespace Rendering {
@@ -13,27 +11,20 @@ class MainWindow {
 	static int width;
 	static int height;
 	const char* m_title = "New Window";
-
 	bool showDebugWindow = false;
-
 	short renderMode = 0;
 
-	std::vector<Mesh::StaticMesh> meshes;
-
 	InputMouseBinding* binding = nullptr;
+
+	GridTools::GridToolBar* gridToolBar = nullptr;
 
 	void RenderImGui();
 	bool InitSDL();
 	bool InitDearImGui();
 
-	GridTools::GridToolBar* gridToolBar = nullptr;
-
-	ivec2 previousMouseGridPos = {INT_MAX, INT_MAX};
-
-
 public:
 	SDL_Window* GetSDLWindow() const { return SDLWindow; }
-	MainWindow(int width, int height, const char* title);
+	MainWindow(int new_width, int new_height, const char* title);
 	void OnMouseInput(const InputMouseEvent* event);
 	bool Initialize();
 	void Render();

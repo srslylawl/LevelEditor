@@ -20,9 +20,9 @@
 
 using namespace Rendering;
 
-MainWindow::MainWindow(int width, int height, const char* title) : m_title(title) {
-	this->width = width;
-	this->height = height;
+MainWindow::MainWindow(const int new_width, const int new_height, const char* title) : m_title(title) {
+	width = new_width;
+	height = new_height;
 }
 
 int MainWindow::width = 0;
@@ -49,6 +49,8 @@ void TextCentered(const char* text) {
 	ImGui::PopTextWrapPos();
 }
 
+
+
 int WindowResizeEvent(void* data, SDL_Event* event) {
 	if (event->type != SDL_WINDOWEVENT
 		|| event->window.event != SDL_WINDOWEVENT_RESIZED) return -1;
@@ -65,7 +67,7 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 }
 
 void MainWindow::OnMouseInput(const InputMouseEvent* event) {
-
+	gridToolBar->OnMouseEvent(event);
 }
 
 bool MainWindow::Initialize() {
@@ -147,6 +149,12 @@ void MainWindow::RenderImGui() {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New")) {
 				//Do something
+				std::string path;
+				constexpr char filter[] = "Image Files (JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM)\0*.jpeg;*.png;*.tga;*.bmp;*.psd;*.gif;*.hdr;*.pic;*.pnm\0\0";
+				if(Files::OpenFileDialog(path, filter)) {
+					// success!
+					std::cout << path << std::endl;
+				}
 			}
 			ImGui::EndMenu();
 		}

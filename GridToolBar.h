@@ -1,6 +1,5 @@
 #pragma once
 #include <unordered_map>
-
 #include "Camera.h"
 #include "GridToolType.h"
 #include "TileMap.h"
@@ -14,7 +13,7 @@ namespace GridTools {
 
 		GridToolType activeTool = GridToolType::Place;
 		bool isStale = false; //did either the tile, tool or grid position change since last placement?
-		Tile* selectedTile;
+		Tile* selectedTile = nullptr;
 		glm::ivec2 lastMouseGridPos = { INT_MAX, INT_MAX };
 
 	public:
@@ -24,7 +23,7 @@ namespace GridTools {
 		~GridToolBar();
 
 		void SelectTool(GridToolType type);
-		void OnInteract(const InputMouseEvent* event);
+		void OnMouseEvent(const InputMouseEvent* event);
 		glm::ivec2 GetMouseGridPos() const;
 		const Tile* GetSelectedTile() const;
 
