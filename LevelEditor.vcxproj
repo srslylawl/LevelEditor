@@ -186,6 +186,7 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Resources.cpp" />
+    <ClCompile Include="Tile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bounds.h" />
@@ -215,9 +216,11 @@ xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Resources.h" />
+    <ClInclude Include="Serialization.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Tile.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="VisualGrid.h" />

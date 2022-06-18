@@ -6,15 +6,17 @@ namespace Rendering {
 	public:
 		Texture() = default;
 
-		Texture(unsigned id, const std::string& path, int width, int height, int channel_count)
+		Texture(unsigned id, std::string name, std::string path, int width, int height, int channel_count)
 			: ID(id),
-			path(path),
+			path(std::move(path)),
+			name(std::move(name)),
 			width(width),
 			height(height),
 			channelCount(channel_count) {}
 
 		unsigned int ID = -1;
 		std::string path;
+		std::string name;
 		int width;
 		int height;
 		int channelCount;

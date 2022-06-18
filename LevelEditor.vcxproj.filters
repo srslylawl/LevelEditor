@@ -25,6 +25,9 @@
     <Filter Include="Source Files\GridTools">
       <UniqueIdentifier>{bbdb572d-2f5c-427f-b348-4e7ecf4b6a65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Tiles">
+      <UniqueIdentifier>{f431941b-e114-4e0e-a808-c1b0e799a077}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -77,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="Files.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tile.cpp">
+      <Filter>Source Files\Tiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,9 +170,6 @@
     <ClInclude Include="MeshRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TileMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Renderable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -178,6 +181,15 @@
     </ClInclude>
     <ClInclude Include="GridToolBar.h">
       <Filter>Source Files\GridTools</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.h">
+      <Filter>Source Files\Tiles</Filter>
+    </ClInclude>
+    <ClInclude Include="TileMap.h">
+      <Filter>Source Files\Tiles</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

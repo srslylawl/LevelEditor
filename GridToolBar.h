@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "Camera.h"
 #include "GridToolType.h"
+#include "Tile.h"
 #include "TileMap.h"
 
 namespace GridTools {

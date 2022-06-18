@@ -2,12 +2,15 @@
 
 #include <iostream>
 #include "glad.h"
+#include <filesystem>
 #define STB_IMAGE_IMPLEMENTATION //required by stb lib
 #include "stb_image.h" //DONT REMOVE THIS
 
 void Resources::LoadTexture(std::string path, bool refresh) {
 	const bool exists = Textures.count(path);
 	if (exists && !refresh) return; // Texture already loaded and we don't want to refresh it
+
+	std::filesystem::path p = path;
 
 	unsigned int textureID;
 
@@ -31,7 +34,7 @@ void Resources::LoadTexture(std::string path, bool refresh) {
 	}
 
 	if(!exists) {
-		const auto newTexture = Rendering::Texture(textureID, path, width, height, channelCount);;
+		const auto newTexture = Rendering::Texture(textureID, p.filename().string(), path, width, height, channelCount);;
 		Textures[path] = newTexture;
 	}
 

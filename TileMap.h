@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <ostream>
 #include <string>
 #include <glm/vec2.hpp>
 #include <utility>
@@ -13,10 +14,7 @@
 #include "Shader.h"
 
 namespace Tiles {
-	class Tile {
-	public:
-		std::string Texture; //TODO: change this from string to something else
-	};
+
 
 	class TileMap : public Rendering::Renderable {
 		std::unordered_map<glm::ivec2, const Tile*> data;

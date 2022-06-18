@@ -1,9 +1,12 @@
 #include "Files.h"
 #include <combaseapi.h>
 #include <SDL_messagebox.h>
+#include <fstream>
 
 
 namespace Files {
+
+
 	bool OpenFileDialog(std::string& filePath, const char* filter) {
 		char filename[1024];
 

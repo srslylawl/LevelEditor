@@ -84,6 +84,17 @@ bool MainWindow::Initialize() {
 	SDL_AddEventWatch(WindowResizeEvent, this);
 	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
 
+
+	// Load Sprites from Sprites Folder to Memory
+	if (Files::VerifyDirectory("Sprites")) {
+		for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
+			std::string item = entry.path().string();
+			if(!Files::IsSupportedImage(item.c_str())) continue;
+
+			Resources::LoadTexture(item);
+		}
+	}
+
 	return true;
 }
 
@@ -151,7 +162,7 @@ void MainWindow::RenderImGui() {
 				//Do something
 				std::string path;
 				constexpr char filter[] = "Image Files (JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM)\0*.jpeg;*.png;*.tga;*.bmp;*.psd;*.gif;*.hdr;*.pic;*.pnm\0\0";
-				if(Files::OpenFileDialog(path, filter)) {
+				if (Files::OpenFileDialog(path, filter)) {
 					// success!
 					std::cout << path << std::endl;
 				}
@@ -161,6 +172,41 @@ void MainWindow::RenderImGui() {
 
 		if (MenuItem("Recompile Shader")) {
 			Renderer::CompileShader();
+		}
+
+		static bool showTileCreationWindow = false;
+		if (BeginMenu("Tiles")) {
+			if (Files::VerifyDirectory("Tiles")) {
+				if (ImGui::MenuItem("New Tile")) {
+					showTileCreationWindow = true;
+				}
+
+				for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
+					std::string item = entry.path().string();
+					if (ImGui::MenuItem(item.c_str())) {
+					}
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (showTileCreationWindow) {
+			Tiles::Tile* t = nullptr;
+			if(Tiles::Tile::ImGuiCreateTile(showTileCreationWindow, t)) {
+				showTileCreationWindow = false;
+				//tile created!
+				//save file to disk
+				//TODO: secure load/save function
+				std::string path = "Tiles/" + t->Name;
+				Files::SaveToFile(path.c_str(), t);
+				std::cout << "Saved." << std::endl;
+				auto loaded = Files::LoadFromFile<Tiles::Tile>(path.c_str());
+
+				std::cout << "Loaded." << std::endl;
+				std::cout << loaded->Name << std::endl;
+				std::cout << loaded->Texture << std::endl;
+			}
 		}
 
 		if (ImGui::BeginMenu("Debug")) {
