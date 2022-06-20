@@ -1,6 +1,7 @@
 #include "Resources.h"
 #include "Texture.h"
 #include "Tile.h"
+#include "Files.h"
 
 
 void Resources::LoadTexture(const std::string& path, const bool refresh) {
@@ -18,12 +19,17 @@ void Resources::LoadTexture(const std::string& path, const bool refresh) {
 }
 
 void Resources::LoadTile(std::string path, bool refresh) {
-	const bool exists = Tiles.count(path);
-	if (exists) {
-		if (!refresh) return;
-
-		/*	delete Tiles[path];*/
+	using namespace Tiles;
+	const auto tileIterator = Tiles.find(path);
+	if (const bool exists = Tiles.count(path)) {
+		if (refresh) {} //TODO: implement refresh
+		return;
 	}
+
+	if(Tile* t = Files::LoadFromFile<Tile>(path.c_str()); t != nullptr) {
+		Tiles[path] = t;
+	}
+	
 }
 
 template<typename PointerCollection>

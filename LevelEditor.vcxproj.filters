@@ -91,6 +91,9 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="ImGuiExtensions.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -191,6 +194,9 @@
     </ClInclude>
     <ClInclude Include="Time.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiExtensions.h">
+      <Filter>Source Files\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

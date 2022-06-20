@@ -8,6 +8,8 @@
 
 #include "MathExt.h"
 #include "Time.h"
+#include "imgui.h"
+#include "ImGuiExtensions.h"
 
 namespace Rendering {
 	using namespace glm;
@@ -390,6 +392,120 @@ namespace Rendering {
 			auto deltaZ = z_pos - position.z;
 
 			return results[0] + (dir * deltaZ);
+		}
+
+		void DearImGuiWindow() {
+			using namespace ImGui;
+			constexpr ImGuiWindowFlags camFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
+			bool open = true;
+			if (ImGui::Begin("Camera", &open, camFlags)) {
+				TextCentered("Camera");
+				bool twoDEnabled = GetDimensionMode() == DimensionMode::TwoDimensional;
+
+				// 2D Checkbox
+				if (ImGui::Checkbox("2D", &twoDEnabled)) {
+					SetDimensionMode(static_cast<DimensionMode>(twoDEnabled));
+				}
+
+				// Transform Position
+				const char* columns[] = { "X:", "Y:", "Z:" };
+				const int columnCount = twoDEnabled ? 2 : 3;
+				constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
+				ImGui::Text("Transform Position");
+				if (ImGui::BeginTable("table_Camera_Main_Transform", columnCount, tableFlags)) {
+					ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
+					ImGui::TableSetupColumn("X", columnFlags);
+					ImGui::TableSetupColumn("Y", columnFlags);
+					if (!twoDEnabled) {
+						ImGui::TableSetupColumn("Z", columnFlags);
+					}
+					ImGui::TableNextRow();
+					glm::vec3 pos = GetPosition();
+					for (int column = 0; column < columnCount; column++) {
+						ImGui::TableSetColumnIndex(column);
+						ImGui::AlignTextToFramePadding();
+						Text(columns[column]);
+						SameLine();
+						// allow empty label by pushing ID and inputting "##" as label name
+						PushID(column);
+						PushItemWidth(-FLT_MIN);
+						if (DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
+							SetPosition(pos);
+						}
+						PopItemWidth();
+						ImGui::PopID();
+					}
+					ImGui::EndTable();
+				}
+
+				if (!twoDEnabled) {
+					// Rotation
+					ImGui::Text("Transform Rotation");
+					if (ImGui::BeginTable("table_Camera_Main_Rotation", 3, tableFlags)) {
+						ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
+						ImGui::TableSetupColumn("X", columnFlags);
+						ImGui::TableSetupColumn("Y", columnFlags);
+						ImGui::TableSetupColumn("Z", columnFlags);
+						ImGui::TableNextRow();
+						glm::vec3 rotation = GetRotation();
+						for (int column = 0; column < 3; column++) {
+							ImGui::TableSetColumnIndex(column);
+							ImGui::AlignTextToFramePadding();
+							Text(columns[column]);
+							SameLine();
+							// allow empty label by pushing ID and inputting "##" as label name
+							PushID(column);
+							PushItemWidth(-FLT_MIN);
+							if (DragFloat("##", &rotation[column], 0.05f, 0, 0, "%.6f")) {
+								SetRotation(rotation);
+							}
+							PopItemWidth();
+							ImGui::PopID();
+						}
+						ImGui::EndTable();
+					}
+					// Movespeed Slider
+					ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
+
+					// Rotation Speed Slider
+					ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
+
+					// FOV Slider
+					float camFOV = GetFOV();
+					if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
+						SetFOV(camFOV);
+					}
+
+					// Zoom
+					float zoom = GetZoom();
+					constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
+					constexpr float minZoom = 1 / 100.0f;
+					if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
+						SetZoom(zoom);
+					}
+
+					// ViewMode (perspective)
+					const char* items[] = { "Perspective", "Orthographic" };
+					int current = static_cast<int>(GetViewMode());
+					constexpr int itemCount = static_cast<int>(std::size(items));
+					if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
+						SetViewMode(static_cast<ViewMode>(current));
+					}
+				}
+				else {
+					// 2D mode active
+					float orthoSize = GetOrthoSize();
+					if (ImGui::SliderFloat("Size", &orthoSize, 1, 100, "%.5f")) {
+						SetOrthoSize(orthoSize);
+					}
+				}
+
+				const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+
+				const auto size = GetWindowSize();
+				ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
+			}
+			ImGui::End();
 		}
 
 	};

@@ -28,26 +28,7 @@ MainWindow::MainWindow(const int new_width, const int new_height, const char* ti
 int MainWindow::width = 0;
 int MainWindow::height = 0;
 
-void TextCentered(const char* text) {
-	float win_width = ImGui::GetWindowSize().x;
-	float text_width = ImGui::CalcTextSize(text).x;
 
-	// calculate the indentation that centers the text on one line, relative
-	// to window left, regardless of the `ImGuiStyleVar_WindowPadding` value
-	float text_indentation = (win_width - text_width) * 0.5f;
-
-	// if text is too long to be drawn on one line, `text_indentation` can
-	// become too small or even negative, so we check a minimum indentation
-	float min_indentation = 20.0f;
-	if (text_indentation <= min_indentation) {
-		text_indentation = min_indentation;
-	}
-
-	ImGui::SameLine(text_indentation);
-	ImGui::PushTextWrapPos(win_width - text_indentation);
-	ImGui::TextWrapped(text);
-	ImGui::PopTextWrapPos();
-}
 
 
 
@@ -93,6 +74,14 @@ bool MainWindow::Initialize() {
 			if (!Files::IsSupportedImageFormat(item.c_str())) continue;
 
 			Resources::LoadTexture(item);
+		}
+	}
+
+	// Load Tiles from Tiles Folder to Memory
+	if (Files::VerifyDirectory("Tiles")) {
+		for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
+			std::string item = entry.path().string();
+			Resources::LoadTile(item);
 		}
 	}
 
@@ -216,6 +205,8 @@ void MainWindow::RenderImGui() {
 				if (Files::VerifyDirectory("Sprites")) {
 					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
 						std::string item = entry.path().string();
+						if(!Files::IsSupportedImageFormat(item.c_str())) continue;
+
 						if (ImGui::MenuItem(item.c_str())) {
 							std::cout << "Item clicked: " << item << std::endl;
 							Resources::LoadTexture(item, true);
@@ -249,116 +240,8 @@ void MainWindow::RenderImGui() {
 		ImGui::EndMainMenuBar();
 	}
 
-	// Camera Window -> TODO: should be transferred to the camera class
-	constexpr ImGuiWindowFlags camFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
-	bool open = true;
-	if (ImGui::Begin("Camera", &open, camFlags)) {
-		TextCentered("Camera");
-		bool twoDEnabled = Camera::Main->GetDimensionMode() == DimensionMode::TwoDimensional;
-
-		// 2D Checkbox
-		if (ImGui::Checkbox("2D", &twoDEnabled)) {
-			Camera::Main->SetDimensionMode(static_cast<DimensionMode>(twoDEnabled));
-		}
-
-		// Transform Position
-		const char* columns[] = { "X:", "Y:", "Z:" };
-		const int columnCount = twoDEnabled ? 2 : 3;
-		constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-		ImGui::Text("Transform Position");
-		if (ImGui::BeginTable("table_Camera_Main_Transform", columnCount, tableFlags)) {
-			ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
-			ImGui::TableSetupColumn("X", columnFlags);
-			ImGui::TableSetupColumn("Y", columnFlags);
-			if (!twoDEnabled) {
-				ImGui::TableSetupColumn("Z", columnFlags);
-			}
-			ImGui::TableNextRow();
-			glm::vec3 pos = Camera::Main->GetPosition();
-			for (int column = 0; column < columnCount; column++) {
-				ImGui::TableSetColumnIndex(column);
-				ImGui::AlignTextToFramePadding();
-				Text(columns[column]);
-				SameLine();
-				// allow empty label by pushing ID and inputting "##" as label name
-				PushID(column);
-				PushItemWidth(-FLT_MIN);
-				if (DragFloat("##", &pos[column], 0.05f, 0, 0, "%.6f")) {
-					Camera::Main->SetPosition(pos);
-				}
-				PopItemWidth();
-				ImGui::PopID();
-			}
-			ImGui::EndTable();
-		}
-
-		if (!twoDEnabled) {
-			// Rotation
-			ImGui::Text("Transform Rotation");
-			if (ImGui::BeginTable("table_Camera_Main_Rotation", 3, tableFlags)) {
-				ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
-				ImGui::TableSetupColumn("X", columnFlags);
-				ImGui::TableSetupColumn("Y", columnFlags);
-				ImGui::TableSetupColumn("Z", columnFlags);
-				ImGui::TableNextRow();
-				glm::vec3 rotation = Camera::Main->GetRotation();
-				for (int column = 0; column < 3; column++) {
-					ImGui::TableSetColumnIndex(column);
-					ImGui::AlignTextToFramePadding();
-					Text(columns[column]);
-					SameLine();
-					// allow empty label by pushing ID and inputting "##" as label name
-					PushID(column);
-					PushItemWidth(-FLT_MIN);
-					if (DragFloat("##", &rotation[column], 0.05f, 0, 0, "%.6f")) {
-						Camera::Main->SetRotation(rotation);
-					}
-					PopItemWidth();
-					ImGui::PopID();
-				}
-				ImGui::EndTable();
-			}
-			// Movespeed Slider
-			ImGui::SliderFloat("Speed", &Camera::MoveSpeed, 0, 200);
-
-			// Rotation Speed Slider
-			ImGui::SliderFloat("RotationSpeed", &Camera::TurnSpeed, 0, 200);
-
-			// FOV Slider
-			float camFOV = Camera::Main->GetFOV();
-			if (ImGui::SliderFloat("FOV", &camFOV, 0, 180, "%.0f")) {
-				Camera::Main->SetFOV(camFOV);
-			}
-
-			// Zoom
-			float zoom = Camera::Main->GetZoom();
-			constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
-			constexpr float minZoom = 1 / 100.0f;
-			if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
-				Camera::Main->SetZoom(zoom);
-			}
-
-			// ViewMode (perspective)
-			const char* items[] = { "Perspective", "Orthographic" };
-			int current = static_cast<int>(Camera::Main->GetViewMode());
-			constexpr int itemCount = static_cast<int>(std::size(items));
-			if (ImGui::Combo("ViewMode", &current, items, itemCount)) {
-				Camera::Main->SetViewMode(static_cast<ViewMode>(current));
-			}
-		}
-		else {
-			// 2D mode active
-			float orthoSize = Camera::Main->GetOrthoSize();
-			if (ImGui::SliderFloat("Size", &orthoSize, 1, 100, "%.5f")) {
-				Camera::Main->SetOrthoSize(orthoSize);
-			}
-		}
-
-
-		const auto size = GetWindowSize();
-		ImGui::SetWindowPos(ImVec2(main_viewport->Size.x - size.x, main_viewport->Size.y - size.y));
-	}
-	ImGui::End();
+	// Main Cam Controls
+	Camera::Main->DearImGuiWindow();
 
 	bool mouseOpen = true;
 	auto mousePos = Input::GetMousePosition();
@@ -409,13 +292,19 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-	constexpr ImGuiWindowFlags explorerFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
+	constexpr ImGuiWindowFlags tilesFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	bool fexOpen = true;
-	if (Begin("File Explorer", &fexOpen, explorerFlags)) {
+	if (Begin("Tiles", &fexOpen, tilesFlags)) {
 		//loaded images
-		for (auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
-			const auto tex = it->second;
-			Image((void*)tex->GetTextureID(), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
+		for (auto it = Resources::Tiles.begin(); it != Resources::Tiles.end(); ++it) {
+			const auto tex = it->second->Texture;
+			const auto id = Resources::Textures[tex]->GetTextureID();
+			bool isSelected = gridToolBar->GetSelectedTile() == it->second;
+			int framePadding = isSelected ? 4 : 0;
+			if(ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
+				gridToolBar->SetSelectedTile(it->second);
+			}
+			SameLine();
 		}
 	}
 	End();
