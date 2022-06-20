@@ -1,22 +1,30 @@
 #pragma once
 #include <map>
+#include <string>
+#include <vector>
 
-#include "Files.h"
-#include "Mesh.h"
-#include "Texture.h"
 
+namespace Tiles {
+	class Tile;
+}
+namespace Rendering {
+	class Texture;
+}
+
+namespace Mesh {
+	class StaticMesh;
+}
 
 class Resources {
 public:
-	inline static std::map<std::string, Rendering::Texture> Textures;
-	static void LoadTexture(std::string path, bool refresh = false);
+	inline static std::map<std::string, Rendering::Texture*> Textures;
+	inline static std::map<std::string, Tiles::Tile*> Tiles;
+	inline static std::vector<Mesh::StaticMesh*> Meshes;
 
-	inline static std::vector<Mesh::StaticMesh> Meshes;
+	static void LoadTexture(const std::string& path, const bool refresh = false);
 
-	static void FreeAll() {
-		for ( auto& mesh : Meshes) {
-			mesh.UnloadFromGPU();
-		}
-	}
+	static void LoadTile(std::string path, bool refresh = false);
+
+	static void FreeAll();
 };
 

@@ -1,7 +1,6 @@
 #pragma once
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 
+#include <glm/vec3.hpp>
 
 struct Ray {
 	Ray(const glm::vec3& origin, const glm::vec3& direction)

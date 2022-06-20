@@ -4,8 +4,6 @@
 #include <utility>
 #include <vector>
 #include <xhash>
-
-#include "glad.h"
 #include "glm/glm.hpp"
 
 struct Vertex {
@@ -87,92 +85,37 @@ namespace Mesh {
 		unsigned int vertexArrayObject = -1;
 		unsigned int elementBufferObject = -1;
 
+		inline static StaticMesh* defaultQuad = nullptr;
+		inline static StaticMesh* defaultQuadDouble = nullptr;
+		inline static StaticMesh* defaultCube = nullptr;
+
+		static StaticMesh* CreateDefaultQuad();
+
+		static StaticMesh* CreateDefaultQuadDoubleSided();
+
+		static StaticMesh* CreateDefaultCube();
+
+		void UnloadFromGPU();
 	public:
-		StaticMesh(const float* vertPos, const float* texCoords, int vertCount) {
-			std::vector<Vertex> temp_verts;
-			PackVertexData(vertPos, texCoords, vertCount, temp_verts);
-			GenIndices(temp_verts, indices, vertices);
+		StaticMesh(const float* vertPos, const float* texCoords, int vertCount);
 
-			BindMeshDataToGPU();
-		}
-		StaticMesh(std::vector<Vertex> new_vertices) {
-			GenIndices(new_vertices, indices, vertices);
-			BindMeshDataToGPU();
-		}
-		StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned int> new_indices) :
-			vertices(new_vertices),
-			indices(new_indices) {
+		StaticMesh(std::vector<Vertex> new_vertices);
 
-			BindMeshDataToGPU();
-		}
+		StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned int> new_indices);
 
-		void BindMeshDataToGPU() {
-			// Create VAO to store all object data in
-			glGenVertexArrays(1, &vertexArrayObject);
-			glBindVertexArray(vertexArrayObject);
+		~StaticMesh();
 
-			//Create Buffers to store vertex data in
-			GLuint VBO;
-			glGenBuffers(1, &VBO);
-			glGenBuffers(1, &elementBufferObject);
+		void BindMeshDataToGPU();
 
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+		void Draw() const;
 
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+		static StaticMesh* GetDefaultQuad();
 
-			// Vertex Pos Data is VertexAttribute 0
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
-			glEnableVertexAttribArray(0);
+		static StaticMesh* GetDefaultQuadDoubleSided();
 
-			// TexCoord Data is VertexAttribute 1
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, TexCoords)));
-			glEnableVertexAttribArray(1);
+		static StaticMesh* GetDefaultCube();
 
-			glBindVertexArray(0);
-		}
 
-		void Draw() const {
-			glBindVertexArray(vertexArrayObject);
-			glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-		}
-
-		static StaticMesh DefaultQuad() {
-			std::vector temp_vertices = {
-				Vertex(-0.5f, 0.5f, 0, 0.0f, 1.0f), //top left
-				Vertex(0.5f, 0.5f, 0, 1.0f, 1.0f), //top right
-				Vertex(-0.5f, -0.5f, 0, 0.0f, 0.0f), //bot left
-				Vertex(0.5f, -0.5f, 0, 1.0f, 0.0f) //bot right
-			};
-
-			std::vector<unsigned int> temp_indices = { 0, 3, 1, 0, 2, 3 };
-
-			auto quad = StaticMesh(temp_vertices, temp_indices);
-
-			return quad;
-		}
-
-		static StaticMesh DefaultQuadDoubleSided() {
-			std::vector temp_vertices = {
-			Vertex(-0.5f, 0.5f, 0, 0.0f, 1.0f), //top left
-			Vertex(0.5f, 0.5f, 0, 1.0f, 1.0f), //top right
-			Vertex(-0.5f, -0.5f, 0, 0.0f, 0.0f), //bot left
-			Vertex(0.5f, -0.5f, 0, 1.0f, 0.0f) //bot right
-			};
-
-			std::vector<unsigned int> temp_indices = {
-				0, 3, 1, 0, 2, 3, //front
-				0, 1, 3, 0, 3, 2 // back
-				};
-
-			return StaticMesh(temp_vertices, temp_indices);
-		}
-
-		void UnloadFromGPU() {
-			glDeleteVertexArrays(1, &vertexArrayObject);
-		}
 	};
 
 

@@ -2,19 +2,14 @@
 
 #include "Input.h"
 
-#include <glm/glm.hpp>
-#include <glm/fwd.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "MathExt.h"
-#include "glm/gtx/string_cast.hpp"
-
 #include "Time.h"
 
-
-
 namespace Rendering {
-
 	using namespace glm;
 
 	enum class ViewMode {
@@ -37,8 +32,8 @@ namespace Rendering {
 		mat4 projectionMatrix = {};
 		mat4 viewMat = {};
 
-		ViewMode viewMode = ViewMode::Perspective;
-		DimensionMode dimensionMode = DimensionMode::ThreeDimensional;
+		ViewMode viewMode;
+		DimensionMode dimensionMode;
 
 		int width;
 		int height;
@@ -210,6 +205,7 @@ namespace Rendering {
 			if (setMain) {
 				Main = this;
 			}
+			SetDimensionMode(DimensionMode::TwoDimensional);
 		};
 
 		void Move(vec3 moveDirection) {

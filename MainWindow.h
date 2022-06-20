@@ -1,12 +1,21 @@
 #pragma once
-#include "Camera.h"
-#include "GridToolBar.h"
-#include "TileMap.h"
+#include <SDL_video.h>
+
+class InputMouseEvent;
+struct InputMouseBinding;
+
+namespace Tiles {
+	class TileMap;
+}
+
+namespace GridTools {
+	class GridToolBar;
+}
 
 namespace Rendering {
 	
 class MainWindow {
-	SDL_Window* SDLWindow = nullptr;
+	inline static SDL_Window* SDLWindow = nullptr;
 
 	static int width;
 	static int height;
@@ -23,15 +32,15 @@ class MainWindow {
 	bool InitDearImGui();
 
 public:
-	SDL_Window* GetSDLWindow() const { return SDLWindow; }
+	static SDL_Window* GetSDLWindow() { return SDLWindow; }
 	MainWindow(int new_width, int new_height, const char* title);
 	void OnMouseInput(const InputMouseEvent* event);
 	bool Initialize();
 	void Render();
 
 	Tiles::TileMap* tileMap = nullptr;
-	
-	void OnResized(int width, int height);
+
+	static void OnResized(int width, int height);
 	void Close();
 
 	static void GetSize(int& out_width, int& out_height) {

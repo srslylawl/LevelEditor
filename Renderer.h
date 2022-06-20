@@ -1,12 +1,14 @@
 #pragma once
 #include <SDL_video.h>
-
-#include "MainWindow.h"
-#include "Shader.h"
+#include <vector>
 
 namespace Rendering {
+	class Shader;
+	class MainWindow;
+	class Renderable;
+	class Camera;
+
 	class Renderer {
-		inline static MainWindow* mainWindow;
 		inline static Camera* camera = nullptr;
 
 		static bool InitOpenGL(SDL_Window* window);
@@ -17,15 +19,11 @@ namespace Rendering {
 
 		inline static SDL_GLContext gl_context = nullptr;
 		inline static std::vector<Renderable*> RenderObjects;
-		static bool Init(MainWindow* mainWindow);
+		static bool Init();
 		static void Render();
 		static void CompileShader();
 
-		static void Exit() {
-			delete defaultShader;
-			delete gridShader;
-			delete camera;
-		}
+		static void Exit();
 	};
 }
 

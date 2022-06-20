@@ -5,20 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Source Files\DearImGui">
-      <UniqueIdentifier>{38aebeb9-481f-4608-a74f-99c3c1fd7487}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\OpenGL">
-      <UniqueIdentifier>{80abd802-d27b-4c34-a841-39197054fab2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Shader">
       <UniqueIdentifier>{ed2091e7-d352-48eb-8644-6792213a6078}</UniqueIdentifier>
     </Filter>
@@ -27,6 +13,18 @@
     </Filter>
     <Filter Include="Source Files\Tiles">
       <UniqueIdentifier>{f431941b-e114-4e0e-a808-c1b0e799a077}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Third-Party">
+      <UniqueIdentifier>{35e2b21c-cdac-4371-a81a-89c40a47a9a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Third-Party\OpenGL">
+      <UniqueIdentifier>{80abd802-d27b-4c34-a841-39197054fab2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Third-Party\DearImGui">
+      <UniqueIdentifier>{38aebeb9-481f-4608-a74f-99c3c1fd7487}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{b1426754-6975-494b-bd75-4cc9b4ddeaca}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,36 +35,33 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\imgui_demo.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\imgui_draw.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\backends\imgui_impl_opengl3.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\backends\imgui_impl_sdl.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\backends\imgui_impl_sdlrenderer.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\imgui_tables.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\imgui.cpp">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
     <ClCompile Include="libs\glad\src\glad.c">
-      <Filter>Source Files\OpenGL</Filter>
+      <Filter>Source Files\Third-Party\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="Resources.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
@@ -84,94 +79,55 @@
     <ClCompile Include="Tile.cpp">
       <Filter>Source Files\Tiles</Filter>
     </ClCompile>
+    <ClCompile Include="TileMap.cpp">
+      <Filter>Source Files\Tiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Files.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MainWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Time.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="libs\imgui\imconfig.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imgui.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\backends\imgui_impl_opengl3.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\backends\imgui_impl_opengl3_loader.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\backends\imgui_impl_sdl.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\backends\imgui_impl_sdlrenderer.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imgui_internal.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imstb_truetype.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imstb_textedit.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\imstb_rectpack.h">
-      <Filter>Source Files\DearImGui</Filter>
+      <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClInclude>
     <ClInclude Include="libs\glad\include\glad\glad.h">
-      <Filter>Source Files\OpenGL</Filter>
+      <Filter>Source Files\Third-Party\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="libs\glad\include\KHR\khrplatform.h">
-      <Filter>Source Files\OpenGL</Filter>
-    </ClInclude>
-    <ClInclude Include="stb_image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libs\glm\glm.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VisualGrid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Bounds.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MathExt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderable.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\Third-Party\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="GridToolType.h">
       <Filter>Source Files\GridTools</Filter>
@@ -182,14 +138,59 @@
     <ClInclude Include="GridToolBar.h">
       <Filter>Source Files\GridTools</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Tile.h">
       <Filter>Source Files\Tiles</Filter>
     </ClInclude>
     <ClInclude Include="TileMap.h">
       <Filter>Source Files\Tiles</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\glm\glm.hpp">
+      <Filter>Source Files\Third-Party</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Source Files\Third-Party</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderable.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshRenderer.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Files.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MathExt.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

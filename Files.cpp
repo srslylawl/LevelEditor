@@ -1,11 +1,16 @@
 #include "Files.h"
 #include <combaseapi.h>
 #include <SDL_messagebox.h>
-#include <fstream>
+
+#include "Texture.h"
 
 
 namespace Files {
 
+
+	bool IsSupportedImageFormat(const char* path) {
+		return Rendering::Texture::CanCreateFromPath(path);
+	}
 
 	bool OpenFileDialog(std::string& filePath, const char* filter) {
 		char filename[1024];

@@ -1,14 +1,17 @@
 #include "Renderer.h"
 
-#include <filesystem>
 #include <iostream>
 #include <SDL.h>
 
+#include "Camera.h"
 #include "glad.h"
+#include "MainWindow.h"
+#include "Mesh.h"
 #include "Resources.h"
 #include "Shader.h"
 #include "Time.h"
 #include "Renderable.h"
+#include "Texture.h"
 
 using namespace Rendering;
 
@@ -51,62 +54,11 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 
 	glEnable(GL_CULL_FACE);
 
-	std::vector cubeVerts = {
-		// back face (CCW winding)
-		Vertex(0.5f, -0.5f,  0.5f,  0.0f, 0.0f), // bottom-left
-		Vertex(-0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
-		Vertex(-0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		Vertex( 0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
-		Vertex( 0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
-		// front face (CCW winding)
-		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
-		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
-		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 1.0f), // top-left
-		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
-		// left face (CCW)
-		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
-		Vertex(-0.5f, -0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
-		Vertex(-0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f,  0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
-		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
-		// right face (CCW)
-		 Vertex(0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
-		 Vertex(0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
-		 Vertex(0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		 Vertex(0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		 Vertex(0.5f,  0.5f,  -0.5f,  0.0f, 1.0f), // top-left
-		 Vertex(0.5f, -0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
-		// bottom face (CCW)      
-		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
-		Vertex( 0.5f, -0.5f, 0.5f,  1.0f, 0.0f), // bottom-right
-		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex( 0.5f, -0.5f,  -0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f, -0.5f,  -0.5f,  0.0f, 1.0f), // top-left
-		Vertex(-0.5f, -0.5f, 0.5f,  0.0f, 0.0f), // bottom-left
-		// top face (CCW)
-		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 0.0f), // bottom-left
-		Vertex( 0.5f,  0.5f,  -0.5f,  1.0f, 0.0f), // bottom-right
-		Vertex( 0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		Vertex( 0.5f,  0.5f, 0.5f,  1.0f, 1.0f), // top-right
-		Vertex(-0.5f,  0.5f, 0.5f,  0.0f, 1.0f), // top-left
-		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 0.0f) // bottom-left
-	};
-	Resources::Meshes.emplace_back(cubeVerts);
-	auto quad = Mesh::StaticMesh::DefaultQuad();
-	Resources::Meshes.push_back(quad);
-	//auto quadDS = Mesh::StaticMesh::DefaultQuadDoubleSided();
-	//Resources::Meshes.push_back(quadDS);
-
 	//init shaders
 	CompileShader();
-	
 
 	int width, height;
-	mainWindow->GetSize(width, height);
+	MainWindow::GetSize(width, height);
 	camera = new Camera(width, height, true);
 
 	return true;
@@ -120,9 +72,14 @@ void Renderer::CompileShader() {
 	gridShader = new Shader("2DGrid");
 }
 
-bool Renderer::Init(MainWindow* window) {
-	mainWindow = window;
-	return InitOpenGL(window->GetSDLWindow());
+void Renderer::Exit() {
+	delete defaultShader;
+	delete gridShader;
+	delete camera;
+}
+
+bool Renderer::Init() {
+	return InitOpenGL(MainWindow::GetSDLWindow());
 }
 
 void Renderer::Render() {
@@ -143,7 +100,7 @@ void Renderer::Render() {
 	glActiveTexture(GL_TEXTURE0);
 
 	if (Resources::Textures.begin() != Resources::Textures.end()) {
-		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second.ID);
+		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second->GetTextureID());
 	}
 
 	const vec3 cubePositions[] = {
@@ -171,7 +128,7 @@ void Renderer::Render() {
 
 		defaultShader->setMat4("model", modelM);
 
-		Resources::Meshes[0].Draw();
+		Mesh::StaticMesh::GetDefaultCube()->Draw();
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -187,7 +144,7 @@ void Renderer::Render() {
 	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
 	gridShader->setVec("mousePos", mouseGridPos);
 	gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
-	Resources::Meshes[1].Draw();
+	Mesh::StaticMesh::GetDefaultQuad()->Draw();
 
 	//unbind vertex array
 	glBindVertexArray(0);

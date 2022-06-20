@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "Resources.h"
 #include "Serialization.h"
+#include "Texture.h"
 
 namespace Tiles {
 	Tile* Tile::Deserialize(std::istream& iStream) {
@@ -44,13 +45,13 @@ namespace Tiles {
 			if (BeginPopup(popupWindow)) {
 				for (auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
 					const auto& tex = it->second;
-					if(ImageButton((void*)tex.ID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
-						
-						texID = tex.ID;
+					const auto textureID = tex->GetTextureID();
+					if(ImageButton((void*)textureID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
+						texID = textureID;
 						strcpy_s(texPathBuff, it->first.c_str());
 						CloseCurrentPopup();
 					}
-					Text(it->second.name.c_str());
+					Text(it->second->GetFileName().c_str());
 				}
 				EndPopup();
 			}

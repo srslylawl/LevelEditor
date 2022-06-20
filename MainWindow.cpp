@@ -1,5 +1,6 @@
+#include "MainWindow.h"
+
 #include <SDL.h>
-#include <cstdio>
 #include <string>
 #include <iostream>
 #include <glad/glad.h>
@@ -8,15 +9,14 @@
 #include <imgui_impl_opengl3.h>
 #include <filesystem>
 
-#include "MainWindow.h"
 
 #include "Files.h"
 
-#include <glm/glm.hpp>
-
 #include "Camera.h"
+#include "GridToolBar.h"
 #include "Renderer.h"
 #include "Resources.h"
+#include "Texture.h"
 
 using namespace Rendering;
 
@@ -72,7 +72,7 @@ void MainWindow::OnMouseInput(const InputMouseEvent* event) {
 
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
-	if (!Renderer::Init(this)) return false;
+	if (!Renderer::Init()) return false;
 	if (!InitDearImGui()) return false;
 
 	tileMap = new Tiles::TileMap();
@@ -89,7 +89,8 @@ bool MainWindow::Initialize() {
 	if (Files::VerifyDirectory("Sprites")) {
 		for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
 			std::string item = entry.path().string();
-			if(!Files::IsSupportedImage(item.c_str())) continue;
+
+			if (!Files::IsSupportedImageFormat(item.c_str())) continue;
 
 			Resources::LoadTexture(item);
 		}
@@ -104,11 +105,9 @@ bool MainWindow::InitSDL() {
 		return false;
 	}
 
-	SDL_WindowFlags window_flags = (SDL_WindowFlags)(
-		SDL_WINDOW_OPENGL
+	auto window_flags = static_cast<SDL_WindowFlags>(SDL_WINDOW_OPENGL
 		| SDL_WINDOW_RESIZABLE
-		| SDL_WINDOW_ALLOW_HIGHDPI
-		);
+		| SDL_WINDOW_ALLOW_HIGHDPI);
 
 	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, window_flags);
 	if (SDLWindow == nullptr) {
@@ -193,7 +192,7 @@ void MainWindow::RenderImGui() {
 
 		if (showTileCreationWindow) {
 			Tiles::Tile* t = nullptr;
-			if(Tiles::Tile::ImGuiCreateTile(showTileCreationWindow, t)) {
+			if (Tiles::Tile::ImGuiCreateTile(showTileCreationWindow, t)) {
 				showTileCreationWindow = false;
 				//tile created!
 				//save file to disk
@@ -219,7 +218,7 @@ void MainWindow::RenderImGui() {
 						std::string item = entry.path().string();
 						if (ImGui::MenuItem(item.c_str())) {
 							std::cout << "Item clicked: " << item << std::endl;
-							Resources::LoadTexture(item);
+							Resources::LoadTexture(item, true);
 						}
 					}
 				}
@@ -275,7 +274,7 @@ void MainWindow::RenderImGui() {
 				ImGui::TableSetupColumn("Z", columnFlags);
 			}
 			ImGui::TableNextRow();
-			vec3 pos = Camera::Main->GetPosition();
+			glm::vec3 pos = Camera::Main->GetPosition();
 			for (int column = 0; column < columnCount; column++) {
 				ImGui::TableSetColumnIndex(column);
 				ImGui::AlignTextToFramePadding();
@@ -302,7 +301,7 @@ void MainWindow::RenderImGui() {
 				ImGui::TableSetupColumn("Y", columnFlags);
 				ImGui::TableSetupColumn("Z", columnFlags);
 				ImGui::TableNextRow();
-				vec3 rotation = Camera::Main->GetRotation();
+				glm::vec3 rotation = Camera::Main->GetRotation();
 				for (int column = 0; column < 3; column++) {
 					ImGui::TableSetColumnIndex(column);
 					ImGui::AlignTextToFramePadding();
@@ -415,8 +414,8 @@ void MainWindow::RenderImGui() {
 	if (Begin("File Explorer", &fexOpen, explorerFlags)) {
 		//loaded images
 		for (auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
-			const auto& tex = it->second;
-			Image((void*)tex.ID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
+			const auto tex = it->second;
+			Image((void*)tex->GetTextureID(), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
 		}
 	}
 	End();
@@ -427,13 +426,12 @@ void MainWindow::RenderImGui() {
 
 
 void MainWindow::OnResized(int width, int height) {
-	this->height = height;
-	this->width = width;
+	MainWindow::height = height;
+	MainWindow::width = width;
 	glViewport(0, 0, width, height);
 	if (Camera::Main != nullptr) {
 		Camera::Main->SetSize(width, height);
 	}
-	//std::cout << "On Resized h: " << height << " w: " << width << endl;
 }
 void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
