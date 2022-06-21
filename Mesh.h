@@ -16,8 +16,6 @@ struct Vertex {
 		return lhs.Position == rhs.Position
 			&& lhs.TexCoords == rhs.TexCoords;
 	}
-
-
 };
 
 namespace std {
@@ -58,7 +56,7 @@ namespace Mesh {
 		return true;
 	}
 
-	inline void GenIndices(std::vector<Vertex>& in_vertices, std::vector<unsigned int>& out_indices, std::vector<Vertex>& out_vertices) {
+	inline void GenIndices(const std::vector<Vertex>& in_vertices, std::vector<unsigned int>& out_indices, std::vector<Vertex>& out_vertices) {
 		std::unordered_map<Vertex, unsigned int> VertexToOutIndex;
 
 		// For each input vertex
@@ -80,6 +78,12 @@ namespace Mesh {
 	}
 
 	class StaticMesh {
+	public:
+		StaticMesh(const StaticMesh& other) = delete;
+		StaticMesh(StaticMesh&& other) noexcept = delete;
+		StaticMesh& operator=(const StaticMesh& other) = delete;
+		StaticMesh& operator=(StaticMesh&& other) noexcept = delete;
+	private:
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 		unsigned int vertexArrayObject = -1;
@@ -99,7 +103,7 @@ namespace Mesh {
 	public:
 		StaticMesh(const float* vertPos, const float* texCoords, int vertCount);
 
-		StaticMesh(std::vector<Vertex> new_vertices);
+		StaticMesh(const std::vector<Vertex>& new_vertices);
 
 		StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned int> new_indices);
 
@@ -114,8 +118,6 @@ namespace Mesh {
 		static StaticMesh* GetDefaultQuadDoubleSided();
 
 		static StaticMesh* GetDefaultCube();
-
-
 	};
 
 

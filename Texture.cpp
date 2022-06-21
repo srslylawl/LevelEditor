@@ -20,7 +20,6 @@ inline bool ImageProperties::SetColorProfile() {
 		std::cout << "Color Profile " << channelCount << " not recognized" << std::endl;
 		return false;
 	}
-
 	return true;
 }
 

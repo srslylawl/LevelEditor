@@ -1,8 +1,13 @@
 #include "GridToolBar.h"
-#include "GridTool.h"
 
+#include <iostream>
+
+#include "Camera.h"
+#include "GridTool.h"
+#include "Input.h"
 
 namespace GridTools {
+
 	GridToolBar::GridToolBar(TileMap* tile_map) : tileMap(tile_map){
 		tools = {
 			{GridToolType::Place, new PlacerTool(this)},
@@ -11,7 +16,7 @@ namespace GridTools {
 	}
 
 	GridToolBar::~GridToolBar() {
-		for (auto kvp : tools)
+		for (auto& kvp : tools)
 			delete kvp.second;
 	}
 
@@ -30,6 +35,7 @@ namespace GridTools {
 		activeTool = type;
 		isStale = false;
 	}
+
 	void GridToolBar::OnMouseEvent(const InputMouseEvent* event) {
 		const auto gridPos = GetMouseGridPos();
 		if(gridPos != lastMouseGridPos) isStale = false;
@@ -42,6 +48,10 @@ namespace GridTools {
 		const auto mousePos = Input::GetMousePosition();
 		const auto mouseCoords = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 		return { floor(mouseCoords.x), floor(mouseCoords.y) };
+	}
+
+	GridToolType GridToolBar::GetActiveTool() const {
+		return activeTool;
 	}
 
 	const Tile* GridToolBar::GetSelectedTile() const {

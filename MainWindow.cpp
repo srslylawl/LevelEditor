@@ -17,6 +17,8 @@
 #include "Renderer.h"
 #include "Resources.h"
 #include "Texture.h"
+#include "TileMap.h"
+#include "Tile.h"
 
 using namespace Rendering;
 
@@ -191,7 +193,7 @@ void MainWindow::RenderImGui() {
 				std::cout << "Saved." << std::endl;
 				auto loaded = Files::LoadFromFile<Tiles::Tile>(path.c_str());
 
-				std::cout << "Loaded." << std::endl;
+				std::cout << "Loaded:" << std::endl;
 				std::cout << loaded->Name << std::endl;
 				std::cout << loaded->Texture << std::endl;
 			}
@@ -205,7 +207,7 @@ void MainWindow::RenderImGui() {
 				if (Files::VerifyDirectory("Sprites")) {
 					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
 						std::string item = entry.path().string();
-						if(!Files::IsSupportedImageFormat(item.c_str())) continue;
+						if (!Files::IsSupportedImageFormat(item.c_str())) continue;
 
 						if (ImGui::MenuItem(item.c_str())) {
 							std::cout << "Item clicked: " << item << std::endl;
@@ -280,8 +282,11 @@ void MainWindow::RenderImGui() {
 		auto buttonSize = ImVec2(32, 32);
 		for (int i = 0; i < toolCount; ++i) {
 			SameLine();
-			ImGui::PushID(i);
-			if (ImageButton((void*)0, buttonSize)) {
+			std::string buttonName = "ToolButton" + std::to_string(i);
+			ImGui::PushID(buttonName.c_str());
+			bool selected = i == static_cast<int>(gridToolBar->GetActiveTool());
+			int framePadding = selected ? 2 : 0;
+			if (ImageButton((void*)0, buttonSize, ImVec2(0,0), ImVec2(1, 1), framePadding)) {
 				auto toolType = static_cast<GridTools::GridToolType>(i);
 				std::cout << "Selected: " << i << std::endl;
 				gridToolBar->SelectTool(toolType);
@@ -296,15 +301,21 @@ void MainWindow::RenderImGui() {
 	bool fexOpen = true;
 	if (Begin("Tiles", &fexOpen, tilesFlags)) {
 		//loaded images
-		for (auto it = Resources::Tiles.begin(); it != Resources::Tiles.end(); ++it) {
-			const auto tex = it->second->Texture;
-			const auto id = Resources::Textures[tex]->GetTextureID();
-			bool isSelected = gridToolBar->GetSelectedTile() == it->second;
-			int framePadding = isSelected ? 4 : 0;
-			if(ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
-				gridToolBar->SetSelectedTile(it->second);
+		for (auto tileIterator = Resources::Tiles.begin(); tileIterator != Resources::Tiles.end(); ++tileIterator) {
+			auto& tex = tileIterator->second->Texture;
+			if (Texture* t; Resources::TryGetTexture(tex, t)) {
+				const auto id = t->GetTextureID();
+				bool isSelected = gridToolBar->GetSelectedTile() == tileIterator->second;
+				int framePadding = isSelected ? 4 : 0;
+				// Push and pop id required as ImageButton gets identified by texture ID which might be same as other tiles
+				PushID(tileIterator->first.c_str()); 
+				if (ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
+					gridToolBar->SetSelectedTile(tileIterator->second);
+				}
+				PopID();
+				SameLine();
 			}
-			SameLine();
+
 		}
 	}
 	End();

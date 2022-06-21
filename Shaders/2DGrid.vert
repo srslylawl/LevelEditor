@@ -15,3 +15,4 @@ void main() {
     vertexPos = (model*vec4(in_vertexPos, 1.0)).xyz;
     texCoord = in_texCoord;
 }
+

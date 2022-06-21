@@ -5,7 +5,6 @@
 
 using namespace std::chrono;
 
-
 class Time {
 
 	inline static bool init;
@@ -38,9 +37,13 @@ public:
 		const auto epoch = high_resolution_clock::now().time_since_epoch();
 
 		auto deltaNano = epoch - lastTick;
+		//auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(deltaNano);
+		//deltaTimeMS = ms.count();
 		auto deltaNanoCount = deltaNano.count();
 		deltaTimeMS = deltaNanoCount / 1000000.0;
 		deltaTimeD = deltaTimeMS / 1000.0;
+		//auto c = ms.count();
+
 		//std::cout << "StartTime: " << startTime.count() << endl;
 		//std::cout << "DeltaNano: " << deltaNano.count() << endl;
 		//std::cout << "DeltaTimeMS: " << deltaTimeMS << endl;
@@ -49,7 +52,7 @@ public:
 		lastTick = epoch;
 	}
 
-	static double GetDeltaTimeD() { return deltaTimeD;  }
+	static double GetDeltaTime_Double() { return deltaTimeD;  }
 	static float GetDeltaTime() { return static_cast<float>(deltaTimeD); }
 	static double GetDeltaTimeMS() { return deltaTimeMS; }
 };

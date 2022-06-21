@@ -208,7 +208,7 @@ namespace Rendering {
 				Main = this;
 			}
 			SetDimensionMode(DimensionMode::TwoDimensional);
-		};
+		}
 
 		void Move(vec3 moveDirection) {
 			position += moveDirection * MoveSpeed * Time::GetDeltaTime();
@@ -281,7 +281,7 @@ namespace Rendering {
 		}
 
 		void SetZoom(const float new_zoom) {
-			zoom = glm::max(new_zoom, 1.0f);
+			zoom = max(new_zoom, 1.0f);
 			UpdateProjectionMatrix();
 		}
 
@@ -290,7 +290,7 @@ namespace Rendering {
 		}
 
 		void SetOrthoSize(const float new_size) {
-			orthoSize = glm::max(new_size, 0.0001f);
+			orthoSize = max(new_size, 0.0001f);
 			UpdateProjectionMatrix();
 		}
 

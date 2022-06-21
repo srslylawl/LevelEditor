@@ -2,6 +2,7 @@
 #include "Texture.h"
 #include "Tile.h"
 #include "Files.h"
+#include "Mesh.h"
 
 
 void Resources::LoadTexture(const std::string& path, const bool refresh) {
@@ -18,7 +19,7 @@ void Resources::LoadTexture(const std::string& path, const bool refresh) {
 	Textures[path] = t;
 }
 
-void Resources::LoadTile(std::string path, bool refresh) {
+void Resources::LoadTile(const std::string& path, bool refresh) {
 	using namespace Tiles;
 	const auto tileIterator = Tiles.find(path);
 	if (const bool exists = Tiles.count(path)) {
@@ -32,25 +33,33 @@ void Resources::LoadTile(std::string path, bool refresh) {
 	
 }
 
+bool Resources::TryGetTexture(const std::string& path, Rendering::Texture*& out_texture) {
+	out_texture = Textures[path];
+	if(out_texture != nullptr) {
+		
+	}
+	return out_texture != nullptr;
+}
+
 template<typename PointerCollection>
 void FreeCollection(PointerCollection pCollection) {
-	for (auto p : pCollection)
+	for (auto& p : pCollection)
 		delete p;
 }
 
 template<typename PointerMap>
 void FreeMap(PointerMap pMap) {
-	for (auto pair : pMap)
+	for (auto& pair : pMap)
 		delete pair.second;
 }
 
 
 void Resources::FreeAll() {
 	FreeCollection(Meshes);
-	for (auto pair : Textures)
+	for (auto& pair : Textures)
 		delete pair.second;
 
-	for (auto pair : Tiles)
+	for (auto& pair : Tiles)
 		delete pair.second;
 
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "Input.h"
 
+class InputMouseEvent;
 namespace GridTools {
 
 	class GridTool {
@@ -16,8 +16,7 @@ namespace GridTools {
 
 	class PlacerTool : public GridTool {
 	public:
-		explicit PlacerTool(GridToolBar* toolBar)
-			: GridTool(toolBar) {}
+		explicit PlacerTool(GridToolBar* gridToolBar) : GridTool(gridToolBar) {}
 
 		void OnSelect() override { }
 		void OnDeselect() override { }
@@ -26,8 +25,7 @@ namespace GridTools {
 
 	class EraserTool : public GridTool {
 	public:
-		explicit EraserTool(GridToolBar* toolBar)
-			: GridTool(toolBar) {}
+		explicit EraserTool(GridToolBar* gridToolBar) : GridTool(gridToolBar) {}
 
 		void OnSelect() override {}
 		void OnDeselect() override {}

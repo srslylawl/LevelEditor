@@ -1,9 +1,16 @@
 #pragma once
+#include <memory>
 #include <unordered_map>
-#include "Camera.h"
+#include <glm/vec2.hpp>
+
 #include "GridToolType.h"
-#include "Tile.h"
-#include "TileMap.h"
+
+namespace Tiles {
+	class Tile;
+	class TileMap;
+}
+
+class InputMouseEvent;
 
 namespace GridTools {
 	class GridTool;
@@ -13,8 +20,11 @@ namespace GridTools {
 		std::unordered_map<GridToolType, GridTool*> tools;
 
 		GridToolType activeTool = GridToolType::Place;
+
 		bool isStale = false; //did either the tile, tool or grid position change since last placement?
+
 		Tile* selectedTile = nullptr;
+
 		glm::ivec2 lastMouseGridPos = { INT_MAX, INT_MAX };
 
 	public:
@@ -25,11 +35,15 @@ namespace GridTools {
 
 		void SelectTool(GridToolType type);
 		void OnMouseEvent(const InputMouseEvent* event);
+
+		GridToolType GetActiveTool() const;
+
 		glm::ivec2 GetMouseGridPos() const;
+
 		const Tile* GetSelectedTile() const;
 
 		void SetSelectedTile(Tile* tile);
 	};
 
-	
+
 }

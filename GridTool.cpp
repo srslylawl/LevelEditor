@@ -1,5 +1,10 @@
 #include "GridToolBar.h"
+#include "Input.h"
+
 #include "GridTool.h"
+
+#include "TileMap.h"
+#include <iostream>
 
 
 namespace GridTools {

@@ -15,10 +15,10 @@ Mesh::StaticMesh* Mesh::StaticMesh::CreateDefaultQuad() {
 
 	const std::vector<unsigned int> temp_indices = { 0, 3, 1, 0, 2, 3 };
 
-	return new StaticMesh(temp_vertices, temp_indices);;
+	return new StaticMesh(temp_vertices, temp_indices);
 }
 Mesh::StaticMesh* Mesh::StaticMesh::CreateDefaultQuadDoubleSided() {
-	std::vector temp_vertices = {
+	const std::vector temp_vertices = {
 		Vertex(-0.5f, 0.5f, 0, 0.0f, 1.0f), //top left
 		Vertex(0.5f, 0.5f, 0, 1.0f, 1.0f), //top right
 		Vertex(-0.5f, -0.5f, 0, 0.0f, 0.0f), //bot left
@@ -78,7 +78,7 @@ Mesh::StaticMesh* Mesh::StaticMesh::CreateDefaultCube() {
 		Vertex(-0.5f,  0.5f,  -0.5f,  0.0f, 0.0f) // bottom-left
 	};
 
-	return new StaticMesh{cubeVerts};
+	return new StaticMesh{ cubeVerts };
 }
 void Mesh::StaticMesh::UnloadFromGPU() {
 	glDeleteVertexArrays(1, &vertexArrayObject);
@@ -90,13 +90,13 @@ Mesh::StaticMesh::StaticMesh(const float* vertPos, const float* texCoords, int v
 
 	BindMeshDataToGPU();
 }
-Mesh::StaticMesh::StaticMesh(std::vector<Vertex> new_vertices) {
+Mesh::StaticMesh::StaticMesh(const std::vector<Vertex>& new_vertices) {
 	GenIndices(new_vertices, indices, vertices);
 	BindMeshDataToGPU();
 }
-Mesh::StaticMesh::StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned> new_indices):
-	vertices(new_vertices),
-	indices(new_indices) {
+Mesh::StaticMesh::StaticMesh(std::vector<Vertex> new_vertices, std::vector<unsigned>new_indices) :
+	vertices(std::move(new_vertices)),
+	indices(std::move(new_indices)) {
 
 	BindMeshDataToGPU();
 }
@@ -122,7 +122,7 @@ void Mesh::StaticMesh::BindMeshDataToGPU() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
 	// Vertex Pos Data is VertexAttribute 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Position)));
 	glEnableVertexAttribArray(0);
 
 	// TexCoord Data is VertexAttribute 1

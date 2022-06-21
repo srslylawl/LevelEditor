@@ -15,9 +15,14 @@ namespace Rendering {
 		ImageProperties() = default;
 	};
 
-
-
 	class Texture {
+	public:
+		Texture(const Texture& other) = delete;
+		Texture(Texture&& other) noexcept = delete;
+		Texture& operator=(const Texture& other) = delete;
+		Texture& operator=(Texture&& other) noexcept = delete;
+
+	private:
 		Texture(unsigned id, std::string name, std::string path, ImageProperties imageProperties);
 
 		unsigned int textureId = 0;
