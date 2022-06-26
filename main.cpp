@@ -12,7 +12,7 @@ using namespace Rendering;
 
 void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow);
 
-int main(int arg, char* args[]) {
+int main(int arg, char** args) {
 	//init time module
 	Time::Init();
 	{
