@@ -68,24 +68,21 @@ bool MainWindow::Initialize() {
 	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
 
 
-	// Load Sprites from Sprites Folder to Memory
-	if (Files::VerifyDirectory("Sprites")) {
-		for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
-			std::string item = entry.path().string();
+	// Load Sprites and Tool Icons to Memory
+	constexpr char spriteDir[] = "Sprites";
+	constexpr char toolIconDir[] = "Resources/Icons";
 
-			if (!Files::IsSupportedImageFormat(item.c_str())) continue;
+	if (Files::VerifyDirectory(spriteDir))
+		Files::ForEachInDirectory(spriteDir, [](const char* path) {Resources::LoadTexture(path); });
 
-			Resources::LoadTexture(item);
-		}
-	}
+	if (Files::VerifyDirectory(toolIconDir))
+		Files::ForEachInDirectory(toolIconDir, [](const char* path) {Resources::LoadInternalTexture(path); });
 
 	// Load Tiles from Tiles Folder to Memory
-	if (Files::VerifyDirectory("Tiles")) {
-		for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
-			std::string item = entry.path().string();
-			Resources::LoadTile(item);
-		}
-	}
+	constexpr char tileDir[] = "Tiles";
+	if (Files::VerifyDirectory(tileDir))
+		Files::ForEachInDirectory(tileDir, [](const char* path) {Resources::LoadTile(path); });
+
 
 	return true;
 }
@@ -191,11 +188,14 @@ void MainWindow::RenderImGui() {
 				std::string path = "Tiles/" + t->Name;
 				Files::SaveToFile(path.c_str(), t);
 				std::cout << "Saved." << std::endl;
-				auto loaded = Files::LoadFromFile<Tiles::Tile>(path.c_str());
 
-				std::cout << "Loaded:" << std::endl;
-				std::cout << loaded->Name << std::endl;
-				std::cout << loaded->Texture << std::endl;
+				Resources::LoadTile(path.c_str());
+
+				Tiles::Tile* loaded = nullptr;
+				if (!Files::LoadFromFile(path.c_str(), loaded)) {
+					std::cout << "Unabled to load created Tile:" << std::endl;
+				}
+
 			}
 		}
 
@@ -211,7 +211,7 @@ void MainWindow::RenderImGui() {
 
 						if (ImGui::MenuItem(item.c_str())) {
 							std::cout << "Item clicked: " << item << std::endl;
-							Resources::LoadTexture(item, true);
+							Resources::LoadTexture(item.c_str(), true);
 						}
 					}
 				}
@@ -280,45 +280,62 @@ void MainWindow::RenderImGui() {
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
+		const char* iconStrings[] = { "Resources/Icons/tool_place.png", "Resources/Icons/tool_erase.png", "Resources/Icons/tool_select.png" };
 		for (int i = 0; i < toolCount; ++i) {
 			SameLine();
 			std::string buttonName = "ToolButton" + std::to_string(i);
 			ImGui::PushID(buttonName.c_str());
-			bool selected = i == static_cast<int>(gridToolBar->GetActiveTool());
-			int framePadding = selected ? 2 : 0;
-			if (ImageButton((void*)0, buttonSize, ImVec2(0,0), ImVec2(1, 1), framePadding)) {
+			bool isSelected = i == static_cast<int>(gridToolBar->GetActiveTool());
+
+			if(isSelected) {
+				PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
+			}
+			int framePadding = 2;
+			int textureID = 0;
+			if (Rendering::Texture* tex = nullptr; Resources::TryGetInternalTexture(iconStrings[i], tex))
+				textureID = tex->GetTextureID();
+
+			if (ImageButton((void*)textureID, buttonSize, ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
 				auto toolType = static_cast<GridTools::GridToolType>(i);
 				std::cout << "Selected: " << i << std::endl;
 				gridToolBar->SelectTool(toolType);
 			}
 			PopID();
+
+			if(isSelected) PopStyleColor();
 		}
 
 	}
 	End();
 
+	// Tile Window
 	constexpr ImGuiWindowFlags tilesFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	bool fexOpen = true;
 	if (Begin("Tiles", &fexOpen, tilesFlags)) {
 		//loaded images
 		for (auto tileIterator = Resources::Tiles.begin(); tileIterator != Resources::Tiles.end(); ++tileIterator) {
 			auto& tex = tileIterator->second->Texture;
-			if (Texture* t; Resources::TryGetTexture(tex, t)) {
+			if (Texture* t; Resources::TryGetTexture(tex.c_str(), t)) {
 				const auto id = t->GetTextureID();
 				bool isSelected = gridToolBar->GetSelectedTile() == tileIterator->second;
-				int framePadding = isSelected ? 4 : 0;
+				int framePadding = 2;
+
 				// Push and pop id required as ImageButton gets identified by texture ID which might be same as other tiles
-				PushID(tileIterator->first.c_str()); 
+				PushID(tileIterator->first.c_str());
+
+				if(isSelected) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
 				if (ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
 					gridToolBar->SetSelectedTile(tileIterator->second);
 				}
 				PopID();
+				if(isSelected) PopStyleColor();
 				SameLine();
 			}
 
 		}
 	}
 	End();
+
 	// Required to render ImGuI
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

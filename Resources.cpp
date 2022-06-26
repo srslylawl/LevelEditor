@@ -1,44 +1,62 @@
 #include "Resources.h"
+
+#include <iostream>
+
 #include "Texture.h"
 #include "Tile.h"
 #include "Files.h"
 #include "Mesh.h"
 
 
-void Resources::LoadTexture(const std::string& path, const bool refresh) {
-	using namespace Rendering;
-	const auto texIterator = Textures.find(path);
-	if (const bool exists = texIterator != Textures.end()) {
+inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map) {
+	const auto texIterator = map.find(relative_path);
+	if (const bool exists = texIterator != map.end()) {
 		if (refresh) texIterator->second->Refresh();
 		return;
 	}
 
-	Texture* t = nullptr;
-	if(!Texture::Create(path, t)) return;
+	Rendering::Texture* t = nullptr;
+	if (!Rendering::Texture::Create(relative_path, t)) return;
 
-	Textures[path] = t;
+	map[relative_path] = t;
+}
+void Resources::LoadTexture(const char* relative_path, const bool refresh) {
+	LoadTex(relative_path, refresh, Textures);
 }
 
-void Resources::LoadTile(const std::string& path, bool refresh) {
+void Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
+	LoadTex(relative_path, refresh, InternalTextures);
+}
+
+void Resources::LoadTile(const char* relative_path, bool refresh) {
 	using namespace Tiles;
-	const auto tileIterator = Tiles.find(path);
-	if (const bool exists = Tiles.count(path)) {
+	const auto tileIterator = Tiles.find(relative_path);
+	if (tileIterator != Tiles.end()) {
 		if (refresh) {} //TODO: implement refresh
 		return;
 	}
 
-	if(Tile* t = Files::LoadFromFile<Tile>(path.c_str()); t != nullptr) {
-		Tiles[path] = t;
+	Tile* t = nullptr;
+	if (!Files::LoadFromFile(relative_path, t)) {
+		std::cout << "unable to load Tile: " << relative_path << std::endl;
+		return;
 	}
-	
+
+	Tiles[relative_path] = t;
 }
 
-bool Resources::TryGetTexture(const std::string& path, Rendering::Texture*& out_texture) {
-	out_texture = Textures[path];
-	if(out_texture != nullptr) {
-		
-	}
+inline bool TryGetTex(const char* relative_path, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
+	out_texture = nullptr;
+	if (const auto it = map.find(relative_path); it != map.end()) out_texture = it->second;
 	return out_texture != nullptr;
+}
+
+bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture) {
+	return TryGetTex(relative_path, out_texture, Textures);
+}
+
+bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture) {
+	return TryGetTex(relative_path, out_texture, InternalTextures);
 }
 
 template<typename PointerCollection>

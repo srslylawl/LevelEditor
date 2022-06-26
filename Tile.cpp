@@ -11,6 +11,7 @@
 namespace Tiles {
 	Tile* Tile::Deserialize(std::istream& iStream) {
 		auto t = new Tile();
+
 		t->Name = Serialization::Deserialize(iStream);
 		t->Texture = Serialization::Deserialize(iStream);
 
@@ -43,10 +44,11 @@ namespace Tiles {
 			}
 
 			if (BeginPopup(popupWindow)) {
-				for (auto it = Resources::Textures.begin(); it != Resources::Textures.end(); ++it) {
+				const auto t = Resources::GetTextures();
+				for (auto it = Resources::GetTextures().begin(); it != Resources::GetTextures().end(); ++it) {
 					const auto& tex = it->second;
 					const auto textureID = tex->GetTextureID();
-					if(ImageButton((void*)textureID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
+					if (ImageButton((void*)textureID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
 						texID = textureID;
 						strcpy_s(texPathBuff, it->first.c_str());
 						CloseCurrentPopup();
@@ -56,7 +58,11 @@ namespace Tiles {
 				EndPopup();
 			}
 
+			bool canCreate = true;
+			if (nameBuff[0] == '\0') canCreate = false;
+			if (texPathBuff[0] == '\0') canCreate = false;
 
+			if(!canCreate) BeginDisabled();
 			if (ImGui::Button("Create Tile")) {
 				out_tile = new Tile();
 				out_tile->Name = nameBuff;
@@ -71,6 +77,7 @@ namespace Tiles {
 
 				created = true;
 			}
+			if(!canCreate) EndDisabled();
 		}
 		End();
 

@@ -16,14 +16,26 @@ namespace Mesh {
 }
 
 class Resources {
-public:
 	inline static std::map<std::string, Rendering::Texture*> Textures;
+	inline static std::map<std::string, Rendering::Texture*> InternalTextures;
+public:
 	inline static std::map<std::string, Tiles::Tile*> Tiles;
 	inline static std::vector<Mesh::StaticMesh*> Meshes;
 
-	static void LoadTexture(const std::string& path, bool refresh = false);
-	static void LoadTile(const std::string& path, bool refresh = false);
-	static bool TryGetTexture(const std::string& path, Rendering::Texture*& out_texture);
+	static const std::map<std::string, Rendering::Texture*>& GetTextures() {
+		const std::map<std::string, Rendering::Texture*>& t = Textures;
+		return t;
+	}
+
+	static const std::map<std::string, Rendering::Texture*>& GetInternalTextures() {
+		return InternalTextures;
+	}
+
+	static void LoadTexture(const char* relative_path, const bool refresh = false);
+	static void LoadInternalTexture(const char* relative_path, bool refresh = false);
+	static void LoadTile(const char* relative_path, bool refresh = false);
+	static bool TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture);
+	static bool TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture);
 
 	static void FreeAll();
 };

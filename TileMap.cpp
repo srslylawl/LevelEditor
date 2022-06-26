@@ -14,14 +14,13 @@ void Tiles::TileMap::Render() const {
 		glm::mat4 modelM = translate(glm::mat4(1.0f), offset);
 		shader->setMat4("model", modelM);
 
-		auto tex = Resources::Textures[pair.second->Texture];
-		auto textureId =tex->GetTextureID();
-		if (textureId == 0) {
+		Rendering::Texture* tex = nullptr;
+		if(!Resources::TryGetTexture(pair.second->Texture.c_str(), tex)) {
 			std::cout << "TEXTURE invalid: " << glm::to_string(pair.first) << std::endl;
 			continue;
 		}
 
-		glBindTexture(GL_TEXTURE_2D, textureId);
+		glBindTexture(GL_TEXTURE_2D, tex->GetTextureID());
 		Mesh::StaticMesh::GetDefaultQuad()->Draw();
 	}
 }

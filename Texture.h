@@ -30,7 +30,7 @@ namespace Rendering {
 		std::string path;
 		std::string name;
 
-		static bool Load(const std::string& path, ImageProperties& out_imageProperties, unsigned char*& out_rawData);
+		static bool Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData);
 
 		static void BindToGPU(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char& imageData);
 	public:

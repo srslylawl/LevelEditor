@@ -99,7 +99,9 @@ void Renderer::Render() {
 
 	glActiveTexture(GL_TEXTURE0);
 
-	if (Resources::Textures.begin() != Resources::Textures.end()) {
+	/* Render Cubes
+	
+	if (Resources::GetTextures().begin() != Resources::GetTextures().end()) {
 		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second->GetTextureID());
 	}
 
@@ -108,7 +110,6 @@ void Renderer::Render() {
 	vec3(2.0f,  2.0f, 2.0f),
 	vec3(-2.0f, -2.0f, -2.0f)
 	};
-
 
 	for (int i = 0; i < 3; i++) {
 		auto pos = cubePositions[i];
@@ -130,6 +131,8 @@ void Renderer::Render() {
 
 		Mesh::StaticMesh::GetDefaultCube()->Draw();
 	}
+
+	*/
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 

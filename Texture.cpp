@@ -5,6 +5,7 @@
 #include <iostream>
 #include "glad.h"
 #include "stb_image.h"
+#include "Files.h"
 
 using namespace Rendering;
 
@@ -27,14 +28,17 @@ Texture::Texture(const unsigned id, std::string name, std::string path,
 	const ImageProperties imageProperties) : textureId(id),
 	imageProperties(imageProperties),
 	path(std::move(path)),
-	name(std::move(name)) {}
+	name(std::move(name)) {
+	std::cout << "Created Texture " << this->name << ": Path: " << this->path << std::endl;
+}
 
-bool Texture::Load(const std::string& path, ImageProperties& out_imageProperties, unsigned char*& out_rawData) {
+bool Texture::Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData) {
 	stbi_set_flip_vertically_on_load(true);
-	out_rawData = stbi_load(path.c_str(), &out_imageProperties.width, &out_imageProperties.height, &out_imageProperties.channelCount, 0);
+	const std::filesystem::path absolutePath = Files::GetAbsolutePath(relative_path);
+	out_rawData = stbi_load(absolutePath.string().c_str(), &out_imageProperties.width, &out_imageProperties.height, &out_imageProperties.channelCount, 0);
 	const bool success = out_rawData != nullptr;
 	if (!success) {
-		std::cout << "Unable to load image: " << path << " : " << stbi_failure_reason() << std::endl;
+		std::cout << "Unable to load image: " << relative_path << " : " << stbi_failure_reason() << std::endl;
 		return false;
 	}
 	if (!out_imageProperties.SetColorProfile()) return false;
@@ -71,7 +75,7 @@ bool Texture::Create(const std::string& path, Texture*& out_texture) {
 
 	const std::filesystem::path p = path;
 	const std::string fileName = p.filename().string();
-	std::cout << "Image " << fileName << " bound to textureID: " << textureId << std::endl;
+	std::cout << "Image " << fileName << " path: " << path.c_str() << " bound to textureID: " << textureId << std::endl;
 	out_texture = new Texture(textureId, p.filename().string(), path, imageProperties);
 
 	return true;
