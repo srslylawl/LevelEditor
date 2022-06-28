@@ -34,6 +34,10 @@ int MainWindow::height = 0;
 
 
 
+
+void MainWindow::OnMouseInput(const InputMouseEvent* event) {
+	gridToolBar->OnMouseEvent(event);
+}
 int WindowResizeEvent(void* data, SDL_Event* event) {
 	if (event->type != SDL_WINDOWEVENT
 		|| event->window.event != SDL_WINDOWEVENT_RESIZED) return -1;
@@ -49,10 +53,6 @@ int WindowResizeEvent(void* data, SDL_Event* event) {
 	return 0;
 }
 
-void MainWindow::OnMouseInput(const InputMouseEvent* event) {
-	gridToolBar->OnMouseEvent(event);
-}
-
 bool MainWindow::Initialize() {
 	if (!InitSDL()) return false;
 	if (!Renderer::Init()) return false;
@@ -64,7 +64,9 @@ bool MainWindow::Initialize() {
 
 	Renderer::RenderObjects.push_back(tileMap);
 	//update while resizing - does not work though, according to google its a backend limitation?
-	SDL_AddEventWatch(WindowResizeEvent, this);
+
+
+	//SDL_AddEventWatch(WindowResizeEvent, this);
 	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
 
 
@@ -276,13 +278,12 @@ void MainWindow::RenderImGui() {
 
 	// Grid Tool Window
 	bool toolWindowOpen = true;
-	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_AlwaysAutoResize;
+	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize;
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
 		const char* iconStrings[] = { "Resources/Icons/tool_place.png", "Resources/Icons/tool_erase.png", "Resources/Icons/tool_select.png" };
 		for (int i = 0; i < toolCount; ++i) {
-			SameLine();
 			std::string buttonName = "ToolButton" + std::to_string(i);
 			ImGui::PushID(buttonName.c_str());
 			bool isSelected = i == static_cast<int>(gridToolBar->GetActiveTool());
@@ -303,8 +304,12 @@ void MainWindow::RenderImGui() {
 			PopID();
 
 			if(isSelected) PopStyleColor();
+			SameLine();
 		}
 
+		const auto size = GetWindowSize();
+		float yPos = main_viewport->Size.y - main_viewport->WorkSize.y;
+		ImGui::SetWindowPos(ImVec2(0, yPos));
 	}
 	End();
 

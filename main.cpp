@@ -10,7 +10,7 @@
 
 using namespace Rendering;
 
-void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow);
+void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit);
 
 int main(int arg, char** args) {
 	//init time module
@@ -28,7 +28,7 @@ int main(int arg, char** args) {
 		bool quit = false;
 		while (!quit) {
 			Time::CalcDeltaTime();
-			HandleSDLEvents(sdlEvent, quit, mainWindow);
+			HandleSDLEvents(sdlEvent, quit);
 
 			if (!imgui_io.WantCaptureMouse) {
 				Input::DelegateMouseActions();
@@ -59,7 +59,7 @@ int main(int arg, char** args) {
 	return 0;
 }
 
-void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow) {
+void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit) {
 	while (SDL_PollEvent(&sdlEvent)) {
 		ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
 		switch (sdlEvent.type) {
@@ -72,7 +72,7 @@ void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit, MainWindow& mainWindow) {
 			case SDL_WINDOWEVENT_RESIZED:
 				const int w = sdlEvent.window.data1;
 				const int h = sdlEvent.window.data2;
-				mainWindow.OnResized(w, h);
+				MainWindow::OnResized(w, h);
 				break;
 			}
 			break;

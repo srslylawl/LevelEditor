@@ -44,20 +44,22 @@ namespace Rendering {
 		float zFar = 200.0f;
 		float fov = 45.0f;
 
-		float zoom = 1;
-		float orthoSize = 270.0f / 32.0f; // resolution height divided by 2x pixel per unit size
+		float zoom3D = 1;
+		float zoom2D = 1;
+		float orthoSize = 270.0f / 32.0f; // pixel perfect = resolution height divided by 2x pixel per unit size
 
 		void UpdateProjectionMatrix() {
 			if (viewMode == ViewMode::Perspective) {
 				aspectRatio = width / static_cast<float>(height);
-				projectionMatrix = perspectiveLH(radians(fov / zoom), aspectRatio, zNear, zFar);
+				projectionMatrix = perspectiveLH(radians(fov / zoom3D), aspectRatio, zNear, zFar);
 				return;
 			}
 
 			if (viewMode == ViewMode::Orthographic) {
+				const float zoomedOrthoSize = orthoSize/zoom2D;
 				aspectRatio = width / static_cast<float>(height);
-				const float halfW = orthoSize * aspectRatio;
-				const float halfH = orthoSize;
+				const float halfW = zoomedOrthoSize * aspectRatio;
+				const float halfH = zoomedOrthoSize;
 				projectionMatrix = orthoLH(-halfW, halfW, -halfH, halfH, zNear, zFar);
 				return;
 			}
@@ -146,7 +148,22 @@ namespace Rendering {
 
 			const auto wheelDelta = e->GetMouseWheelDelta();
 			if (wheelDelta != 0) {
-				SetOrthoSize(orthoSize - wheelDelta);
+				float newZoom = zoom2D;
+				if(wheelDelta > 0) {
+					if(zoom2D >= 1) newZoom++;
+					else newZoom*=1.25f;
+				}
+
+				if(wheelDelta < 0) {
+					if(zoom2D >= 2) newZoom--;
+					else newZoom /= 1.25f;
+				}
+
+				if(newZoom > 1) {
+					newZoom = round(newZoom);
+				}
+
+				SetZoom2D(newZoom);
 			}
 		}
 		void HandleMouseInput3D(const InputMouseEvent* e) {
@@ -166,7 +183,7 @@ namespace Rendering {
 
 			const auto wheelDelta = e->GetMouseWheelDelta();
 			if (wheelDelta != 0) {
-				SetZoom(zoom + wheelDelta);
+				SetZoom3D(zoom3D + wheelDelta);
 			}
 		}
 		vec3 position = vec3(0, 0, -3.0f); //in World Space
@@ -191,7 +208,8 @@ namespace Rendering {
 			}
 		}
 
-		Camera(int width, int height, bool setMain = false) : width(width), height(height) {
+		Camera(int width, int height, bool setMain = false) {
+			SetSize(width, height);
 			UpdateProjectionMatrix();
 
 			inputBindings = {
@@ -280,17 +298,26 @@ namespace Rendering {
 			return fov;
 		}
 
-		void SetZoom(const float new_zoom) {
-			zoom = max(new_zoom, 1.0f);
+		void SetZoom3D(const float new_zoom) {
+			zoom3D = max(new_zoom, 1.0f);
 			UpdateProjectionMatrix();
 		}
 
-		float GetZoom() const {
-			return zoom;
+		float GetZoom3D() const {
+			return zoom3D;
+		}
+
+		void SetZoom2D(const float new_zoom) {
+			zoom2D = max(new_zoom, 0.00001f); //avoid divide by 0
+			UpdateProjectionMatrix();
+		}
+
+		float GetZoom2D() const {
+			return zoom2D;
 		}
 
 		void SetOrthoSize(const float new_size) {
-			orthoSize = max(new_size, 0.0001f);
+			orthoSize = max(new_size, 0.0001f); //avoid divide by 0
 			UpdateProjectionMatrix();
 		}
 
@@ -314,6 +341,7 @@ namespace Rendering {
 		void SetSize(int new_width, int new_height) {
 			width = new_width;
 			height = new_height;
+			orthoSize = height / 32.0f;
 			UpdateProjectionMatrix();
 		}
 
@@ -477,11 +505,11 @@ namespace Rendering {
 					}
 
 					// Zoom
-					float zoom = GetZoom();
+					float zoom = GetZoom3D();
 					constexpr ImGuiSliderFlags zoomFlags = ImGuiSliderFlags_Logarithmic;
 					constexpr float minZoom = 1 / 100.0f;
 					if (ImGui::SliderFloat("Zoom", &zoom, minZoom, 50.0f, "%.6f", zoomFlags)) {
-						SetZoom(zoom);
+						SetZoom3D(zoom);
 					}
 
 					// ViewMode (perspective)
@@ -494,9 +522,10 @@ namespace Rendering {
 				}
 				else {
 					// 2D mode active
-					float orthoSize = GetOrthoSize();
-					if (ImGui::SliderFloat("Size", &orthoSize, 1, 100, "%.5f")) {
-						SetOrthoSize(orthoSize);
+					float zoom_2d = GetZoom2D();
+					constexpr float minZoom = 1.0f/25.0f;
+					if (ImGui::SliderFloat("Size", &zoom_2d, minZoom, 25, "%.5f")) {
+						SetZoom2D(zoom_2d);
 					}
 				}
 
