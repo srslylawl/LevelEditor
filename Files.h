@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iostream>
 
 namespace Files {
 	using namespace std;
@@ -24,6 +25,18 @@ namespace Files {
 		return std::filesystem::current_path().append(path);
 	}
 
+	inline std::string GetRelativePath(const std::string& absolutePath) {
+		std::string result = absolutePath;
+		const std::string currentPath = std::filesystem::current_path().lexically_normal().string() + "\\";
+		const auto subStringPos = result.find(currentPath);
+		if(subStringPos != std::string::npos)
+			result.erase(subStringPos, currentPath.length());
+		//std::cout << "GetRelativePath for " << absolutePath << ":" << std::endl;
+		//std::cout << "CurrentPath: " << currentPath << std::endl;
+		//std::cout << "Result: " << result << std::endl;
+		return result;
+	}
+
 	inline auto GetDirectoryIterator(const char* directory) {
 		return std::filesystem::directory_iterator(GetAbsolutePath(directory));
 	}
@@ -31,7 +44,7 @@ namespace Files {
 	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function) {
 		for (auto& entry : GetDirectoryIterator(directory)) {
 			string relativePath = directory;
-			relativePath += "/" + entry.path().filename().string();
+			relativePath += "\\" + entry.path().filename().string();
 			function(relativePath.c_str());
 		}
 	}

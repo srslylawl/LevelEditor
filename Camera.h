@@ -45,8 +45,8 @@ namespace Rendering {
 		float fov = 45.0f;
 
 		float zoom3D = 1;
-		float zoom2D = 1;
-		float orthoSize = 270.0f / 32.0f; // pixel perfect = resolution height divided by 2x pixel per unit size
+		float zoom2D = 3;
+		float orthoSize; // pixel perfect = resolution height divided by 2x pixel per unit size
 
 		void UpdateProjectionMatrix() {
 			if (viewMode == ViewMode::Perspective) {

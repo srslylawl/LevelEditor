@@ -94,6 +94,9 @@
     <ClCompile Include="ImGuiExtensions.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="FileBrowser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -198,6 +201,8 @@
     <ClInclude Include="ImGuiExtensions.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="FileBrowser.h" />
+    <ClInclude Include="Strings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\default.frag">

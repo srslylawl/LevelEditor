@@ -20,7 +20,6 @@ class MainWindow {
 	static int width;
 	static int height;
 	const char* m_title = "New Window";
-	bool showDebugWindow = false;
 	short renderMode = 0;
 
 	InputMouseBinding* binding = nullptr;

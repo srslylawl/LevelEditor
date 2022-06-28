@@ -13,9 +13,11 @@
 #include "Files.h"
 
 #include "Camera.h"
+#include "FileBrowser.h"
 #include "GridToolBar.h"
 #include "Renderer.h"
 #include "Resources.h"
+#include "Strings.h"
 #include "Texture.h"
 #include "TileMap.h"
 #include "Tile.h"
@@ -71,14 +73,11 @@ bool MainWindow::Initialize() {
 
 
 	// Load Sprites and Tool Icons to Memory
-	constexpr char spriteDir[] = "Sprites";
-	constexpr char toolIconDir[] = "Resources/Icons";
+	if (Files::VerifyDirectory(Strings::Sprites_Directory))
+		Files::ForEachInDirectory(Strings::Sprites_Directory, [](const char* path) {Resources::LoadTexture(path); });
 
-	if (Files::VerifyDirectory(spriteDir))
-		Files::ForEachInDirectory(spriteDir, [](const char* path) {Resources::LoadTexture(path); });
-
-	if (Files::VerifyDirectory(toolIconDir))
-		Files::ForEachInDirectory(toolIconDir, [](const char* path) {Resources::LoadInternalTexture(path); });
+	if (Files::VerifyDirectory(Strings::Icon_Directory))
+		Files::ForEachInDirectory(Strings::Icon_Directory, [](const char* path) {Resources::LoadInternalTexture(path); });
 
 	// Load Tiles from Tiles Folder to Memory
 	constexpr char tileDir[] = "Tiles";
@@ -140,6 +139,7 @@ void MainWindow::RenderImGui() {
 	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 	// ImGui logic here
 
+	static bool showDebugWindow = false;
 	if (showDebugWindow) {
 		ImGui::ShowDemoWindow();
 	}
@@ -173,6 +173,7 @@ void MainWindow::RenderImGui() {
 				for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
 					std::string item = entry.path().string();
 					if (ImGui::MenuItem(item.c_str())) {
+						std::cout << "Abs: " << item << " Rel: " << Files::GetRelativePath(item) << std::endl;
 					}
 				}
 			}
@@ -247,7 +248,7 @@ void MainWindow::RenderImGui() {
 	// Main Cam Controls
 	Camera::Main->DearImGuiWindow();
 
-	bool mouseOpen = true;
+	static bool mouseOpen = true;
 	auto mousePos = Input::GetMousePosition();
 	auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 	auto gridCoords = floor(mouseCoords);
@@ -277,12 +278,12 @@ void MainWindow::RenderImGui() {
 	ImGui::End();
 
 	// Grid Tool Window
-	bool toolWindowOpen = true;
-	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize;
+	static bool toolWindowOpen = true;
+	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove ;
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
-		const char* iconStrings[] = { "Resources/Icons/tool_place.png", "Resources/Icons/tool_erase.png", "Resources/Icons/tool_select.png" };
+		const char* iconStrings[] = { Strings::Tool_Place, Strings::Tool_Erase, Strings::Tool_Select };
 		for (int i = 0; i < toolCount; ++i) {
 			std::string buttonName = "ToolButton" + std::to_string(i);
 			ImGui::PushID(buttonName.c_str());
@@ -307,7 +308,6 @@ void MainWindow::RenderImGui() {
 			SameLine();
 		}
 
-		const auto size = GetWindowSize();
 		float yPos = main_viewport->Size.y - main_viewport->WorkSize.y;
 		ImGui::SetWindowPos(ImVec2(0, yPos));
 	}
@@ -315,7 +315,7 @@ void MainWindow::RenderImGui() {
 
 	// Tile Window
 	constexpr ImGuiWindowFlags tilesFlags = ImGuiWindowFlags_AlwaysAutoResize;
-	bool fexOpen = true;
+	static bool fexOpen = true;
 	if (Begin("Tiles", &fexOpen, tilesFlags)) {
 		//loaded images
 		for (auto tileIterator = Resources::Tiles.begin(); tileIterator != Resources::Tiles.end(); ++tileIterator) {
@@ -340,6 +340,9 @@ void MainWindow::RenderImGui() {
 		}
 	}
 	End();
+
+	static FileBrowser spriteFileBrowser("Sprites", "Sprites");
+	spriteFileBrowser.DearImGuiWindow();
 
 	// Required to render ImGuI
 	ImGui::Render();

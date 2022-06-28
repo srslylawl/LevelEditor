@@ -165,6 +165,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FileBrowser.cpp" />
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GridTool.cpp" />
     <ClCompile Include="GridToolBar.cpp" />
@@ -190,6 +191,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="FileBrowser.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GridTool.h" />
     <ClInclude Include="GridToolBar.h" />
@@ -219,6 +221,7 @@
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Strings.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileMap.h" />
