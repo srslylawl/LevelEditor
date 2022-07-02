@@ -13,7 +13,7 @@ namespace Serialization {
 		iStream.read((char*)&item, sizeof T);
 	}
 
-	inline std::ostream& Serialize(std::ostream& oStream, std::string& str) {
+	inline std::ostream& Serialize(std::ostream& oStream, const std::string& str) {
 		auto size = str.size();
 		oStream.write((char*)&size, sizeof(size));
 		oStream << str;
@@ -23,6 +23,7 @@ namespace Serialization {
 	inline std::string Deserialize(std::istream& stream) {
 		size_t stringSize;
 		stream.read((char*)&stringSize, sizeof(stringSize));
+		if(stringSize > 2048) stringSize = 2048; //hard coded limit in case we read from an invalid stream
 
 		char* chars = new char[stringSize + 1];
 		chars[stringSize] = 0;

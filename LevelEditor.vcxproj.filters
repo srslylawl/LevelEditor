@@ -201,8 +201,12 @@
     <ClInclude Include="ImGuiExtensions.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="FileBrowser.h" />
-    <ClInclude Include="Strings.h" />
+    <ClInclude Include="FileBrowser.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Strings.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\default.frag">

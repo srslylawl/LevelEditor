@@ -37,6 +37,10 @@ namespace Files {
 		return result;
 	}
 
+	inline std::string GetRelativePath(const std::filesystem::path& absolutePath) {
+		return GetRelativePath(absolutePath.string());
+	}
+
 	inline auto GetDirectoryIterator(const char* directory) {
 		return std::filesystem::directory_iterator(GetAbsolutePath(directory));
 	}
@@ -65,10 +69,10 @@ namespace Files {
 
 		if(!file) return false; // Check for error
 
-		out = Serializable::Deserialize(file);
+		bool success = Serializable::Deserialize(file, out);
 		file.close();
 
-		return out != nullptr;
+		return success && out != nullptr;
 	}
 
 	bool OpenFileDialog(std::string& filePath, const char* filter);

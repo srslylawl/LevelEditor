@@ -31,11 +31,12 @@ public:
 		return InternalTextures;
 	}
 
-	static void LoadTexture(const char* relative_path, const bool refresh = false);
+	static void LoadTexture(const char* relative_path, bool refresh = false);
 	static void LoadInternalTexture(const char* relative_path, bool refresh = false);
-	static void LoadTile(const char* relative_path, bool refresh = false);
+	static bool LoadTile(const char* relative_path, bool refresh = false);
 	static bool TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture);
 	static bool TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture);
+	static bool TryGetTile(const char* relative_path, Tiles::Tile*& out_tile);
 
 	static void FreeAll();
 };

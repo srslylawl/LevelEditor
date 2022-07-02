@@ -9,18 +9,26 @@
 #include "Texture.h"
 
 namespace Tiles {
-	Tile* Tile::Deserialize(std::istream& iStream) {
-		auto t = new Tile();
+	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
+		out_tile = new Tile();
 
-		t->Name = Serialization::Deserialize(iStream);
-		t->Texture = Serialization::Deserialize(iStream);
+		out_tile->Name = Serialization::Deserialize(iStream);
+		out_tile->Texture = Serialization::Deserialize(iStream);
+		std::string fileEndingCheck = Serialization::Deserialize(iStream);
 
-		return t;
+		bool valid = fileEndingCheck == fileEnding;
+		if(!valid) {
+			delete out_tile;
+			std::cout << "File ending check failed." << std::endl;
+		}
+
+		return valid;
 	}
 
 	std::ostream& Tile::Serialize(std::ostream& oStream) {
 		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, Texture);
+		Serialization::Serialize(oStream, fileEnding);
 
 		return oStream;
 	}

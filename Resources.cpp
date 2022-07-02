@@ -28,21 +28,22 @@ void Resources::LoadInternalTexture(const char* relative_path, const bool refres
 	LoadTex(relative_path, refresh, InternalTextures);
 }
 
-void Resources::LoadTile(const char* relative_path, bool refresh) {
+bool Resources::LoadTile(const char* relative_path, bool refresh) {
 	using namespace Tiles;
 	const auto tileIterator = Tiles.find(relative_path);
 	if (tileIterator != Tiles.end()) {
 		if (refresh) {} //TODO: implement refresh
-		return;
+		return true;
 	}
 
 	Tile* t = nullptr;
 	if (!Files::LoadFromFile(relative_path, t)) {
 		std::cout << "unable to load Tile: " << relative_path << std::endl;
-		return;
+		return false;
 	}
 
 	Tiles[relative_path] = t;
+	return true;
 }
 
 inline bool TryGetTex(const char* relative_path, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
@@ -57,6 +58,13 @@ bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& ou
 
 bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture) {
 	return TryGetTex(relative_path, out_texture, InternalTextures);
+}
+
+bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile) {
+	out_tile = nullptr;
+	if(const auto it = Tiles.find(relative_path); it != Tiles.end()) out_tile = it->second;
+
+	return out_tile != nullptr;
 }
 
 template<typename PointerCollection>

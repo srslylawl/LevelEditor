@@ -73,11 +73,11 @@ bool MainWindow::Initialize() {
 
 
 	// Load Sprites and Tool Icons to Memory
-	if (Files::VerifyDirectory(Strings::Sprites_Directory))
-		Files::ForEachInDirectory(Strings::Sprites_Directory, [](const char* path) {Resources::LoadTexture(path); });
+	if (Files::VerifyDirectory(Strings::Directory_Sprites))
+		Files::ForEachInDirectory(Strings::Directory_Sprites, [](const char* path) {Resources::LoadTexture(path); });
 
-	if (Files::VerifyDirectory(Strings::Icon_Directory))
-		Files::ForEachInDirectory(Strings::Icon_Directory, [](const char* path) {Resources::LoadInternalTexture(path); });
+	if (Files::VerifyDirectory(Strings::Directory_Icon))
+		Files::ForEachInDirectory(Strings::Directory_Icon, [](const char* path) {Resources::LoadInternalTexture(path); });
 
 	// Load Tiles from Tiles Folder to Memory
 	constexpr char tileDir[] = "Tiles";
@@ -188,7 +188,7 @@ void MainWindow::RenderImGui() {
 				//tile created!
 				//save file to disk
 				//TODO: secure load/save function
-				std::string path = "Tiles/" + t->Name;
+				std::string path = "Tiles/" + t->Name + Tiles::Tile::fileEnding;
 				Files::SaveToFile(path.c_str(), t);
 				std::cout << "Saved." << std::endl;
 
@@ -279,7 +279,7 @@ void MainWindow::RenderImGui() {
 
 	// Grid Tool Window
 	static bool toolWindowOpen = true;
-	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove ;
+	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
@@ -289,7 +289,7 @@ void MainWindow::RenderImGui() {
 			ImGui::PushID(buttonName.c_str());
 			bool isSelected = i == static_cast<int>(gridToolBar->GetActiveTool());
 
-			if(isSelected) {
+			if (isSelected) {
 				PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
 			}
 			int framePadding = 2;
@@ -304,7 +304,7 @@ void MainWindow::RenderImGui() {
 			}
 			PopID();
 
-			if(isSelected) PopStyleColor();
+			if (isSelected) PopStyleColor();
 			SameLine();
 		}
 
@@ -314,6 +314,15 @@ void MainWindow::RenderImGui() {
 	End();
 
 	// Tile Window
+	//static FileBrowser tileFileBrowser("Tiles", "Tiles", [this](std::string relFilePath) {
+	//	std::cout << "Pressed: " << relFilePath << std::endl;
+	//	if (Tiles::Tile* tile; Resources::TryGetTile(relFilePath.c_str(), tile)) {
+	//		bool isSelected = gridToolBar->GetSelectedTile() == tile;
+
+	//	}
+	//	});
+	//tileFileBrowser.RenderRearImGuiWindow();
+
 	constexpr ImGuiWindowFlags tilesFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	static bool fexOpen = true;
 	if (Begin("Tiles", &fexOpen, tilesFlags)) {
@@ -328,12 +337,12 @@ void MainWindow::RenderImGui() {
 				// Push and pop id required as ImageButton gets identified by texture ID which might be same as other tiles
 				PushID(tileIterator->first.c_str());
 
-				if(isSelected) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
+				if (isSelected) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
 				if (ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
 					gridToolBar->SetSelectedTile(tileIterator->second);
 				}
 				PopID();
-				if(isSelected) PopStyleColor();
+				if (isSelected) PopStyleColor();
 				SameLine();
 			}
 
@@ -341,8 +350,10 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-	static FileBrowser spriteFileBrowser("Sprites", "Sprites");
-	spriteFileBrowser.DearImGuiWindow();
+	static FileBrowser spriteFileBrowser("Sprites", "Sprites", [](std::string relFilePath) {
+		std::cout << "Pressed: " << relFilePath << std::endl;
+		});
+	spriteFileBrowser.RenderRearImGuiWindow();
 
 	// Required to render ImGuI
 	ImGui::Render();
