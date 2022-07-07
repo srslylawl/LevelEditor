@@ -97,6 +97,9 @@
     <ClCompile Include="FileBrowser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileBrowserFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -205,6 +208,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Strings.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiHelper.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileBrowserFile.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

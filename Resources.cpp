@@ -47,9 +47,9 @@ bool Resources::LoadTile(const char* relative_path, bool refresh) {
 }
 
 inline bool TryGetTex(const char* relative_path, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
-	out_texture = nullptr;
+	out_texture = Rendering::Texture::Empty();
 	if (const auto it = map.find(relative_path); it != map.end()) out_texture = it->second;
-	return out_texture != nullptr;
+	return out_texture != Rendering::Texture::Empty();
 }
 
 bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture) {

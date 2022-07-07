@@ -1,27 +1,39 @@
 #include "FileBrowser.h"
 
-#include <iostream>
 #include <string>
 
 #include "Files.h"
 #include "imgui.h"
+#include "ImGuiHelper.h"
 #include "Resources.h"
 #include "Strings.h"
 #include "Texture.h"
 #include "Tile.h"
 
-FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(std::string)> onFileClick) : name(std::move(title)), fileBrowserID(++currentID), onFileClick(std::move(onFileClick)) {
+FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick,
+	std::function<bool(FileBrowserFile)> shouldHighlight) :
+	name(std::move(title)),
+	fileBrowserID(++currentID),
+	onFileClick(std::move(onFileClick)),
+	shouldHighlight(std::move(shouldHighlight)) {
+
 	const auto path = Files::GetAbsolutePath(start_directory);
 	currentDirectory = path;
 
-	if (Rendering::Texture* subDirectoryTexture; Resources::TryGetInternalTexture(Strings::Folder, subDirectoryTexture)) {
-		folderTextureId = subDirectoryTexture->GetTextureID();
-	}
+	Resources::TryGetInternalTexture(Strings::Folder, folderTexture);
+	Resources::TryGetInternalTexture(Strings::Previous_Directory, returnTexture);
+
 	RefreshCurrentDirectory();
 }
 
-bool DrawFileButton(const int textureID, const int elementCount, const std::string& name, const std::string& description, const int size) {
+bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, const std::string& name, const std::string& description, const int size, bool shouldHighlight = false, bool allowDragAndDrop = false) {
 	using namespace ImGui;
+
+	//bool shouldHighlight = false;
+	//if(file != nullptr) {
+	//	shouldHighlight =
+	//}
+
 	ImVec2 startPos = GetCursorStartPos();
 
 	const int iconSideLength = size;
@@ -32,7 +44,18 @@ bool DrawFileButton(const int textureID, const int elementCount, const std::stri
 
 	SetCursorPos(IconDrawPos);
 	PushID(name.c_str());
-	const bool clicked = ImageButton((void*)textureID, ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
+	if (shouldHighlight) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
+	const bool clicked = ImageButton((void*)texture->GetTextureID(), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
+	if (shouldHighlight) PopStyleColor();
+	if (allowDragAndDrop) {
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+			ImGui::SetDragDropPayload("Texture", &texture, sizeof(Rendering::Texture**));
+			ImGuiHelper::Image(texture->GetTextureID());
+			Text(texture->GetFileName().c_str());
+			ImGui::EndDragDropSource();
+		}
+	}
+
 	PopID();
 	if (IsItemHovered()) {
 		BeginTooltip();
@@ -44,34 +67,28 @@ bool DrawFileButton(const int textureID, const int elementCount, const std::stri
 
 void FileBrowser::RenderRearImGuiWindow() {
 	using namespace ImGui;
-	constexpr ImGuiWindowFlags fileBrowserFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_MenuBar;
-	static bool fileBrowserOpen = true;
+	constexpr ImGuiWindowFlags fileBrowserFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	std::string imguiID = "FileBrowser_" + std::to_string(fileBrowserID);
+	std::string windowTitle = Files::GetRelativePath(currentDirectory.string()) + "###" + imguiID; /// '###' allows manipulating of window title
 
 	int buttonSize = 32;
 
 	PushID(imguiID.c_str());
-	if (Begin(name.c_str(), &fileBrowserOpen, fileBrowserFlags)) {
-		BeginMenuBar();
-		Text(Files::GetRelativePath(currentDirectory.string()).c_str());
-		EndMenuBar();
-
-
+	if (Begin(windowTitle.c_str(), nullptr, fileBrowserFlags)) {
 		int buttonIndex = 0;
-
 		if (!subDirectoryStack.empty()) {
 			//not in base directory, display "up" button
 			const std::string returnButton = imguiID + "ReturnButton";
-			if (DrawFileButton(returnTextureId, buttonIndex, returnButton, "Return to previous directory.", buttonSize)) {
+			if (DrawFileButton(returnTexture, buttonIndex, returnButton, "Return to previous directory.", buttonSize)) {
 				ReturnToPreviousDirectory();
 			}
 			++buttonIndex;
 		}
 
 		//display subdirectories first
-		for (const auto& subDir : currentSubFolders) {
+		for (auto& subDir : currentSubFolders) {
 			const std::string currButton = imguiID + "_Subdirectories_" + std::to_string(buttonIndex);
-			if (DrawFileButton(folderTextureId, buttonIndex, currButton, subDir.path().filename().string(), buttonSize)) {
+			if (DrawFileButton(folderTexture, buttonIndex, currButton, subDir.path().filename().string(), buttonSize)) {
 				ChangeDirectory(subDir.path());
 			}
 
@@ -79,15 +96,18 @@ void FileBrowser::RenderRearImGuiWindow() {
 		}
 
 		//display files
-		for (const auto& [entry, textureID] : currentItems) {
+		for (const auto& file : currentItems) {
 			const std::string currButton = imguiID + "_Items_" + std::to_string(buttonIndex);
-			if (DrawFileButton(textureID, buttonIndex, currButton, entry.path().filename().string(), buttonSize)) {
+			const bool highlight = shouldHighlight == nullptr ? false : shouldHighlight(file);
+			const bool isSupportedFile = file.FileType != FileBrowserFileType::Unsupported;
+			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.directory_entry.path().filename().string(), buttonSize, highlight, isSupportedFile)) {
 				if (onFileClick != nullptr)
-				onFileClick(Files::GetRelativePath(entry.path()));
+					onFileClick(file);
 			}
 			++buttonIndex;
 		}
-
+		//resize window with title
+		SetCursorPosX(CalcTextSize(windowTitle.c_str()).x);
 	}
 	End();
 	PopID();
@@ -104,26 +124,34 @@ void FileBrowser::RefreshCurrentDirectory() {
 		}
 
 		if (dirEntry.exists() && dirEntry.is_regular_file()) {
-			Rendering::Texture* texture = nullptr;
-			int textureID = 0;
+			FileBrowserFile fileBrowserFile(dirEntry);
+			fileBrowserFile.Texture = Rendering::Texture::Empty();
+
 			if (Files::IsSupportedImageFormat(dirEntry.path().string().c_str())) {
 				//Is Image
 				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-				Resources::TryGetTexture(relativePath.c_str(), texture);
+				Resources::TryGetTexture(relativePath.c_str(), fileBrowserFile.Texture);
+
+				fileBrowserFile.Data = fileBrowserFile.Texture;
+				fileBrowserFile.FileType = FileBrowserFileType::Sprite;
 			}
 			else if (dirEntry.path().has_extension() && dirEntry.path().extension().string() == Tiles::Tile::fileEnding) {
 				//Is Tile
 				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-				if(Tiles::Tile* tile; Resources::TryGetTile(relativePath.c_str(), tile)) {
-					Resources::TryGetTexture(tile->Texture.c_str(), texture);
+				Tiles::Tile* tile;
+				if (!Resources::TryGetTile(relativePath.c_str(), tile)) {
+					std::cout << "ERROR: Unable to get tile: " << relativePath.c_str() << std::endl;
 				}
+				Resources::TryGetTexture(tile->Texture.c_str(), fileBrowserFile.Texture);
+				fileBrowserFile.Data = tile;
+				fileBrowserFile.FileType = FileBrowserFileType::Tile;
+
 			}
 			else {
-				Resources::TryGetInternalTexture(Strings::Unknown_File, texture);
+				Resources::TryGetInternalTexture(Strings::Unknown_File, fileBrowserFile.Texture);
+				fileBrowserFile.FileType = FileBrowserFileType::Unsupported;
 			}
-
-			if (texture != nullptr) textureID = texture->GetTextureID();
-			currentItems.emplace_back(dirEntry, textureID);
+			currentItems.emplace_back(fileBrowserFile);
 		}
 	}
 
@@ -134,7 +162,7 @@ void FileBrowser::RefreshCurrentDirectory() {
 		});
 }
 
-void FileBrowser::ChangeDirectory(std::filesystem::path new_directory) {
+void FileBrowser::ChangeDirectory(const std::filesystem::path& new_directory) {
 	subDirectoryStack.push(currentDirectory);
 	currentDirectory = new_directory;
 	RefreshCurrentDirectory();

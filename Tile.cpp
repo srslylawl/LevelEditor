@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "imgui.h"
+#include "ImGuiHelper.h"
 #include "Resources.h"
 #include "Serialization.h"
 #include "Texture.h"
@@ -17,7 +18,7 @@ namespace Tiles {
 		std::string fileEndingCheck = Serialization::Deserialize(iStream);
 
 		bool valid = fileEndingCheck == fileEnding;
-		if(!valid) {
+		if (!valid) {
 			delete out_tile;
 			std::cout << "File ending check failed." << std::endl;
 		}
@@ -44,7 +45,16 @@ namespace Tiles {
 			static unsigned int texID = 0;
 
 			ImGui::InputTextWithHint("Name", "<enter tile name>", nameBuff, IM_ARRAYSIZE(nameBuff));
-			ImGui::Image((void*)texID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0));
+			ImGuiHelper::Image(texID, ImVec2(32, 32));
+			if (ImGui::BeginDragDropTarget()) {
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
+					const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
+					texID = t->GetTextureID();
+					strcpy_s(texPathBuff, t->GetFilePath().c_str());
+				}
+				ImGui::EndDragDropTarget();
+			}
+
 			SameLine();
 			constexpr char popupWindow[] = "Select Sprite";
 			if (ImGui::Button("Select...")) {
@@ -70,7 +80,7 @@ namespace Tiles {
 			if (nameBuff[0] == '\0') canCreate = false;
 			if (texPathBuff[0] == '\0') canCreate = false;
 
-			if(!canCreate) BeginDisabled();
+			if (!canCreate) BeginDisabled();
 			if (ImGui::Button("Create Tile")) {
 				out_tile = new Tile();
 				out_tile->Name = nameBuff;
@@ -85,7 +95,7 @@ namespace Tiles {
 
 				created = true;
 			}
-			if(!canCreate) EndDisabled();
+			if (!canCreate) EndDisabled();
 		}
 		End();
 

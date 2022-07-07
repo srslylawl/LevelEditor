@@ -144,6 +144,24 @@ void MainWindow::RenderImGui() {
 		ImGui::ShowDemoWindow();
 	}
 
+	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
+		[this](FileBrowserFile file) {
+			if (file.FileType != FileBrowserFileType::Tile) return;
+			const auto tile = static_cast<Tiles::Tile*>(file.Data);
+			gridToolBar->SetSelectedTile(tile);
+		}, [this](FileBrowserFile file) -> bool {
+			if (file.FileType != FileBrowserFileType::Tile) return false;
+			const auto tile = static_cast<Tiles::Tile*>(file.Data);
+			return tile == gridToolBar->GetSelectedTile();
+		});
+
+	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](FileBrowserFile file) {
+		if (file.FileType != FileBrowserFileType::Sprite) return;
+		auto p = file.directory_entry.path().string();
+		std::cout << "Pressed: " << p.c_str() << std::endl;
+		});
+
+
 	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -188,17 +206,19 @@ void MainWindow::RenderImGui() {
 				//tile created!
 				//save file to disk
 				//TODO: secure load/save function
-				std::string path = "Tiles/" + t->Name + Tiles::Tile::fileEnding;
+				std::string path = "Tiles\\" + t->Name + Tiles::Tile::fileEnding;
 				Files::SaveToFile(path.c_str(), t);
 				std::cout << "Saved." << std::endl;
 
-				Resources::LoadTile(path.c_str());
+				if(!Resources::LoadTile(path.c_str())) {
+					std::cout << "Unable to load tile into resources!" << std::endl;
+				}
 
 				Tiles::Tile* loaded = nullptr;
 				if (!Files::LoadFromFile(path.c_str(), loaded)) {
 					std::cout << "Unabled to load created Tile:" << std::endl;
 				}
-
+				tileFileBrowser.RefreshCurrentDirectory();
 			}
 		}
 
@@ -313,46 +333,10 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-	// Tile Window
-	//static FileBrowser tileFileBrowser("Tiles", "Tiles", [this](std::string relFilePath) {
-	//	std::cout << "Pressed: " << relFilePath << std::endl;
-	//	if (Tiles::Tile* tile; Resources::TryGetTile(relFilePath.c_str(), tile)) {
-	//		bool isSelected = gridToolBar->GetSelectedTile() == tile;
 
-	//	}
-	//	});
-	//tileFileBrowser.RenderRearImGuiWindow();
+	tileFileBrowser.RenderRearImGuiWindow();
 
-	constexpr ImGuiWindowFlags tilesFlags = ImGuiWindowFlags_AlwaysAutoResize;
-	static bool fexOpen = true;
-	if (Begin("Tiles", &fexOpen, tilesFlags)) {
-		//loaded images
-		for (auto tileIterator = Resources::Tiles.begin(); tileIterator != Resources::Tiles.end(); ++tileIterator) {
-			auto& tex = tileIterator->second->Texture;
-			if (Texture* t; Resources::TryGetTexture(tex.c_str(), t)) {
-				const auto id = t->GetTextureID();
-				bool isSelected = gridToolBar->GetSelectedTile() == tileIterator->second;
-				int framePadding = 2;
 
-				// Push and pop id required as ImageButton gets identified by texture ID which might be same as other tiles
-				PushID(tileIterator->first.c_str());
-
-				if (isSelected) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
-				if (ImageButton((void*)id, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
-					gridToolBar->SetSelectedTile(tileIterator->second);
-				}
-				PopID();
-				if (isSelected) PopStyleColor();
-				SameLine();
-			}
-
-		}
-	}
-	End();
-
-	static FileBrowser spriteFileBrowser("Sprites", "Sprites", [](std::string relFilePath) {
-		std::cout << "Pressed: " << relFilePath << std::endl;
-		});
 	spriteFileBrowser.RenderRearImGuiWindow();
 
 	// Required to render ImGuI

@@ -33,6 +33,7 @@ namespace Rendering {
 		static bool Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData);
 
 		static void BindToGPU(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char& imageData);
+		inline static Texture* empty = nullptr;
 	public:
 
 		ImageProperties GetImageProperties() const;
@@ -43,6 +44,13 @@ namespace Rendering {
 		static bool Create(const std::string& path, Texture*& out_texture);
 
 		static bool CanCreateFromPath(const char* path);
+
+		static Texture* Empty() {
+			if(empty == nullptr) {
+				empty = new Texture(0, "Empty_Default", "", ImageProperties());
+			}
+			return empty;
+		}
 
 		bool Refresh();
 

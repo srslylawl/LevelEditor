@@ -166,6 +166,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FileBrowser.cpp" />
+    <ClCompile Include="FileBrowserFile.cpp" />
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GridTool.cpp" />
     <ClCompile Include="GridToolBar.cpp" />
@@ -192,11 +193,13 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FileBrowser.h" />
+    <ClInclude Include="FileBrowserFile.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GridTool.h" />
     <ClInclude Include="GridToolBar.h" />
     <ClInclude Include="GridToolType.h" />
     <ClInclude Include="ImGuiExtensions.h" />
+    <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="libs\glad\include\glad\glad.h" />
     <ClInclude Include="libs\glad\include\KHR\khrplatform.h" />

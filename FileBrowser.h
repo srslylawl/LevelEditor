@@ -3,11 +3,17 @@
 #include <functional>
 #include <stack>
 
+#include "FileBrowserFile.h"
+
+namespace Rendering {
+	class Texture;
+}
+
 class FileBrowser {
 	std::string name;
 	std::filesystem::path currentDirectory;
 
-	std::vector<std::pair<std::filesystem::directory_entry, int>> currentItems;
+	std::vector<FileBrowserFile> currentItems;
 	std::vector<std::filesystem::directory_entry> currentSubFolders;
 
 	std::stack<std::filesystem::path> subDirectoryStack;
@@ -15,16 +21,17 @@ class FileBrowser {
 	int fileBrowserID;
 	inline static int currentID = 0;
 
-	int folderTextureId = 0;
-	int returnTextureId = 0;
+	Rendering::Texture* folderTexture = nullptr;
+	Rendering::Texture* returnTexture = nullptr;
 
-	std::function<void(std::string)> onFileClick;
+	std::function<void(FileBrowserFile)> onFileClick;
+	std::function<bool(FileBrowserFile)> shouldHighlight;
 public:
-	FileBrowser(const char* start_directory, std::string title, std::function<void(std::string)> onFileClick);
+	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr);
 
 	void RenderRearImGuiWindow();
 	void RefreshCurrentDirectory();
-	void ChangeDirectory(std::filesystem::path new_directory);
+	void ChangeDirectory(const std::filesystem::path& new_directory);
 	void ReturnToPreviousDirectory();
 };
 
