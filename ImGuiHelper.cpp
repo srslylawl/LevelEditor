@@ -1,6 +1,6 @@
-#include "imgui.h"
+#include "ImGuiHelper.h"
 
-namespace ImGui {
+namespace ImGuiHelper {
 	void TextCentered(const char* text) {
 		float win_width = ImGui::GetWindowSize().x;
 		float text_width = ImGui::CalcTextSize(text).x;

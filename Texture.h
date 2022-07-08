@@ -30,7 +30,7 @@ namespace Rendering {
 		std::string path;
 		std::string name;
 
-		static bool Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData);
+		static bool Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically = true);
 
 		static void BindToGPU(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char& imageData);
 		inline static Texture* empty = nullptr;
@@ -41,7 +41,8 @@ namespace Rendering {
 		std::string GetFilePath() const;
 		std::string GetFileName() const;
 
-		static bool Create(const std::string& path, Texture*& out_texture);
+		static bool Create(const std::string& relativePath, Texture*& out_texture);
+		static bool CreateSubTexture(const std::string& relativePath, Texture*& out_texture, int xOffset, int yOffset, int subTextureWidth, int subTextureHeight);
 
 		static bool CanCreateFromPath(const char* path);
 

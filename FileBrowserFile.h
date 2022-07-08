@@ -10,7 +10,7 @@ enum class FileBrowserFileType {
 };
 class FileBrowserFile {
 public:
-	void* Data;
+	void* Data = nullptr;
 	std::filesystem::directory_entry directory_entry;
 
 

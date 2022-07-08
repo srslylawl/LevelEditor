@@ -122,7 +122,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)libs\glad\include;$(ProjectDir)libs\glad\src;$(ProjectDir)libs\glad\include\glad;$(ProjectDir)libs\dependency;$(ProjectDir)libs\imgui\backends;$(ProjectDir)libs\imgui;$(ProjectDir)libs\SDL2\include;$(ProjectDir)libs\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4244;4312</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)libs\glad\include;$(ProjectDir)libs\glad\src;$(ProjectDir)libs\glad\include\glad;$(ProjectDir)libs\dependency;$(ProjectDir)libs\imgui\backends;$(ProjectDir)libs\imgui;$(ProjectDir)libs\SDL2\include;$(ProjectDir)libs\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4244;4312</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -170,7 +170,7 @@
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GridTool.cpp" />
     <ClCompile Include="GridToolBar.cpp" />
-    <ClCompile Include="ImGuiExtensions.cpp" />
+    <ClCompile Include="ImGuiHelper.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="libs\glad\src\glad.c" />
     <ClCompile Include="libs\imgui\backends\imgui_impl_opengl3.cpp" />
@@ -186,6 +186,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Resources.cpp" />
+    <ClCompile Include="SpriteSheet.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileMap.cpp" />
@@ -198,7 +199,6 @@
     <ClInclude Include="GridTool.h" />
     <ClInclude Include="GridToolBar.h" />
     <ClInclude Include="GridToolType.h" />
-    <ClInclude Include="ImGuiExtensions.h" />
     <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="libs\glad\include\glad\glad.h" />
@@ -223,7 +223,9 @@
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SpriteSheet.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="Strings.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Tile.h" />

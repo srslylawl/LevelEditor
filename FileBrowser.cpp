@@ -29,11 +29,6 @@ FileBrowser::FileBrowser(const char* start_directory, std::string title, std::fu
 bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, const std::string& name, const std::string& description, const int size, bool shouldHighlight = false, bool allowDragAndDrop = false) {
 	using namespace ImGui;
 
-	//bool shouldHighlight = false;
-	//if(file != nullptr) {
-	//	shouldHighlight =
-	//}
-
 	ImVec2 startPos = GetCursorStartPos();
 
 	const int iconSideLength = size;
@@ -45,7 +40,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	SetCursorPos(IconDrawPos);
 	PushID(name.c_str());
 	if (shouldHighlight) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
-	const bool clicked = ImageButton((void*)texture->GetTextureID(), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
+	const bool clicked = ImageButton(reinterpret_cast<void*>(texture->GetTextureID()), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
 	if (shouldHighlight) PopStyleColor();
 	if (allowDragAndDrop) {
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -130,7 +125,7 @@ void FileBrowser::RefreshCurrentDirectory() {
 			if (Files::IsSupportedImageFormat(dirEntry.path().string().c_str())) {
 				//Is Image
 				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-				Resources::TryGetTexture(relativePath.c_str(), fileBrowserFile.Texture);
+				Resources::LoadTexture(relativePath.c_str(), fileBrowserFile.Texture, true);
 
 				fileBrowserFile.Data = fileBrowserFile.Texture;
 				fileBrowserFile.FileType = FileBrowserFileType::Sprite;

@@ -9,7 +9,7 @@
 #include "MathExt.h"
 #include "Time.h"
 #include "imgui.h"
-#include "ImGuiExtensions.h"
+#include "ImGuiHelper.h"
 
 namespace Rendering {
 	using namespace glm;
@@ -427,7 +427,7 @@ namespace Rendering {
 			constexpr ImGuiWindowFlags camFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 			bool open = true;
 			if (ImGui::Begin("Camera", &open, camFlags)) {
-				TextCentered("Camera");
+				ImGuiHelper::TextCentered("Camera");
 				bool twoDEnabled = GetDimensionMode() == DimensionMode::TwoDimensional;
 
 				// 2D Checkbox

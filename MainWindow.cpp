@@ -15,6 +15,7 @@
 #include "Camera.h"
 #include "FileBrowser.h"
 #include "GridToolBar.h"
+#include "ImGuiHelper.h"
 #include "Renderer.h"
 #include "Resources.h"
 #include "Strings.h"
@@ -162,6 +163,7 @@ void MainWindow::RenderImGui() {
 		});
 
 
+
 	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -179,6 +181,61 @@ void MainWindow::RenderImGui() {
 
 		if (MenuItem("Recompile Shader")) {
 			Renderer::CompileShader();
+		}
+
+		static bool openSpriteSheetEditor = false;
+		if (MenuItem("SpriteSheetEditor")) {
+			openSpriteSheetEditor = true;
+		}
+
+		if (openSpriteSheetEditor) {
+			if (Begin("SpriteSheet Editor", &openSpriteSheetEditor, ImGuiWindowFlags_AlwaysAutoResize)) {
+				static unsigned int texID = 0;
+				static std::string texturePath;
+				static int offsetX = 0;
+				static int offsetY = 0;
+				static int width = 0;
+				static int height = 0;
+				static int channels = 0;
+				ImGuiHelper::Image(texID, ImVec2(128, 128));
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
+						const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
+						texID = t->GetTextureID();
+						texturePath = t->GetFilePath();
+						width = t->GetImageProperties().width;
+						height = t->GetImageProperties().height;
+						channels = t->GetImageProperties().channelCount;
+					}
+					ImGui::EndDragDropTarget();
+				}
+				std::string ctext = "Channels: " + std::to_string(channels);
+				Text(ctext.c_str());
+				ImGui::InputInt("Offset X", &offsetX);
+				ImGui::InputInt("Offset Y", &offsetY);
+				ImGui::InputInt("Width", &width);
+				ImGui::InputInt("Height", &height);
+
+				static unsigned int newTextureId = 0;
+				static int newTextureId_i = 0;
+
+
+				if (Button("Create Subtexture")) {
+					Texture* t = nullptr;
+					if (Texture::CreateSubTexture(texturePath, t, offsetX, offsetY, width, height)) {
+						newTextureId = t->GetTextureID();
+						newTextureId_i = newTextureId;
+						spriteFileBrowser.RefreshCurrentDirectory();
+					}
+				}
+				ImGuiHelper::Image(newTextureId, ImVec2(128, 128));
+
+				if (ImGui::InputInt("TextureId", &newTextureId_i)) {
+					newTextureId = (unsigned int)newTextureId_i;
+				}
+
+			}
+			End();
 		}
 
 		static bool showTileCreationWindow = false;
@@ -210,7 +267,7 @@ void MainWindow::RenderImGui() {
 				Files::SaveToFile(path.c_str(), t);
 				std::cout << "Saved." << std::endl;
 
-				if(!Resources::LoadTile(path.c_str())) {
+				if (!Resources::LoadTile(path.c_str())) {
 					std::cout << "Unable to load tile into resources!" << std::endl;
 				}
 
@@ -225,20 +282,6 @@ void MainWindow::RenderImGui() {
 		if (ImGui::BeginMenu("Debug")) {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
-			}
-			if (ImGui::BeginMenu("Sprites")) {
-				if (Files::VerifyDirectory("Sprites")) {
-					for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Sprites"))) {
-						std::string item = entry.path().string();
-						if (!Files::IsSupportedImageFormat(item.c_str())) continue;
-
-						if (ImGui::MenuItem(item.c_str())) {
-							std::cout << "Item clicked: " << item << std::endl;
-							Resources::LoadTexture(item.c_str(), true);
-						}
-					}
-				}
-				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}

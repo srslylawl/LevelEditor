@@ -26,6 +26,9 @@
     <Filter Include="Source Files\Rendering">
       <UniqueIdentifier>{b1426754-6975-494b-bd75-4cc9b4ddeaca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Third-Party\stb">
+      <UniqueIdentifier>{488efc47-5276-40c8-b52c-bb8c88bd5c0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -91,14 +94,17 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="ImGuiExtensions.cpp">
-      <Filter>Source Files\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="FileBrowser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileBrowserFile.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteSheet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiHelper.cpp">
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -156,9 +162,6 @@
     <ClInclude Include="libs\glm\glm.hpp">
       <Filter>Source Files\Third-Party</Filter>
     </ClInclude>
-    <ClInclude Include="stb_image.h">
-      <Filter>Source Files\Third-Party</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
@@ -201,20 +204,26 @@
     <ClInclude Include="Time.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImGuiExtensions.h">
-      <Filter>Source Files\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="FileBrowser.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Strings.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImGuiHelper.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="FileBrowserFile.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Source Files\Third-Party\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image_write.h">
+      <Filter>Source Files\Third-Party\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteSheet.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiHelper.h">
+      <Filter>Source Files\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

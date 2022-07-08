@@ -8,24 +8,33 @@
 #include "Mesh.h"
 
 
-inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map) {
+inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture) {
+	out_texture = nullptr;
+
 	const auto texIterator = map.find(relative_path);
 	if (const bool exists = texIterator != map.end()) {
 		if (refresh) texIterator->second->Refresh();
+		out_texture = texIterator->second;
 		return;
 	}
 
-	Rendering::Texture* t = nullptr;
-	if (!Rendering::Texture::Create(relative_path, t)) return;
+	if (!Rendering::Texture::Create(relative_path, out_texture)) return;
 
-	map[relative_path] = t;
+	map[relative_path] = out_texture;
 }
 void Resources::LoadTexture(const char* relative_path, const bool refresh) {
-	LoadTex(relative_path, refresh, Textures);
+	Rendering::Texture* _;
+	LoadTex(relative_path, refresh, Textures, _);
+}
+
+bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, const bool refresh) {
+	LoadTex(relative_path, refresh, Textures, out_texture);
+	return out_texture != nullptr;
 }
 
 void Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
-	LoadTex(relative_path, refresh, InternalTextures);
+	Rendering::Texture* _;
+	LoadTex(relative_path, refresh, InternalTextures, _);
 }
 
 bool Resources::LoadTile(const char* relative_path, bool refresh) {

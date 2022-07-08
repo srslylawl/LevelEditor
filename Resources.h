@@ -32,6 +32,7 @@ public:
 	}
 
 	static void LoadTexture(const char* relative_path, bool refresh = false);
+	static bool LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, bool refresh = false);
 	static void LoadInternalTexture(const char* relative_path, bool refresh = false);
 	static bool LoadTile(const char* relative_path, bool refresh = false);
 	static bool TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture);
