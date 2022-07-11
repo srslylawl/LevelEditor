@@ -12,5 +12,6 @@ namespace ImGuiHelper {
 
 
 	void TextCentered(const char* text);
+
 }
 

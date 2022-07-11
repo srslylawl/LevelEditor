@@ -1,3 +1,4 @@
+// ReSharper disable CppLocalVariableMayBeConst
 #include "MainWindow.h"
 
 #include <SDL.h>
@@ -152,27 +153,26 @@ void MainWindow::RenderImGui() {
 	}
 
 	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
-		[this](FileBrowserFile file) {
+		[this](const FileBrowserFile& file) {
 			if (file.FileType != FileBrowserFileType::Tile) return;
 			const auto tile = static_cast<Tiles::Tile*>(file.Data);
 			gridToolBar->SetSelectedTile(tile);
-		}, [this](FileBrowserFile file) -> bool {
+		}, false, [this](const FileBrowserFile& file) -> bool {
 			if (file.FileType != FileBrowserFileType::Tile) return false;
 			const auto tile = static_cast<Tiles::Tile*>(file.Data);
 			return tile == gridToolBar->GetSelectedTile();
 		});
 
-	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](FileBrowserFile file) {
+	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.FileType != FileBrowserFileType::Sprite) return;
 		auto p = file.directory_entry.path().string();
 		std::cout << "Pressed: " << p.c_str() << std::endl;
 		});
 
-	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](FileBrowserFile file)
-		{
+	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](const FileBrowserFile& file){
 			if (file.FileType != FileBrowserFileType::TextureSheet) return;
 
-		});
+		}, true);
 
 
 
@@ -203,28 +203,22 @@ void MainWindow::RenderImGui() {
 		if (openSpriteSheetEditor) {
 			if (Begin("TextureSheet Editor", &openSpriteSheetEditor, ImGuiWindowFlags_AlwaysAutoResize)) {
 				static unsigned int texID = 0;
-				static std::string texturePath;
 				static int offsetX = 0;
 				static int offsetY = 0;
 				static int width = 0;
 				static int height = 0;
 				static int channels = 0;
-				static TextureSheet* s = nullptr;
+				static TextureSheet* sheet = nullptr;
 				ImGuiHelper::Image(texID, ImVec2(128, 128));
 				if (ImGui::BeginDragDropTarget()) {
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
-						Rendering::Texture* t = *static_cast<Rendering::Texture**>(payload->Data);
-						texID = t->GetTextureID();
-						texturePath = t->GetRelativeFilePath();
-						width = t->GetImageProperties().width;
-						height = t->GetImageProperties().height;
-						channels = t->GetImageProperties().channelCount;
-						s = new TextureSheet(t);
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TextureSheet")) {
+						sheet = *static_cast<TextureSheet**>(payload->Data);
+						texID = sheet->GetMainTexture()->GetTextureID();
+						width = sheet->GetMainTexture()->GetImageProperties().width;
+						height = sheet->GetMainTexture()->GetImageProperties().height;
 					}
 					ImGui::EndDragDropTarget();
 				}
-				std::string ctext = "Channels: " + std::to_string(channels);
-				ImGui::Text(ctext.c_str());
 				ImGui::InputInt("Offset X", &offsetX);
 				ImGui::InputInt("Offset Y", &offsetY);
 				ImGui::InputInt("Width", &width);
@@ -233,8 +227,8 @@ void MainWindow::RenderImGui() {
 				static unsigned int newTextureId = 0;
 
 				ImGuiHelper::Image(newTextureId, ImVec2(128, 128));
-				if (!texturePath.empty() && Button("Auto Slice")) {
-					s->AutoSlice();
+				if (sheet != nullptr && Button("Auto Slice")) {
+					sheet->AutoSlice();
 					spriteFileBrowser.RefreshCurrentDirectory();
 				}
 
@@ -382,9 +376,8 @@ void MainWindow::RenderImGui() {
 
 
 	tileFileBrowser.RenderRearImGuiWindow();
-
-
 	spriteFileBrowser.RenderRearImGuiWindow();
+	textureSheetFileBrowser.RenderRearImGuiWindow();
 
 	// Required to render ImGuI
 	ImGui::Render();

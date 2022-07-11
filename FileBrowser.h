@@ -21,13 +21,18 @@ class FileBrowser {
 	int fileBrowserID;
 	inline static int currentID = 0;
 
+	bool isTileSheetBrowser = false;
+
 	Rendering::Texture* folderTexture = nullptr;
 	Rendering::Texture* returnTexture = nullptr;
 
 	std::function<void(FileBrowserFile)> onFileClick;
 	std::function<bool(FileBrowserFile)> shouldHighlight;
+
+	void RefreshCurrentTileSheetDirectory();
+	void RefreshCurrentGenericDirectory();
 public:
-	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr);
+	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, bool isTileSheetBrowser = false, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr);
 
 	void RenderRearImGuiWindow();
 	void RefreshCurrentDirectory();

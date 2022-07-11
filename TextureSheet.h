@@ -16,24 +16,28 @@ public:
 	TextureSheet& operator=(TextureSheet&& other) noexcept = delete;
 private:
 	const int spriteSize = 16; // in Pixels
-	Rendering::Texture* mainTexture;
+	Rendering::Texture* mainTexture = nullptr;
 
-	std::string Name;
-	inline static const std::string ParentDirectory = Strings::Directory_TextureSheets;
 public:
+	std::string Name;
 	inline static const std::string FileEnding = ".texsheet";
+	inline static const std::string ParentDirectory = Strings::Directory_TextureSheets;
 
 	std::vector<Rendering::Texture*> SubTextures;
 	std::vector<Rendering::SubTextureData> SubTextureData;
 
 	explicit TextureSheet(Rendering::Texture* mainTexture) : mainTexture(mainTexture) {
-		Name = mainTexture->GetFileName();
+		const std::filesystem::path texFilePath = mainTexture->GetFileName();
+		Name = texFilePath.stem().string();
 	}
+
+	Rendering::Texture* GetMainTexture() const { return mainTexture == nullptr ? Rendering::Texture::Empty() : mainTexture; }
 
 	static bool Deserialize(std::istream& iStream, TextureSheet*& out_textureSheet);
 	void Serialize(std::ostream& oStream) const;
 
 	void AutoSlice();
+	void RenderImGuiWindow();
 
 	~TextureSheet();
 };

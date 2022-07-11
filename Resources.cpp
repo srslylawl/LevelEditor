@@ -53,25 +53,26 @@ void Resources::HandleTextureSheetFolder(bool refresh) {
 		if (!LoadTexture(relativePathStr.c_str(), loadedTexture, refresh)) continue;
 
 		//Check if texture has a corresponding SpriteSheet
-		std::filesystem::path relativePath = relativePathStr;
-		std::filesystem::path relativeTexSheetPath = relativePath.stem();
-		relativeTexSheetPath.append(TextureSheet::FileEnding);
+		std::filesystem::path relativeTexSheetPath = std::filesystem::path(relativePathStr).replace_extension(TextureSheet::FileEnding);;
+		std::string relativeTexSheetPathStr = relativeTexSheetPath.string();
 
 		if (std::filesystem::exists(relativeTexSheetPath)) {
-			LoadTextureSheet(relativeTexSheetPath.string().c_str(), refresh);
+			LoadTextureSheet(relativeTexSheetPathStr.c_str(), refresh);
 			continue;
 		}
 
 		//Texture does not have a corresponding texture sheet, so we create one!
-		TextureSheets[relativeTexSheetPath.string()] = new TextureSheet(loadedTexture);
+		TextureSheets[relativeTexSheetPathStr] = new TextureSheet(loadedTexture);
+		Files::SaveToFile(TextureSheets[relativeTexSheetPathStr]);
 	}
 
 	//Check the remaining TextureSheet files - if one is not loaded yet, that means that its corresponding image file is missing
 	for (auto& entry : it) {
 		if (entry.path().extension().string() == TextureSheet::FileEnding) {
-			if (TextureSheets.find(entry.path().string()) == TextureSheets.end()) {
+			auto relPath = Files::GetRelativePath(entry.path());
+			if (TextureSheets.find(relPath) == TextureSheets.end()) {
 				// not loaded, which means its texture was not found
-				std::cout << "TextureSheet " << entry.path().string() << " 's corresponding Image file was not found." << std::endl;
+				std::cout << "TextureSheet " << relPath << " 's corresponding Image file was not found." << std::endl;
 			}
 		}
 	}
@@ -132,6 +133,13 @@ bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile) {
 	return out_tile != nullptr;
 }
 
+bool Resources::TryGetTextureSheet(const char* relative_path, TextureSheet*& out_textureSheet) {
+	out_textureSheet = nullptr;
+	if(const auto it = TextureSheets.find(relative_path); it!=TextureSheets.end()) out_textureSheet = it->second;
+
+	return out_textureSheet != nullptr;
+}
+
 template<typename PointerCollection>
 void FreeCollection(PointerCollection pCollection) {
 	for (auto& p : pCollection)
@@ -152,6 +160,10 @@ void Resources::FreeAll() {
 
 	for (auto& pair : Tiles)
 		delete pair.second;
+
+	for (auto& pair : TextureSheets) {
+		delete pair.second;
+	}
 
 }
 

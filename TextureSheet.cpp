@@ -5,6 +5,7 @@
 #include "Resources.h"
 #include "Serialization.h"
 #include "Texture.h"
+#include "ImGuiHelper.h"
 
 
 bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_textureSheet) {
@@ -41,7 +42,7 @@ bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_texture
 }
 
 void TextureSheet::Serialize(std::ostream& oStream) const {
-	Serialization::writeToStream(oStream, mainTexture->GetRelativeFilePath());
+	Serialization::Serialize(oStream, mainTexture->GetRelativeFilePath());
 	Serialization::writeToStream(oStream, SubTextureData.size());
 
 	for (auto data : SubTextureData) {
@@ -84,6 +85,54 @@ void TextureSheet::AutoSlice() {
 	}
 
 	mainTexture->CreateSubTextures(SubTextureData, SubTextures);
+}
+
+bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shouldHighlight = false) {
+	using namespace ImGui;
+	//	ImVec2 startPos = GetCursorStartPos();
+
+	//const int iconSideLength = size;
+	//const int totalItemWidth = iconSideLength + 3;
+	//startPos.x += (startPos.x + totalItemWidth) * elementCount;
+
+	//ImVec2 IconDrawPos(startPos.x, startPos.y);
+	//SetCursorPos(IconDrawPos);
+	if (shouldHighlight) PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
+	const bool clicked = ImGuiHelper::ImageButton(texture->GetTextureID(), ImVec2(buttonSize, buttonSize));
+	if (shouldHighlight) PopStyleColor();
+
+	PopID();
+
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+		ImGui::SetDragDropPayload("Texture", &texture, sizeof(void*));
+		ImGuiHelper::Image(texture->GetTextureID());
+		Text(texture->GetRelativeFilePath().c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (IsItemHovered()) {
+		BeginTooltip();
+		Text(texture->GetFileName().c_str());
+		EndTooltip();
+	}
+
+	return clicked;
+}
+
+void TextureSheet::RenderImGuiWindow() {
+	using namespace ImGui;
+	// Assuming this is inside some window
+	size_t total = SubTextures.size();
+	size_t rows = total / spriteSize;
+	int buttonSize = 32;
+	for (size_t i = 0; i < SubTextures.size(); ++i) {
+		PushID(i);
+		DrawSubSpriteButton(SubTextures[i], buttonSize);
+
+		if (i % rows != 0) {
+			SameLine();
+		}
+	}
 }
 
 TextureSheet::~TextureSheet() {
