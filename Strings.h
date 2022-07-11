@@ -5,6 +5,7 @@ namespace Strings {
 	constexpr char Directory_Icon[] = "Resources\\Icons";
 	constexpr char Directory_Sprites[] = "Sprites";
 	constexpr char Directory_Tiles[] = "Tiles";
+	constexpr char Directory_TextureSheets[] = "TextureSheets";
 	// Resources
 	constexpr char Unknown_File[] = "Resources\\Icons\\unknown_file.png";
 	constexpr char Folder[] = "Resources\\Icons\\folder.png";

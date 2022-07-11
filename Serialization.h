@@ -1,5 +1,6 @@
 #pragma once
-#include <iostream>
+#include <istream>
+#include <ostream>
 #include <vector>
 
 namespace Serialization {
@@ -20,7 +21,7 @@ namespace Serialization {
 		return oStream;
 	}
 
-	inline std::string Deserialize(std::istream& stream) {
+	inline std::string DeserializeStdString(std::istream& stream) {
 		size_t stringSize;
 		stream.read((char*)&stringSize, sizeof(stringSize));
 		if(stringSize > 2048) stringSize = 2048; //hard coded limit in case we read from an invalid stream
@@ -33,5 +34,4 @@ namespace Serialization {
 		delete[] chars;
 		return s;
 	}
-
 }

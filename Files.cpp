@@ -8,8 +8,8 @@
 namespace Files {
 
 
-	bool IsSupportedImageFormat(const char* path) {
-		return Rendering::Texture::CanCreateFromPath(path);
+	bool IsSupportedImageFormat(const char* absolutePath) {
+		return Rendering::Texture::CanCreateFromPath(absolutePath);
 	}
 
 	bool OpenFileDialog(std::string& filePath, const char* filter) {

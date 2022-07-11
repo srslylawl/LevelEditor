@@ -18,6 +18,7 @@
 #include "ImGuiHelper.h"
 #include "Renderer.h"
 #include "Resources.h"
+#include "TextureSheet.h"
 #include "Strings.h"
 #include "Texture.h"
 #include "TileMap.h"
@@ -79,6 +80,11 @@ bool MainWindow::Initialize() {
 
 	if (Files::VerifyDirectory(Strings::Directory_Icon))
 		Files::ForEachInDirectory(Strings::Directory_Icon, [](const char* path) {Resources::LoadInternalTexture(path); });
+
+	// Load all textures in TextureSheets first
+	if(Files::VerifyDirectory(Strings::Directory_TextureSheets)) {
+		Resources::HandleTextureSheetFolder(false);
+	}
 
 	// Load Tiles from Tiles Folder to Memory
 	constexpr char tileDir[] = "Tiles";
@@ -162,6 +168,12 @@ void MainWindow::RenderImGui() {
 		std::cout << "Pressed: " << p.c_str() << std::endl;
 		});
 
+	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](FileBrowserFile file)
+		{
+			if (file.FileType != FileBrowserFileType::TextureSheet) return;
+
+		});
+
 
 
 	// Menu Bar
@@ -189,7 +201,7 @@ void MainWindow::RenderImGui() {
 		}
 
 		if (openSpriteSheetEditor) {
-			if (Begin("SpriteSheet Editor", &openSpriteSheetEditor, ImGuiWindowFlags_AlwaysAutoResize)) {
+			if (Begin("TextureSheet Editor", &openSpriteSheetEditor, ImGuiWindowFlags_AlwaysAutoResize)) {
 				static unsigned int texID = 0;
 				static std::string texturePath;
 				static int offsetX = 0;
@@ -197,41 +209,33 @@ void MainWindow::RenderImGui() {
 				static int width = 0;
 				static int height = 0;
 				static int channels = 0;
+				static TextureSheet* s = nullptr;
 				ImGuiHelper::Image(texID, ImVec2(128, 128));
 				if (ImGui::BeginDragDropTarget()) {
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
-						const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
+						Rendering::Texture* t = *static_cast<Rendering::Texture**>(payload->Data);
 						texID = t->GetTextureID();
-						texturePath = t->GetFilePath();
+						texturePath = t->GetRelativeFilePath();
 						width = t->GetImageProperties().width;
 						height = t->GetImageProperties().height;
 						channels = t->GetImageProperties().channelCount;
+						s = new TextureSheet(t);
 					}
 					ImGui::EndDragDropTarget();
 				}
 				std::string ctext = "Channels: " + std::to_string(channels);
-				Text(ctext.c_str());
+				ImGui::Text(ctext.c_str());
 				ImGui::InputInt("Offset X", &offsetX);
 				ImGui::InputInt("Offset Y", &offsetY);
 				ImGui::InputInt("Width", &width);
 				ImGui::InputInt("Height", &height);
 
 				static unsigned int newTextureId = 0;
-				static int newTextureId_i = 0;
 
-
-				if (Button("Create Subtexture")) {
-					Texture* t = nullptr;
-					if (Texture::CreateSubTexture(texturePath, t, offsetX, offsetY, width, height)) {
-						newTextureId = t->GetTextureID();
-						newTextureId_i = newTextureId;
-						spriteFileBrowser.RefreshCurrentDirectory();
-					}
-				}
 				ImGuiHelper::Image(newTextureId, ImVec2(128, 128));
-
-				if (ImGui::InputInt("TextureId", &newTextureId_i)) {
-					newTextureId = (unsigned int)newTextureId_i;
+				if (!texturePath.empty() && Button("Auto Slice")) {
+					s->AutoSlice();
+					spriteFileBrowser.RefreshCurrentDirectory();
 				}
 
 			}
@@ -263,8 +267,8 @@ void MainWindow::RenderImGui() {
 				//tile created!
 				//save file to disk
 				//TODO: secure load/save function
-				std::string path = "Tiles\\" + t->Name + Tiles::Tile::fileEnding;
-				Files::SaveToFile(path.c_str(), t);
+				std::string path = "Tiles\\" + t->Name + Tiles::Tile::FileEnding;
+				Files::SaveToFile(t);
 				std::cout << "Saved." << std::endl;
 
 				if (!Resources::LoadTile(path.c_str())) {

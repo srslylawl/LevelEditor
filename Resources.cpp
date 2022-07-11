@@ -6,6 +6,7 @@
 #include "Tile.h"
 #include "Files.h"
 #include "Mesh.h"
+#include "TextureSheet.h"
 
 
 inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture) {
@@ -35,6 +36,61 @@ bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_
 void Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
 	Rendering::Texture* _;
 	LoadTex(relative_path, refresh, InternalTextures, _);
+}
+
+void Resources::HandleTextureSheetFolder(bool refresh) {
+	//TODO: this only handles the root directory currently
+	auto it = Files::GetDirectoryIterator(Strings::Directory_TextureSheets);
+
+	//Load all textures first
+	for (auto& entry : it) {
+		std::string absolutePath = entry.path().string();
+
+		if (!Rendering::Texture::CanCreateFromPath(absolutePath.c_str())) continue;
+
+		std::string relativePathStr = Files::GetRelativePath(absolutePath);
+		Rendering::Texture* loadedTexture = nullptr;
+		if (!LoadTexture(relativePathStr.c_str(), loadedTexture, refresh)) continue;
+
+		//Check if texture has a corresponding SpriteSheet
+		std::filesystem::path relativePath = relativePathStr;
+		std::filesystem::path relativeTexSheetPath = relativePath.stem();
+		relativeTexSheetPath.append(TextureSheet::FileEnding);
+
+		if (std::filesystem::exists(relativeTexSheetPath)) {
+			LoadTextureSheet(relativeTexSheetPath.string().c_str(), refresh);
+			continue;
+		}
+
+		//Texture does not have a corresponding texture sheet, so we create one!
+		TextureSheets[relativeTexSheetPath.string()] = new TextureSheet(loadedTexture);
+	}
+
+	//Check the remaining TextureSheet files - if one is not loaded yet, that means that its corresponding image file is missing
+	for (auto& entry : it) {
+		if (entry.path().extension().string() == TextureSheet::FileEnding) {
+			if (TextureSheets.find(entry.path().string()) == TextureSheets.end()) {
+				// not loaded, which means its texture was not found
+				std::cout << "TextureSheet " << entry.path().string() << " 's corresponding Image file was not found." << std::endl;
+			}
+		}
+	}
+
+}
+
+void Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
+	const auto tsIt = TextureSheets.find(relative_path);
+	if (tsIt != TextureSheets.end()) {
+		if (refresh) {} //TODO: implement refresh
+		return;
+	}
+
+	TextureSheet* t = nullptr;
+	if (!Files::LoadFromFile(relative_path, t)) {
+		std::cout << "Unable to load Texturesheet: " << relative_path << std::endl;
+		return;
+	}
+	TextureSheets[relative_path] = t;
 }
 
 bool Resources::LoadTile(const char* relative_path, bool refresh) {
@@ -71,7 +127,7 @@ bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Text
 
 bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile) {
 	out_tile = nullptr;
-	if(const auto it = Tiles.find(relative_path); it != Tiles.end()) out_tile = it->second;
+	if (const auto it = Tiles.find(relative_path); it != Tiles.end()) out_tile = it->second;
 
 	return out_tile != nullptr;
 }

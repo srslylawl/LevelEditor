@@ -13,11 +13,11 @@ namespace Tiles {
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
 		out_tile = new Tile();
 
-		out_tile->Name = Serialization::Deserialize(iStream);
-		out_tile->Texture = Serialization::Deserialize(iStream);
-		std::string fileEndingCheck = Serialization::Deserialize(iStream);
+		out_tile->Name = Serialization::DeserializeStdString(iStream);
+		out_tile->Texture = Serialization::DeserializeStdString(iStream);
+		std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
 
-		bool valid = fileEndingCheck == fileEnding;
+		bool valid = fileEndingCheck == FileEnding;
 		if (!valid) {
 			delete out_tile;
 			std::cout << "File ending check failed." << std::endl;
@@ -26,12 +26,10 @@ namespace Tiles {
 		return valid;
 	}
 
-	std::ostream& Tile::Serialize(std::ostream& oStream) {
+	void Tile::Serialize(std::ostream& oStream) const {
 		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, Texture);
-		Serialization::Serialize(oStream, fileEnding);
-
-		return oStream;
+		Serialization::Serialize(oStream, FileEnding);
 	}
 
 	// Menu for Tile Creation; Returns True on success
@@ -50,7 +48,7 @@ namespace Tiles {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
 					const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
 					texID = t->GetTextureID();
-					strcpy_s(texPathBuff, t->GetFilePath().c_str());
+					strcpy_s(texPathBuff, t->GetRelativeFilePath().c_str());
 				}
 				ImGui::EndDragDropTarget();
 			}

@@ -19,7 +19,7 @@ namespace Files {
 
 		return false;
 	}
-	bool IsSupportedImageFormat(const char* path);
+	bool IsSupportedImageFormat(const char* absolutePath);
 
 	inline std::filesystem::path GetAbsolutePath(const std::string& path) {
 		return std::filesystem::current_path().append(path);
@@ -54,8 +54,9 @@ namespace Files {
 	}
 
 	template<typename Serializable>
-	void SaveToFile(const char* fileName, Serializable* serializable) {
+	void SaveToFile(Serializable* serializable) {
 		//TODO: make secure
+		const std::string fileName = serializable->ParentDirectory + "\\" + serializable->Name + serializable->FileEnding;
 		ofstream o(fileName, iostream::binary);
 		serializable->Serialize(o);
 		o.close();

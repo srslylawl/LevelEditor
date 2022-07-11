@@ -130,7 +130,7 @@ void FileBrowser::RefreshCurrentDirectory() {
 				fileBrowserFile.Data = fileBrowserFile.Texture;
 				fileBrowserFile.FileType = FileBrowserFileType::Sprite;
 			}
-			else if (dirEntry.path().has_extension() && dirEntry.path().extension().string() == Tiles::Tile::fileEnding) {
+			else if (dirEntry.path().has_extension() && dirEntry.path().extension().string() == Tiles::Tile::FileEnding) {
 				//Is Tile
 				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
 				Tiles::Tile* tile;
