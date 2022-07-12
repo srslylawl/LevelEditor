@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "Files.h"
 #include "Resources.h"
 #include "Serialization.h"
 #include "Texture.h"
@@ -85,6 +86,7 @@ void TextureSheet::AutoSlice() {
 	}
 
 	mainTexture->CreateSubTextures(SubTextureData, SubTextures);
+	Files::SaveToFile(this);
 }
 
 bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shouldHighlight = false) {
@@ -98,7 +100,7 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 	//ImVec2 IconDrawPos(startPos.x, startPos.y);
 	//SetCursorPos(IconDrawPos);
 	if (shouldHighlight) PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
-	const bool clicked = ImGuiHelper::ImageButton(texture->GetTextureID(), ImVec2(buttonSize, buttonSize));
+	const bool clicked = ImGuiHelper::ImageButton(texture->GetTextureID(), ImVec2(buttonSize, buttonSize), 0);
 	if (shouldHighlight) PopStyleColor();
 
 	PopID();
@@ -123,20 +125,16 @@ void TextureSheet::RenderImGuiWindow() {
 	using namespace ImGui;
 	// Assuming this is inside some window
 	size_t total = SubTextures.size();
-	size_t rows = total / spriteSize;
+	size_t rows = total*spriteSize / mainTexture->GetImageProperties().height;
 	int buttonSize = 32;
 	for (size_t i = 0; i < SubTextures.size(); ++i) {
 		PushID(i);
 		DrawSubSpriteButton(SubTextures[i], buttonSize);
 
-		if (i % rows != 0) {
+		if (i % rows != 0 || i == 0) {
 			SameLine();
 		}
 	}
 }
 
-TextureSheet::~TextureSheet() {
-	for (auto& subTexture : SubTextures) {
-		delete subTexture;
-	}
-}
+TextureSheet::~TextureSheet() = default;

@@ -37,6 +37,8 @@ public:
 	static void LoadTexture(const char* relative_path, bool refresh = false);
 	static bool LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, bool refresh = false);
 
+	static void AddTexture(Rendering::Texture* texture, bool isInternal = false);
+
 	static void LoadInternalTexture(const char* relative_path, bool refresh = false);
 	static void HandleTextureSheetFolder(bool refresh = false);
 	static void LoadTextureSheet(const char* relative_path, bool refresh = false);

@@ -9,7 +9,7 @@
 #include "TextureSheet.h"
 
 
-inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture) {
+inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture, bool isInternal) {
 	out_texture = nullptr;
 
 	const auto texIterator = map.find(relative_path);
@@ -19,23 +19,26 @@ inline void LoadTex(const char* relative_path, const bool refresh, std::map<std:
 		return;
 	}
 
-	if (!Rendering::Texture::Create(relative_path, out_texture)) return;
-
-	map[relative_path] = out_texture;
+	if (!Rendering::Texture::Create(relative_path, out_texture, isInternal)) return;
 }
 void Resources::LoadTexture(const char* relative_path, const bool refresh) {
 	Rendering::Texture* _;
-	LoadTex(relative_path, refresh, Textures, _);
+	LoadTex(relative_path, refresh, Textures, _, false);
 }
 
 bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, const bool refresh) {
-	LoadTex(relative_path, refresh, Textures, out_texture);
+	LoadTex(relative_path, refresh, Textures, out_texture, false);
 	return out_texture != nullptr;
+}
+
+void Resources::AddTexture(Rendering::Texture* texture, bool isInternal) {
+	auto &map = isInternal ? InternalTextures : Textures;
+	map[texture->GetRelativeFilePath()] = texture;
 }
 
 void Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
 	Rendering::Texture* _;
-	LoadTex(relative_path, refresh, InternalTextures, _);
+	LoadTex(relative_path, refresh, InternalTextures, _, true);
 }
 
 void Resources::HandleTextureSheetFolder(bool refresh) {
@@ -118,6 +121,7 @@ inline bool TryGetTex(const char* relative_path, Rendering::Texture*& out_textur
 	return out_texture != Rendering::Texture::Empty();
 }
 
+//Returns Texture::Empty() on fail.
 bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture) {
 	return TryGetTex(relative_path, out_texture, Textures);
 }

@@ -83,7 +83,7 @@ bool MainWindow::Initialize() {
 		Files::ForEachInDirectory(Strings::Directory_Icon, [](const char* path) {Resources::LoadInternalTexture(path); });
 
 	// Load all textures in TextureSheets first
-	if(Files::VerifyDirectory(Strings::Directory_TextureSheets)) {
+	if (Files::VerifyDirectory(Strings::Directory_TextureSheets)) {
 		Resources::HandleTextureSheetFolder(false);
 	}
 
@@ -103,8 +103,8 @@ bool MainWindow::InitSDL() {
 	}
 
 	auto window_flags = static_cast<SDL_WindowFlags>(SDL_WINDOW_OPENGL
-		| SDL_WINDOW_RESIZABLE
-		| SDL_WINDOW_ALLOW_HIGHDPI);
+													 | SDL_WINDOW_RESIZABLE
+													 | SDL_WINDOW_ALLOW_HIGHDPI);
 
 	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, window_flags);
 	if (SDLWindow == nullptr) {
@@ -153,26 +153,32 @@ void MainWindow::RenderImGui() {
 	}
 
 	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
-		[this](const FileBrowserFile& file) {
-			if (file.FileType != FileBrowserFileType::Tile) return;
-			const auto tile = static_cast<Tiles::Tile*>(file.Data);
-			gridToolBar->SetSelectedTile(tile);
-		}, false, [this](const FileBrowserFile& file) -> bool {
-			if (file.FileType != FileBrowserFileType::Tile) return false;
-			const auto tile = static_cast<Tiles::Tile*>(file.Data);
-			return tile == gridToolBar->GetSelectedTile();
-		});
+									   [this](const FileBrowserFile& file) {
+		if (file.FileType != FileBrowserFileType::Tile) return;
+		const auto tile = static_cast<Tiles::Tile*>(file.Data);
+		gridToolBar->SetSelectedTile(tile);
+	}, false, [this](const FileBrowserFile& file) -> bool {
+		if (file.FileType != FileBrowserFileType::Tile) return false;
+		const auto tile = static_cast<Tiles::Tile*>(file.Data);
+		return tile == gridToolBar->GetSelectedTile();
+	});
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.FileType != FileBrowserFileType::Sprite) return;
 		auto p = file.directory_entry.path().string();
 		std::cout << "Pressed: " << p.c_str() << std::endl;
-		});
+	});
 
-	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](const FileBrowserFile& file){
-			if (file.FileType != FileBrowserFileType::TextureSheet) return;
+	static TextureSheet* selectedTextureSheet = nullptr;
 
-		}, true);
+	constexpr char selectedTexSheetPopupID[] = "SelectedTextureSheet";
+	static bool openTexSheetPopup = false;
+
+	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](const FileBrowserFile& file) {
+		if (file.FileType != FileBrowserFileType::TextureSheet) return;
+		selectedTextureSheet = static_cast<TextureSheet*>(file.Data);
+		openTexSheetPopup = true;
+	}, true);
 
 
 
@@ -276,12 +282,26 @@ void MainWindow::RenderImGui() {
 				tileFileBrowser.RefreshCurrentDirectory();
 			}
 		}
+		static bool showTextureDebugViewer = false;
 
 		if (ImGui::BeginMenu("Debug")) {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
 			}
+			if (ImGui::MenuItem("Show TextureDebugViewer", nullptr, showTextureDebugViewer)) {
+				showTextureDebugViewer = !showTextureDebugViewer;
+			}
 			ImGui::EndMenu();
+		}
+
+		if (showTextureDebugViewer) {
+			if (ImGui::Begin("TextureDebugViewer", &showTextureDebugViewer, ImGuiWindowFlags_AlwaysAutoResize)) {
+				static unsigned int textureId = 0;
+				constexpr unsigned int step = 1;
+				InputScalar("Texture ID", ImGuiDataType_U32, &textureId, &step);
+				ImGuiHelper::Image(textureId, ImVec2(64, 64));
+			}
+			End();
 		}
 
 		if (ImGui::BeginMenu("View")) {
@@ -300,7 +320,6 @@ void MainWindow::RenderImGui() {
 				}
 				ImGui::EndMenu();
 			}
-
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -337,6 +356,7 @@ void MainWindow::RenderImGui() {
 		const auto size = GetWindowSize();
 	}
 	ImGui::End();
+
 
 	// Grid Tool Window
 	static bool toolWindowOpen = true;
@@ -378,6 +398,18 @@ void MainWindow::RenderImGui() {
 	tileFileBrowser.RenderRearImGuiWindow();
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
+
+	if (selectedTextureSheet != nullptr) {
+		if (openTexSheetPopup) {
+			OpenPopup(selectedTexSheetPopupID);
+			openTexSheetPopup = false;
+		}
+
+		if (BeginPopup(selectedTexSheetPopupID)) {
+			selectedTextureSheet->RenderImGuiWindow();
+			EndPopup();
+		}
+	}
 
 	// Required to render ImGuI
 	ImGui::Render();

@@ -9,6 +9,7 @@
 #include <iostream>
 #include "glad.h"
 #include "Files.h"
+#include "Resources.h"
 
 using namespace Rendering;
 
@@ -28,11 +29,12 @@ inline bool ImageProperties::SetColorProfile() {
 }
 
 Texture::Texture(const unsigned id, std::string name, std::string path,
-	const ImageProperties imageProperties) : textureId(id),
+	const ImageProperties imageProperties, bool isInternal) : textureId(id),
 	imageProperties(imageProperties),
 	relativeFilePath(std::move(path)),
 	fileName(std::move(name)) {
 	std::cout << "Created Texture " << this->fileName << ": Path: " << this->relativeFilePath << std::endl;
+	Resources::AddTexture(this, isInternal);
 }
 
 bool Texture::Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically) {
@@ -51,6 +53,7 @@ bool Texture::Load(const std::string& relative_path, ImageProperties& out_imageP
 }
 
 void Texture::BindToGPU(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char*& imageData) {
+	//TODO: allow customization of parameters
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -66,7 +69,7 @@ unsigned Texture::GetTextureID() const { return textureId; }
 std::string Texture::GetRelativeFilePath() const { return relativeFilePath; }
 std::string Texture::GetFileName() const { return fileName; }
 
-bool Texture::Create(const std::string& relativePath, Texture*& out_texture) {
+bool Texture::Create(const std::string& relativePath, Texture*& out_texture, bool isInternal) {
 	ImageProperties imageProperties{};
 	unsigned char* rawImageData = nullptr;
 
@@ -79,8 +82,8 @@ bool Texture::Create(const std::string& relativePath, Texture*& out_texture) {
 
 	const std::filesystem::path p = relativePath;
 	const std::string fileName = p.filename().string();
-	std::cout << "Image " << fileName << " relativePath: " << relativePath.c_str() << " bound to textureID: " << textureId << std::endl;
-	out_texture = new Texture(textureId, p.filename().string(), relativePath, imageProperties);
+	std::cout << "Image " << relativePath.c_str() << " bound to textureID: " << textureId << std::endl;
+	out_texture = new Texture(textureId, p.filename().string(), relativePath, imageProperties, isInternal);
 
 	return true;
 }
@@ -116,7 +119,7 @@ void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImagePr
 	glGenTextures(1, &textureId);
 	BindToGPU(textureId, subTexImgProps, rawSubTextureData);
 	delete[] rawSubTextureData;
-
+	//TODO: check if texture already exists for that path, and if yes, refresh instead
 	out_TexturePtr = new Texture(textureId, newTexturePath.filename().string(), newTexturePath.string(), imageProperties);
 }
 
@@ -125,9 +128,6 @@ bool Texture::CreateSubTextures(std::vector<SubTextureData>& subTextureData, std
 	ImageProperties imageProperties{};
 	//load without flip so yOffset is from the top instead of the bottom as expected
 	if (!Load(GetRelativeFilePath(), imageProperties, rawImageData, false)) return false;
-
-	const size_t pixelByteSize = imageProperties.channelCount;
-	const size_t originRowByteSize = pixelByteSize * imageProperties.width;
 
 	for (const auto& sData : subTextureData) {
 		if (imageProperties.width < sData.xOffset + sData.width || imageProperties.height < sData.yOffset + sData.height) {
@@ -146,8 +146,7 @@ bool Texture::CreateSubTextures(std::vector<SubTextureData>& subTextureData, std
 		const std::filesystem::path newPath = parentPath.string() + "\\" + fileName;
 		SliceSubTextureFromData(rawImageData, imageProperties, sData, newPath, tPtr);
 		out_textures.push_back(tPtr);
-
-		std::cout << "SubTextureData " << newPath.filename().string() << " relativePath: " << newPath.string().c_str() << " bound to textureID: " << textureId << std::endl;
+		//std::cout << "SubTextureData " << newPath.string().c_str() << " bound to textureID: " << tPtr->GetTextureID() << std::endl;
 	}
 
 	//stbi_write_png(newPath.string().c_str(), imageProperties.width, imageProperties.height, imageProperties.channelCount, subTextureData, static_cast<int>(newRowByteSize));
@@ -164,6 +163,7 @@ bool Texture::Refresh() {
 	unsigned char* rawImageData = nullptr;
 	if (!Load(relativeFilePath, imageProperties, rawImageData)) return false;
 	BindToGPU(textureId, imageProperties, rawImageData);
+	delete[] rawImageData;
 
 	std::cout << "Image " << fileName << " refreshed to textureID: " << textureId << std::endl;
 

@@ -26,7 +26,7 @@ namespace Rendering {
 		Texture& operator=(Texture&& other) noexcept = delete;
 
 	private:
-		Texture(unsigned id, std::string name, std::string path, ImageProperties imageProperties);
+		Texture(unsigned id, std::string name, std::string path, ImageProperties imageProperties, bool isInternal = false);
 
 		unsigned int textureId = 0;
 		ImageProperties imageProperties;
@@ -49,7 +49,7 @@ namespace Rendering {
 		std::string GetRelativeFilePath() const;
 		std::string GetFileName() const;
 
-		static bool Create(const std::string& relativePath, Texture*& out_texture);
+		static bool Create(const std::string& relativePath, Texture*& out_texture, bool isInternal);
 
 		bool CreateSubTextures(std::vector<SubTextureData>& subTextureData, std::vector<Texture*>& out_textures);
 

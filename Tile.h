@@ -1,9 +1,19 @@
 #pragma once
 #include <string>
+#include <vector>
 
 #include "Strings.h"
 
 namespace  Tiles {
+
+	struct TileSprite {
+		std::string Texture;
+		float ProbabilityModifier;
+	};
+
+	struct TileSlot {
+		std::vector<TileSprite> TileSprites;
+	};
 	class Tile {
 	public:
 		std::string Texture; //TODO: change this from string to something else

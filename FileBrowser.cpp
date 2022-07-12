@@ -48,7 +48,8 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	const bool clicked = ImageButton(reinterpret_cast<void*>(texture->GetTextureID()), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
 	if (shouldHighlight) PopStyleColor();
 
-	const bool allowDragAndDrop = file != nullptr && file->FileType != FileBrowserFileType::Unsupported;
+	const bool allowDragAndDrop = file != nullptr && 
+		(file->FileType == FileBrowserFileType::Sprite || file->FileType == FileBrowserFileType::TextureSheet);
 	if (allowDragAndDrop) {
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
 			std::string payloadType;
@@ -188,7 +189,9 @@ void FileBrowser::RefreshCurrentGenericDirectory() {
 				if (!Resources::TryGetTile(relativePath.c_str(), tile)) {
 					std::cout << "ERROR: Unable to get tile: " << relativePath.c_str() << std::endl;
 				}
-				Resources::TryGetTexture(tile->Texture.c_str(), fileBrowserFile.Texture);
+				if(!Resources::TryGetTexture(tile->Texture.c_str(), fileBrowserFile.Texture)) {
+					std::cout << "ERROR: Unable to get texture for tile: " << relativePath.c_str() << " texture: " << tile->Texture.c_str() << std::endl;
+				}
 				fileBrowserFile.Data = tile;
 				fileBrowserFile.FileType = FileBrowserFileType::Tile;
 
