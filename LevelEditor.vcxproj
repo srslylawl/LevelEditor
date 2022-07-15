@@ -128,7 +128,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2main.lib;SDL2.lib;winmm.lib;version.lib;Imm32.lib;Setupapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%Program Files%Windows Kits\10\Lib;%Program Files%\Windows Kits\10\Lib\10.0.19041.0\um\x64;C:\Users\Andreas\Desktop\LevelEditor\libs\SDL2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%Program Files%Windows Kits\10\Lib;%Program Files%\Windows Kits\10\Lib\10.0.19041.0\um\x64;$(ProjectDir)libs\SDL2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Message>
