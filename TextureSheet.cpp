@@ -64,7 +64,7 @@ void TextureSheet::AutoSlice() {
 		std::cout << "TextureSheet's WIDTH is not divisible by SpriteSize, abort." << std::endl;
 		return;
 	}
-	const size_t x = props.height / spriteSize;
+	const size_t x = props.width / spriteSize;
 	const size_t y = props.height / spriteSize;
 
 	//TODO: dont delete textures as we might be able to re-use some of them when slicing multiple times
@@ -124,16 +124,21 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 void TextureSheet::RenderImGuiWindow() {
 	using namespace ImGui;
 	// Assuming this is inside some window
+	auto props = mainTexture->GetImageProperties();
+	Text(mainTexture->GetFileName().c_str());
+	std::string sizeT("Size: " + std::to_string(props.width) + " x " + std::to_string(props.height));
+	Text(sizeT.c_str());
+
 	size_t total = SubTextures.size();
 	size_t rows = total*spriteSize / mainTexture->GetImageProperties().height;
 	int buttonSize = 32;
 	for (size_t i = 0; i < SubTextures.size(); ++i) {
+		if (i % rows != 0) {
+			SameLine();
+		}
 		PushID(i);
 		DrawSubSpriteButton(SubTextures[i], buttonSize);
 
-		if (i % rows != 0 || i == 0) {
-			SameLine();
-		}
 	}
 }
 
