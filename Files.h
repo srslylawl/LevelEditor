@@ -54,9 +54,20 @@ namespace Files {
 	}
 
 	template<typename Serializable>
+	std::string GetRelativePathTo(Serializable* serializable) {
+		return serializable->ParentDirectory + "\\" + serializable->Name + serializable->FileEnding;
+	}
+
+		template<typename Serializable>
+	std::string GetRelativePathTo(Serializable* serializable, std::string nameOverride) {
+		return serializable->ParentDirectory + "\\" + nameOverride + serializable->FileEnding;
+	}
+
+
+	template<typename Serializable>
 	void SaveToFile(Serializable* serializable) {
 		//TODO: make secure
-		const std::string fileName = serializable->ParentDirectory + "\\" + serializable->Name + serializable->FileEnding;
+		const std::string fileName = GetRelativePathTo(serializable);
 		ofstream o(fileName, iostream::binary);
 		serializable->Serialize(o);
 		o.close();
@@ -74,6 +85,14 @@ namespace Files {
 		file.close();
 
 		return success && out != nullptr;
+	}
+
+	template<typename Serializable>
+	void Rename(Serializable* serializable, const std::string& new_name) {
+		std::string oldPath = GetRelativePathTo(serializable);
+		serializable->Name = new_name;
+		std::string newPath = GetRelativePathTo(serializable);
+		std::filesystem::rename(oldPath, newPath);
 	}
 
 	bool OpenFileDialog(std::string& filePath, const char* filter);

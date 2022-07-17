@@ -15,7 +15,7 @@ void Tiles::TileMap::Render() const {
 		shader->setMat4("model", modelM);
 
 		Rendering::Texture* tex = nullptr;
-		if(!Resources::TryGetTexture(pair.second->Texture.c_str(), tex)) {
+		if(!Resources::TryGetTexture(pair.second->DisplayTexture.c_str(), tex)) {
 			std::cout << "TEXTURE invalid: " << glm::to_string(pair.first) << std::endl;
 			continue;
 		}

@@ -28,11 +28,12 @@ class FileBrowser {
 
 	std::function<void(FileBrowserFile)> onFileClick;
 	std::function<bool(FileBrowserFile)> shouldHighlight;
+	std::function<void(FileBrowserFile&)> onFileEdit;
 
 	void RefreshCurrentTileSheetDirectory();
 	void RefreshCurrentGenericDirectory();
 public:
-	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, bool isTileSheetBrowser = false, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr);
+	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, bool isTileSheetBrowser = false, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr, std::function<void(FileBrowserFile&)> onFileEdit = nullptr);
 
 	void RenderRearImGuiWindow();
 	void RefreshCurrentDirectory();

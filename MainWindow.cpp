@@ -145,12 +145,25 @@ void MainWindow::RenderImGui() {
 	ImGui::NewFrame();
 
 	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-	// ImGui logic here
+	// ########################## ImGui logic below this line ##############################
 
 	static bool showDebugWindow = false;
 	if (showDebugWindow) {
 		ImGui::ShowDemoWindow();
 	}
+
+	// Main Cam Controls
+	Camera::Main->DearImGuiWindow();
+
+	static bool showFileEditWindow = false;
+	static void* fileEditData = nullptr;
+	static FileBrowserFileType fileEditType = FileBrowserFileType::Unsupported;
+
+	auto onFileEdit = [](FileBrowserFile& file) {
+		showFileEditWindow = true;
+		fileEditData = file.Data;
+		fileEditType = file.FileType;
+	};
 
 	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
 									   [this](const FileBrowserFile& file) {
@@ -161,7 +174,7 @@ void MainWindow::RenderImGui() {
 		if (file.FileType != FileBrowserFileType::Tile) return false;
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		return tile == gridToolBar->GetSelectedTile();
-	});
+	}, onFileEdit);
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.FileType != FileBrowserFileType::Sprite) return;
@@ -241,12 +254,15 @@ void MainWindow::RenderImGui() {
 			}
 			End();
 		}
-
+		static Tiles::Tile* newTile = nullptr;
 		static bool showTileCreationWindow = false;
 		if (BeginMenu("Tiles")) {
 			if (Files::VerifyDirectory("Tiles")) {
 				if (ImGui::MenuItem("New Tile")) {
 					showTileCreationWindow = true;
+					delete newTile; //delete in case we didn't save last time
+					newTile = new Tiles::Tile();
+					Tiles::Tile::NewTileName.clear();
 				}
 
 				for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
@@ -261,26 +277,16 @@ void MainWindow::RenderImGui() {
 		}
 
 		if (showTileCreationWindow) {
-			Tiles::Tile* t = nullptr;
-			if (Tiles::Tile::ImGuiCreateTile(showTileCreationWindow, t)) {
-				showTileCreationWindow = false;
-				//tile created!
-				//save file to disk
-				//TODO: secure load/save function
-				std::string path = "Tiles\\" + t->Name + Tiles::Tile::FileEnding;
-				Files::SaveToFile(t);
-				std::cout << "Saved." << std::endl;
-
-				if (!Resources::LoadTile(path.c_str())) {
-					std::cout << "Unable to load tile into resources!" << std::endl;
+			if (Begin("Create new Tile", &showTileCreationWindow)) {
+				if (newTile->ImGuiEditTile(true)) {
+					Files::SaveToFile(newTile);
+					tileFileBrowser.RefreshCurrentDirectory();
+					delete newTile;
+					newTile = nullptr;
+					showTileCreationWindow = false;
 				}
-
-				Tiles::Tile* loaded = nullptr;
-				if (!Files::LoadFromFile(path.c_str(), loaded)) {
-					std::cout << "Unabled to load created Tile:" << std::endl;
-				}
-				tileFileBrowser.RefreshCurrentDirectory();
 			}
+			End();
 		}
 		static bool showTextureDebugViewer = false;
 
@@ -325,39 +331,6 @@ void MainWindow::RenderImGui() {
 		ImGui::EndMainMenuBar();
 	}
 
-	// Main Cam Controls
-	Camera::Main->DearImGuiWindow();
-
-	static bool mouseOpen = true;
-	auto mousePos = Input::GetMousePosition();
-	auto mouseCoords = Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
-	auto gridCoords = floor(mouseCoords);
-	constexpr ImGuiWindowFlags mouseCoordFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
-	if (ImGui::Begin("MouseCoordinates", &mouseOpen, mouseCoordFlags)) {
-		ImGui::Text("Mouse/Grid Debug");
-		if (ImGui::BeginTable("table_RawMouseCoords", 2)) {
-			ImGui::TableNextRow();
-			TableSetColumnIndex(0);
-			Text(std::string("X: " + std::to_string(mouseCoords.x)).c_str());
-			TableSetColumnIndex(1);
-			Text(std::string("Y: " + std::to_string(mouseCoords.y)).c_str());
-		}
-		EndTable();
-		ImGui::Text("Grid Coords:");
-		if (ImGui::BeginTable("table_MouseGridCoords", 2)) {
-			ImGui::TableNextRow();
-			TableSetColumnIndex(0);
-			Text(std::string("X: " + std::to_string((int)gridCoords.x)).c_str());
-			TableSetColumnIndex(1);
-			Text(std::string("Y: " + std::to_string((int)gridCoords.y)).c_str());
-		}
-		EndTable();
-
-		const auto size = GetWindowSize();
-	}
-	ImGui::End();
-
-
 	// Grid Tool Window
 	static bool toolWindowOpen = true;
 	constexpr ImGuiWindowFlags toolFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
@@ -394,10 +367,22 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-
 	tileFileBrowser.RenderRearImGuiWindow();
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
+
+	if (showFileEditWindow) {
+		if (Begin("File Properties", &showFileEditWindow)) {
+			if (fileEditData != nullptr && fileEditType == FileBrowserFileType::Tile) {
+				auto tile = static_cast<Tiles::Tile*>(fileEditData);
+				if (tile->ImGuiEditTile()) {
+					tileFileBrowser.RefreshCurrentDirectory();
+				}
+			}
+		}
+		End();
+	}
+
 
 	if (selectedTextureSheet != nullptr) {
 		if (openTexSheetPopup) {
@@ -411,6 +396,7 @@ void MainWindow::RenderImGui() {
 		}
 	}
 
+	// ############################### ImGui logic above this line #################################
 	// Required to render ImGuI
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -47,7 +47,7 @@ public:
 
 	static bool TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture);
 	static bool TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture);
-	static bool TryGetTile(const char* relative_path, Tiles::Tile*& out_tile);
+	static bool TryGetTile(const char* relative_path, Tiles::Tile*& out_tile, bool tryLoad = false);
 	static bool TryGetTextureSheet(const char* relative_path, TextureSheet*& out_textureSheet);
 
 	static void FreeAll();

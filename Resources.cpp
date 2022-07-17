@@ -32,7 +32,7 @@ bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_
 }
 
 void Resources::AddTexture(Rendering::Texture* texture, bool isInternal) {
-	auto &map = isInternal ? InternalTextures : Textures;
+	auto& map = isInternal ? InternalTextures : Textures;
 	map[texture->GetRelativeFilePath()] = texture;
 }
 
@@ -85,7 +85,8 @@ void Resources::HandleTextureSheetFolder(bool refresh) {
 void Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 	const auto tsIt = TextureSheets.find(relative_path);
 	if (tsIt != TextureSheets.end()) {
-		if (refresh) {} //TODO: implement refresh
+		if (refresh) {
+		} //TODO: implement refresh
 		return;
 	}
 
@@ -101,7 +102,8 @@ bool Resources::LoadTile(const char* relative_path, bool refresh) {
 	using namespace Tiles;
 	const auto tileIterator = Tiles.find(relative_path);
 	if (tileIterator != Tiles.end()) {
-		if (refresh) {} //TODO: implement refresh
+		if (refresh) {
+		} //TODO: implement refresh
 		return true;
 	}
 
@@ -130,16 +132,22 @@ bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Text
 	return TryGetTex(relative_path, out_texture, InternalTextures);
 }
 
-bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile) {
+bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile, bool tryLoad) {
 	out_tile = nullptr;
 	if (const auto it = Tiles.find(relative_path); it != Tiles.end()) out_tile = it->second;
+
+	if (out_tile == nullptr && tryLoad) {
+		if (LoadTile(relative_path)) {
+			return TryGetTile(relative_path, out_tile, false);
+		}
+	}
 
 	return out_tile != nullptr;
 }
 
 bool Resources::TryGetTextureSheet(const char* relative_path, TextureSheet*& out_textureSheet) {
 	out_textureSheet = nullptr;
-	if(const auto it = TextureSheets.find(relative_path); it!=TextureSheets.end()) out_textureSheet = it->second;
+	if (const auto it = TextureSheets.find(relative_path); it != TextureSheets.end()) out_textureSheet = it->second;
 
 	return out_textureSheet != nullptr;
 }

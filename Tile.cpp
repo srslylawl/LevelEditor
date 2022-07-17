@@ -3,20 +3,28 @@
 #include <fstream>
 #include <iostream>
 
+#include "Files.h"
 #include "imgui.h"
 #include "ImGuiHelper.h"
 #include "Resources.h"
 #include "Serialization.h"
 #include "Texture.h"
+#include "TileMap.h"
 
 namespace Tiles {
+
+	void Tile::Update(glm::ivec2 position, TileMap tileMap) {
+
+	}
+
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
 		out_tile = new Tile();
 
 		out_tile->Name = Serialization::DeserializeStdString(iStream);
-		out_tile->Texture = Serialization::DeserializeStdString(iStream);
-		std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
+		out_tile->DisplayTexture = Serialization::DeserializeStdString(iStream);
+		out_tile->pattern = Serialization::DeserializeTilePattern(iStream);
 
+		const std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
 		bool valid = fileEndingCheck == FileEnding;
 		if (!valid) {
 			delete out_tile;
@@ -28,7 +36,8 @@ namespace Tiles {
 
 	void Tile::Serialize(std::ostream& oStream) const {
 		Serialization::Serialize(oStream, Name);
-		Serialization::Serialize(oStream, Texture);
+		Serialization::Serialize(oStream, DisplayTexture);
+		Serialization::Serialize(oStream, pattern);
 		Serialization::Serialize(oStream, FileEnding);
 	}
 
@@ -82,9 +91,9 @@ namespace Tiles {
 			if (ImGui::Button("Create Tile")) {
 				out_tile = new Tile();
 				out_tile->Name = nameBuff;
-				out_tile->Texture = texPathBuff;
+				out_tile->DisplayTexture = texPathBuff;
 
-				std::cout << "Created Tile: " << out_tile->Name << " with Tex: " << out_tile->Texture << std::endl;
+				std::cout << "Created Tile: " << out_tile->Name << " with Tex: " << out_tile->DisplayTexture << std::endl;
 
 				//clear buffers for next tile
 				sprintf_s(nameBuff, "");
@@ -98,6 +107,64 @@ namespace Tiles {
 		End();
 
 		return created;
+	}
+
+	bool Tile::ImGuiEditTile(bool creatingNew) {
+		if (NewTileName.empty()) NewTileName = Name;
+
+		static bool nameChanged = false;
+		static bool fileNameAlreadyExists = false;
+		static bool hasError = false;
+		static std::string errorMessage;
+		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &NewTileName)) {
+			std::error_code error;
+			fileNameAlreadyExists = std::filesystem::exists(Files::GetRelativePathTo(this, NewTileName), error);
+			hasError = error.value() != 0;
+			errorMessage = error.message();
+			nameChanged = true;
+		}
+
+
+		unsigned int texId = 0;
+		if (Rendering::Texture* t; Resources::TryGetTexture(DisplayTexture.c_str(), t)) texId = t->GetTextureID();
+		ImGui::Text("Tile Icon");
+		ImGuiHelper::Image(texId, ImVec2(32, 32));
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
+				const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
+				DisplayTexture = t->GetRelativeFilePath();
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		pattern.DearImGuiEditPattern();
+
+		if(hasError) {
+			ImGui::Text(("Error: " + errorMessage).c_str());
+		}
+
+		if (nameChanged && fileNameAlreadyExists) {
+			ImGui::Text("Tile with same name already exists.");
+			ImGui::BeginDisabled();
+		}
+		else if (NewTileName.empty() || hasError) ImGui::BeginDisabled();
+
+		if (ImGui::Button("Save")) {
+			if (!creatingNew && nameChanged) {
+				Files::Rename(this, NewTileName);
+			}
+			Name = NewTileName;
+			NewTileName = "";
+			Files::SaveToFile(this);
+
+			nameChanged = false;
+			fileNameAlreadyExists = false;
+			hasError = false;
+			return true;
+		}
+		if (nameChanged && fileNameAlreadyExists || NewTileName.empty() || hasError) ImGui::EndDisabled();
+
+		return false;
 	}
 
 

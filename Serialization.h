@@ -12,7 +12,7 @@ namespace Serialization {
 	}
 
 	template<typename T>
-	void readFromStream(std::istream& iStream, const T& item) {
+	void readFromStream(std::istream& iStream, T& item) {
 		iStream.read((char*)&item, sizeof T);
 	}
 

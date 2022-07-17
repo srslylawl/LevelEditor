@@ -180,6 +180,7 @@
     <ClCompile Include="libs\imgui\imgui_draw.cpp" />
     <ClCompile Include="libs\imgui\imgui_tables.cpp" />
     <ClCompile Include="libs\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="libs\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -190,6 +191,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="TilePattern.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -214,6 +216,7 @@
     <ClInclude Include="libs\imgui\imstb_rectpack.h" />
     <ClInclude Include="libs\imgui\imstb_textedit.h" />
     <ClInclude Include="libs\imgui\imstb_truetype.h" />
+    <ClInclude Include="libs\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="MathExt.h" />
     <ClInclude Include="Mesh.h" />
@@ -231,6 +234,7 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileMap.h" />
+    <ClInclude Include="TilePattern.h" />
     <ClInclude Include="Time.h" />
   </ItemGroup>
   <ItemGroup>

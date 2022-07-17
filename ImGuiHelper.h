@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <imgui/misc/cpp/imgui_stdlib.h>
 
 namespace ImGuiHelper {
 	inline void Image(const int textureId, const ImVec2 size = ImVec2(32, 32)) {

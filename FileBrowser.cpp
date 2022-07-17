@@ -13,13 +13,13 @@
 
 
 FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick,
-						 bool isTileSheetBrowser,
-						 std::function<bool(FileBrowserFile)> shouldHighlight) :
+						 bool isTileSheetBrowser, std::function<bool(FileBrowserFile)> shouldHighlight, std::function<void(FileBrowserFile&)> onFileEdit) :
 	name(std::move(title)),
 	fileBrowserID(++currentID),
-	onFileClick(std::move(onFileClick)),
 	isTileSheetBrowser(isTileSheetBrowser),
-	shouldHighlight(std::move(shouldHighlight)) {
+	onFileClick(std::move(onFileClick)),
+	shouldHighlight(std::move(shouldHighlight)),
+	onFileEdit(std::move(onFileEdit)) {
 
 	const auto path = Files::GetAbsolutePath(start_directory);
 	currentDirectory = path;
@@ -30,7 +30,7 @@ FileBrowser::FileBrowser(const char* start_directory, std::string title, std::fu
 	RefreshCurrentDirectory();
 }
 
-bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, const std::string& name, const std::string& description, const int size, bool shouldHighlight = false, const FileBrowserFile* file = nullptr) {
+bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, const std::string& name, const std::string& description, const int size, bool shouldHighlight = false, const FileBrowserFile* file = nullptr, bool* out_rightClicked = nullptr) {
 	using namespace ImGui;
 
 	ImVec2 startPos = GetCursorStartPos();
@@ -46,9 +46,15 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	PushID(name.c_str());
 	if (shouldHighlight) ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
 	const bool clicked = ImageButton(reinterpret_cast<void*>(texture->GetTextureID()), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
+	const bool wasRightClicked = IsItemClicked(ImGuiMouseButton_Right);
+
+	if(wasRightClicked && out_rightClicked != nullptr) {
+		*out_rightClicked = true;
+	}
+
 	if (shouldHighlight) PopStyleColor();
 
-	const bool allowDragAndDrop = file != nullptr && 
+	const bool allowDragAndDrop = file != nullptr &&
 		(file->FileType == FileBrowserFileType::Sprite || file->FileType == FileBrowserFileType::TextureSheet);
 	if (allowDragAndDrop) {
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -72,6 +78,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 			ImGui::EndDragDropSource();
 		}
 	}
+
 
 	PopID();
 	if (IsItemHovered()) {
@@ -113,13 +120,18 @@ void FileBrowser::RenderRearImGuiWindow() {
 		}
 
 		//display files
-		for (const auto& file : currentItems) {
+		for (auto& file : currentItems) {
 			const std::string currButton = imguiID + "_Items_" + std::to_string(buttonIndex);
 			const bool highlight = shouldHighlight == nullptr ? false : shouldHighlight(file);
 			const bool isSupportedFile = file.FileType != FileBrowserFileType::Unsupported;
-			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.directory_entry.path().filename().string(), buttonSize, highlight, &file)) {
+			bool wasRightClicked = false;
+			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.directory_entry.path().filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
 				if (onFileClick != nullptr)
 					onFileClick(file);
+			}
+			if(wasRightClicked) {
+				if(onFileEdit != nullptr)
+					onFileEdit(file);
 			}
 			++buttonIndex;
 		}
@@ -186,11 +198,12 @@ void FileBrowser::RefreshCurrentGenericDirectory() {
 				//Is Tile
 				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
 				Tiles::Tile* tile;
-				if (!Resources::TryGetTile(relativePath.c_str(), tile)) {
+				if (!Resources::TryGetTile(relativePath.c_str(), tile, true)) {
 					std::cout << "ERROR: Unable to get tile: " << relativePath.c_str() << std::endl;
+					continue;
 				}
-				if(!Resources::TryGetTexture(tile->Texture.c_str(), fileBrowserFile.Texture)) {
-					std::cout << "ERROR: Unable to get texture for tile: " << relativePath.c_str() << " texture: " << tile->Texture.c_str() << std::endl;
+				if (!Resources::TryGetTexture(tile->DisplayTexture.c_str(), fileBrowserFile.Texture)) {
+					std::cout << "ERROR: Unable to get texture for tile: " << relativePath.c_str() << " texture: " << tile->DisplayTexture.c_str() << std::endl;
 				}
 				fileBrowserFile.Data = tile;
 				fileBrowserFile.FileType = FileBrowserFileType::Tile;
