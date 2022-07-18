@@ -115,6 +115,9 @@
     <ClCompile Include="libs\imgui\misc\cpp\imgui_stdlib.cpp">
       <Filter>Source Files\Third-Party\DearImGui</Filter>
     </ClCompile>
+    <ClCompile Include="FileEditWindow.cpp">
+      <Filter>Source Files\Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -242,6 +245,9 @@
     </ClInclude>
     <ClInclude Include="libs\imgui\misc\cpp\imgui_stdlib.h">
       <Filter>Source Files\Third-Party\DearImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="FileEditWindow.h">
+      <Filter>Source Files\Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

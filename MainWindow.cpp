@@ -15,6 +15,7 @@
 
 #include "Camera.h"
 #include "FileBrowser.h"
+#include "FileEditWindow.h"
 #include "GridToolBar.h"
 #include "ImGuiHelper.h"
 #include "Renderer.h"
@@ -155,14 +156,10 @@ void MainWindow::RenderImGui() {
 	// Main Cam Controls
 	Camera::Main->DearImGuiWindow();
 
-	static bool showFileEditWindow = false;
-	static void* fileEditData = nullptr;
-	static FileBrowserFileType fileEditType = FileBrowserFileType::Unsupported;
-
 	auto onFileEdit = [](FileBrowserFile& file) {
-		showFileEditWindow = true;
-		fileEditData = file.Data;
-		fileEditType = file.FileType;
+		if(file.FileType == FileBrowserFileType::Tile) {
+			FileEditWindow<Tiles::Tile>::NewEditWindow(static_cast<Tiles::Tile*>(file.Data));
+		}
 	};
 
 	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
@@ -254,39 +251,13 @@ void MainWindow::RenderImGui() {
 			}
 			End();
 		}
-		static Tiles::Tile* newTile = nullptr;
-		static bool showTileCreationWindow = false;
 		if (BeginMenu("Tiles")) {
 			if (Files::VerifyDirectory("Tiles")) {
 				if (ImGui::MenuItem("New Tile")) {
-					showTileCreationWindow = true;
-					delete newTile; //delete in case we didn't save last time
-					newTile = new Tiles::Tile();
-					Tiles::Tile::NewTileName.clear();
-				}
-
-				for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path().append("Tiles"))) {
-					std::string item = entry.path().string();
-					if (ImGui::MenuItem(item.c_str())) {
-						std::cout << "Abs: " << item << " Rel: " << Files::GetRelativePath(item) << std::endl;
-					}
+					FileEditWindow<Tiles::Tile>::NewFileCreationWindow();
 				}
 			}
-
 			ImGui::EndMenu();
-		}
-
-		if (showTileCreationWindow) {
-			if (Begin("Create new Tile", &showTileCreationWindow)) {
-				if (newTile->ImGuiEditTile(true)) {
-					Files::SaveToFile(newTile);
-					tileFileBrowser.RefreshCurrentDirectory();
-					delete newTile;
-					newTile = nullptr;
-					showTileCreationWindow = false;
-				}
-			}
-			End();
 		}
 		static bool showTextureDebugViewer = false;
 
@@ -371,18 +342,7 @@ void MainWindow::RenderImGui() {
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
 
-	if (showFileEditWindow) {
-		if (Begin("File Properties", &showFileEditWindow)) {
-			if (fileEditData != nullptr && fileEditType == FileBrowserFileType::Tile) {
-				auto tile = static_cast<Tiles::Tile*>(fileEditData);
-				if (tile->ImGuiEditTile()) {
-					tileFileBrowser.RefreshCurrentDirectory();
-				}
-			}
-		}
-		End();
-	}
-
+	IFileEditWindow::RenderAll();
 
 	if (selectedTextureSheet != nullptr) {
 		if (openTexSheetPopup) {

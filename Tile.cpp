@@ -109,24 +109,21 @@ namespace Tiles {
 		return created;
 	}
 
-	bool Tile::ImGuiEditTile(bool creatingNew) {
-		if (NewTileName.empty()) NewTileName = Name;
-
-		static bool nameChanged = false;
-		static bool fileNameAlreadyExists = false;
+	bool Tile::ImGuiEditTile(Tile* tempFile) {
 		static bool hasError = false;
 		static std::string errorMessage;
-		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &NewTileName)) {
+		static bool fileNameAlreadyExists = false;
+
+		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name)) {
 			std::error_code error;
-			fileNameAlreadyExists = std::filesystem::exists(Files::GetRelativePathTo(this, NewTileName), error);
+			fileNameAlreadyExists = std::filesystem::exists(Files::GetRelativePathTo(tempFile), error);
 			hasError = error.value() != 0;
 			errorMessage = error.message();
-			nameChanged = true;
 		}
 
 
 		unsigned int texId = 0;
-		if (Rendering::Texture* t; Resources::TryGetTexture(DisplayTexture.c_str(), t)) texId = t->GetTextureID();
+		if (Rendering::Texture* t; Resources::TryGetTexture(tempFile->DisplayTexture.c_str(), t)) texId = t->GetTextureID();
 		ImGui::Text("Tile Icon");
 		ImGuiHelper::Image(texId, ImVec2(32, 32));
 		if (ImGui::BeginDragDropTarget()) {
@@ -137,35 +134,29 @@ namespace Tiles {
 			ImGui::EndDragDropTarget();
 		}
 
-		pattern.DearImGuiEditPattern();
+		tempFile->pattern.DearImGuiEditPattern();
 
-		if(hasError) {
-			ImGui::Text(("Error: " + errorMessage).c_str());
-		}
+		if (hasError) ImGui::Text(("Error: " + errorMessage).c_str());
+		if (fileNameAlreadyExists) ImGui::Text("Tile with same name already exists.");
 
-		if (nameChanged && fileNameAlreadyExists) {
-			ImGui::Text("Tile with same name already exists.");
-			ImGui::BeginDisabled();
-		}
-		else if (NewTileName.empty() || hasError) ImGui::BeginDisabled();
+		if (tempFile->Name.empty() || hasError) ImGui::BeginDisabled();
 
 		if (ImGui::Button("Save")) {
-			if (!creatingNew && nameChanged) {
-				Files::Rename(this, NewTileName);
+			if (Name != tempFile->Name) {
+				Files::RenameFile(this, tempFile->Name);
 			}
-			Name = NewTileName;
-			NewTileName = "";
+			//move tempfile into this one
+			if (this != tempFile) *this = std::move(*tempFile);
 			Files::SaveToFile(this);
-
-			nameChanged = false;
 			fileNameAlreadyExists = false;
 			hasError = false;
+
 			return true;
 		}
-		if (nameChanged && fileNameAlreadyExists || NewTileName.empty() || hasError) ImGui::EndDisabled();
+
+
 
 		return false;
 	}
-
 
 }

@@ -88,10 +88,9 @@ namespace Files {
 	}
 
 	template<typename Serializable>
-	void Rename(Serializable* serializable, const std::string& new_name) {
+	void RenameFile(Serializable* serializable, const std::string& new_name) {
 		std::string oldPath = GetRelativePathTo(serializable);
-		serializable->Name = new_name;
-		std::string newPath = GetRelativePathTo(serializable);
+		std::string newPath = GetRelativePathTo(serializable, new_name);
 		std::filesystem::rename(oldPath, newPath);
 	}
 

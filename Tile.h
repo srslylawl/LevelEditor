@@ -10,6 +10,13 @@ namespace  Tiles {
 
 	class Tile {
 	public:
+		Tile(const Tile& other) = default;
+		Tile(Tile&& other) = default;
+		Tile& operator=(Tile&& other) = default;
+		Tile& operator=(const Tile& other) = default;
+		Tile() = default;
+		~Tile() = default;
+
 		inline static const std::string FileEnding = ".tile";
 		inline static const std::string ParentDirectory = Strings::Directory_Tiles;
 
@@ -24,9 +31,8 @@ namespace  Tiles {
 		void Serialize(std::ostream& oStream) const;
 
 		static bool ImGuiCreateTile(bool& displayWindow, Tile*& out_tile);
-		bool ImGuiEditTile(bool creatingNew = false);
+		bool ImGuiEditTile(Tile* tempFile);
 
-		inline static std::string NewTileName = "";
 	};
 }
 
