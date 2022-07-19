@@ -128,6 +128,14 @@ bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& ou
 	return TryGetTex(relative_path, out_texture, Textures);
 }
 
+unsigned Resources::TryGetTextureId(const char* relative_path) {
+	unsigned int textureId = 0;
+	if(Rendering::Texture* t; TryGetTexture(relative_path, t)) {
+		textureId = t->GetTextureID();
+	}
+	return textureId;
+}
+
 bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture) {
 	return TryGetTex(relative_path, out_texture, InternalTextures);
 }

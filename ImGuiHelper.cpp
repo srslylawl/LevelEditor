@@ -1,6 +1,18 @@
 #include "ImGuiHelper.h"
 
+#include "Texture.h"
+
 namespace ImGuiHelper {
+	void DragSourceTexture(Rendering::Texture*& texture) {
+		if(texture == nullptr) return;
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+			ImGui::SetDragDropPayload("Texture", &texture, sizeof(void*));
+			Image(texture->GetTextureID());
+			ImGui::Text(texture->GetRelativeFilePath().c_str());
+			ImGui::EndDragDropSource();
+		}
+	}
+
 	void TextCentered(const char* text) {
 		float win_width = ImGui::GetWindowSize().x;
 		float text_width = ImGui::CalcTextSize(text).x;

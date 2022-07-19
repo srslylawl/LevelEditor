@@ -1,29 +1,30 @@
 #pragma once
+
+#include <functional>
+
 #include "FileBrowserFile.h"
 
 class IFileEditWindow {
 public:
 	virtual ~IFileEditWindow() = default;
 	inline static std::vector<std::unique_ptr<IFileEditWindow>> activeWindows;
-	inline static std::vector<std::unique_ptr<IFileEditWindow>*> windowsToClose;
 
 	virtual bool RenderImGui() = 0;
-	virtual void Close() = 0;
+
+	bool setFocus = false;
+	std::function<void()> onClose = nullptr;
 
 	static void RenderAll() {
-		for (auto& windowUPTR : activeWindows)
-			if (!windowUPTR->RenderImGui()) {
-				//std::unique_ptr<IFileEditWindow>* uptr = &windowUPTR;
-				windowsToClose.emplace_back(&windowUPTR);
+		for (auto it = activeWindows.begin(); it != activeWindows.end();) {
+			if (!it->get()->RenderImGui()) {
+				if (it->get()->onClose != nullptr) {
+					it->get()->onClose();
+				}
+				it = activeWindows.erase(it);
+				continue;
 			}
-
-		if(windowsToClose.empty()) return;
-
-		for (auto& element : windowsToClose) {
-			element->get()->Close();
+			++it;
 		}
-
-		windowsToClose.clear();
 	}
 };
 
@@ -35,14 +36,12 @@ class FileEditWindow : public IFileEditWindow {
 
 	bool RenderImGui() override;
 	bool EditFile();
-	FileEditWindow(T* data, std::unique_ptr<T> tempCopy);
 public:
+	FileEditWindow(std::unique_ptr<T> tempCopy, std::function<void()> onClose = nullptr);
+	FileEditWindow(T* data, std::function<void()> onClose = nullptr);
 	//Holds reference to file and will create a temporary copy that can be edited while the window is open.
-	static void NewEditWindow(T* dataToEdit);
-	static void NewFileCreationWindow();
-
-	void Close() override;
-
+	static void NewEditWindow(T* data, const std::function<void()> onClose = nullptr);
+	static void NewFileCreationWindow(const std::function<void()> onClose = nullptr);
 };
 
 

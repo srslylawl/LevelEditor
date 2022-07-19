@@ -191,6 +191,7 @@
     <ClCompile Include="TextureSheet.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tile.cpp" />
+    <ClCompile Include="TileInstance.cpp" />
     <ClCompile Include="TileMap.cpp" />
     <ClCompile Include="TilePattern.cpp" />
   </ItemGroup>
@@ -235,6 +236,7 @@
     <ClInclude Include="Strings.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Tile.h" />
+    <ClInclude Include="TileInstance.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="TilePattern.h" />
     <ClInclude Include="Time.h" />

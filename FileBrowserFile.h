@@ -1,7 +1,8 @@
 #pragma once
 #include <filesystem>
-
 #include "Texture.h"
+
+class FileBrowser;
 
 enum class FileBrowserFileType {
 	Unsupported = 1 << 0,
@@ -14,10 +15,11 @@ public:
 	void* Data = nullptr;
 	std::filesystem::directory_entry directory_entry;
 
-	FileBrowserFile(std::filesystem::directory_entry dirEntry) : directory_entry(dirEntry), FileType(FileBrowserFileType::Unsupported) { }
+	FileBrowserFile(std::filesystem::directory_entry dirEntry, FileBrowser* fileBrowser) : directory_entry(dirEntry), FileType(FileBrowserFileType::Unsupported), FileBrowser(fileBrowser) { }
 	FileBrowserFile(void* data, const FileBrowserFileType type) : Data(data), FileType(type) { }
 
 	FileBrowserFileType FileType;
 	Rendering::Texture* Texture = nullptr;
+	FileBrowser* FileBrowser = nullptr;
 };
 

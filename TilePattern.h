@@ -7,6 +7,7 @@
 
 namespace Tiles {
 	enum class SurroundingTileFlags {
+		NONE = 0,
 		UP = 1 << 0,
 		UP_RIGHT = 1 << 1,
 		RIGHT = 1 << 2,
@@ -16,6 +17,10 @@ namespace Tiles {
 		LEFT = 1 << 6,
 		UP_LEFT = 1 << 7
 	};
+
+	inline SurroundingTileFlags operator|(SurroundingTileFlags a, SurroundingTileFlags b) {
+		return static_cast<SurroundingTileFlags>(static_cast<int>(a) | static_cast<int>(b));
+	}
 
 	enum class PatternFlag {
 		SOLO = 1,
@@ -60,13 +65,15 @@ namespace Tiles {
 	public:
 		std::unordered_map<PatternFlag, TileSlot> TileSlots;
 
+		//Won't allow empty texture variants.
 		void AddTextureVariant(PatternFlag flag, TextureVariant variant) {
+			if (variant.Texture.empty()) return;
 			TileSlots[flag].TileSprites.emplace_back(std::move(variant));
 		}
 
 		static PatternFlag PatternFromSurroundingTiles(const SurroundingTileFlags& mask);
 
-		TileSlot* GetTileSlot(const SurroundingTileFlags& mask);
+		const TileSlot* GetTileSlot(const SurroundingTileFlags& mask) const;
 
 		void DearImGuiEditPattern();
 	};

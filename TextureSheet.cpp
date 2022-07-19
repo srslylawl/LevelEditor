@@ -105,12 +105,7 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 
 	PopID();
 
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-		ImGui::SetDragDropPayload("Texture", &texture, sizeof(void*));
-		ImGuiHelper::Image(texture->GetTextureID());
-		Text(texture->GetRelativeFilePath().c_str());
-		ImGui::EndDragDropSource();
-	}
+	ImGuiHelper::DragSourceTexture(texture);
 
 	if (IsItemHovered()) {
 		BeginTooltip();
@@ -130,7 +125,7 @@ void TextureSheet::RenderImGuiWindow() {
 	Text(sizeT.c_str());
 
 	size_t total = SubTextures.size();
-	size_t rows = total*spriteSize / mainTexture->GetImageProperties().height;
+	size_t rows = total * spriteSize / mainTexture->GetImageProperties().height;
 	int buttonSize = 32;
 	for (size_t i = 0; i < SubTextures.size(); ++i) {
 		if (i % rows != 0) {

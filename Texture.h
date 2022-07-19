@@ -26,7 +26,7 @@ namespace Rendering {
 		Texture& operator=(Texture&& other) noexcept = delete;
 
 	private:
-		Texture(unsigned id, std::string name, std::string path, ImageProperties imageProperties, bool isInternal = false);
+		Texture(unsigned int id, std::string name, std::string path, ImageProperties imageProperties, bool isInternal = false);
 
 		unsigned int textureId = 0;
 		ImageProperties imageProperties;

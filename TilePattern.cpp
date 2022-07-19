@@ -12,7 +12,7 @@ int hasFlag(const Tiles::SurroundingTileFlags& mask, const Tiles::SurroundingTil
 }
 
 
-Tiles::TileSlot* Tiles::TilePattern::GetTileSlot(const SurroundingTileFlags& mask) {
+const Tiles::TileSlot* Tiles::TilePattern::GetTileSlot(const SurroundingTileFlags& mask) const {
 	const auto pattern = PatternFromSurroundingTiles(mask);
 
 	const auto it = TileSlots.find(pattern);
@@ -25,26 +25,58 @@ void Tiles::TilePattern::DearImGuiEditPattern() {
 	using namespace ImGui;
 	const auto drawFileImageButton = [this](const PatternFlag& pattern, const char* description) {
 		unsigned int texId = 0;
+		TileSlot* tileSlot = nullptr;
+		Rendering::Texture* tex = nullptr;
+
 		if (auto it = TileSlots.find(pattern); it != TileSlots.end()) {
-			auto tileSlot = it->second;
-			Rendering::Texture* tex;
-			if (!tileSlot.TileSprites.empty() && Resources::TryGetTexture(tileSlot.TileSprites[0].Texture.c_str(), tex)) {
+			tileSlot = &it->second;
+			//display last added item
+			if (!tileSlot->TileSprites.empty() && Resources::TryGetTexture(tileSlot->TileSprites.back().Texture.c_str(), tex)) {
 				texId = tex->GetTextureID();
 			}
 		}
-		ImGuiHelper::Image(texId);
-		if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
-				const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
-				AddTextureVariant(pattern, t->GetRelativeFilePath());
-			}
-			ImGui::EndDragDropTarget();
-		}
+		std::string id = "ImageId" + std::to_string((int)pattern);
+		ImGuiHelper::Image(texId, ImVec2(32, 32), id.c_str());
+		ImGuiHelper::DropTargetTexture([this, &pattern](Rendering::Texture* t) {AddTextureVariant(pattern, t->GetRelativeFilePath()); });
+		ImGuiHelper::DragSourceTexture(tex);
+
 		if (IsItemHovered()) {
 			BeginTooltip();
-			Text(description);
+			std::string descriptionString = description;
+			if(tileSlot && tileSlot->TileSprites.size() > 1) descriptionString += " (+" + std::to_string(tileSlot->TileSprites.size()-1) + " more textures.) \nRight-click to view.";
+			Text(descriptionString.c_str());
 			EndTooltip();
 		}
+		if (!tileSlot || !BeginPopupContextItem(id.c_str())) return;
+		//when right-clicked, display all variants in a popup, aligned in a square pattern
+		const auto squareRoot = (int)sqrt(tileSlot->TileSprites.size());
+		int index = 0;
+		for (auto it = tileSlot->TileSprites.begin(); it != tileSlot->TileSprites.end();) {
+			if (index++ % squareRoot != 0) SameLine();
+			unsigned int textureId = 0;
+			Rendering::Texture* variantTex = nullptr;
+			if (Resources::TryGetTexture(it->Texture.c_str(), variantTex))
+				textureId = variantTex->GetTextureID();
+
+			ImGuiHelper::Image(textureId);
+			ImGuiHelper::DragSourceTexture(variantTex);
+			bool removed = false;
+			//when hovered, display tooltip and allow deletion with "X" key
+			if (IsItemHovered()) {
+				BeginTooltip();
+				if (variantTex != nullptr) {
+					Text(variantTex->GetRelativeFilePath().c_str());
+				}
+				Text("Press 'X' while hovering to remove");
+				EndTooltip();
+				if (IsKeyPressed(ImGuiKey_X, false)) {
+					it = tileSlot->TileSprites.erase(it);
+					removed = true;
+				}
+			}
+			if (!removed) ++it;
+		}
+		EndPopup();
 	};
 
 	// Show regular grid first
@@ -63,6 +95,15 @@ void Tiles::TilePattern::DearImGuiEditPattern() {
 	drawFileImageButton(PatternFlag::OUTER_BOT_MID, "Bottom middle");
 	SameLine();
 	drawFileImageButton(PatternFlag::OUTER_BOT_RIGHT, "Bottom right");
+
+	// Inner corners
+
+	drawFileImageButton(PatternFlag::INNER_TOP_LEFT, "Inner top left");
+	SameLine();
+	drawFileImageButton(PatternFlag::INNER_TOP_RIGHT, "Inner top right");
+	drawFileImageButton(PatternFlag::INNER_BOT_LEFT, "Inner bottom left");
+	SameLine();
+	drawFileImageButton(PatternFlag::INNER_BOT_RIGHT, "Inner bottom right");
 }
 
 

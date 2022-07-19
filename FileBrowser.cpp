@@ -152,7 +152,7 @@ void FileBrowser::RefreshCurrentTileSheetDirectory() {
 		if (!dirEntry.exists() || !dirEntry.is_regular_file())
 			continue;
 
-		FileBrowserFile fileBrowserFile(dirEntry);
+		FileBrowserFile fileBrowserFile(dirEntry, this);
 		fileBrowserFile.Texture = Rendering::Texture::Empty();
 
 		const bool isTextureSheetFile = dirEntry.path().has_extension() && dirEntry.path().extension().string() == TextureSheet::FileEnding;
@@ -183,7 +183,7 @@ void FileBrowser::RefreshCurrentGenericDirectory() {
 		}
 
 		if (dirEntry.exists() && dirEntry.is_regular_file()) {
-			FileBrowserFile fileBrowserFile(dirEntry);
+			FileBrowserFile fileBrowserFile(dirEntry, this);
 			fileBrowserFile.Texture = Rendering::Texture::Empty();
 
 			if (Files::IsSupportedImageFormat(dirEntry.path().string().c_str())) {

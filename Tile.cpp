@@ -12,11 +12,6 @@
 #include "TileMap.h"
 
 namespace Tiles {
-
-	void Tile::Update(glm::ivec2 position, TileMap tileMap) {
-
-	}
-
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
 		out_tile = new Tile();
 
@@ -124,22 +119,25 @@ namespace Tiles {
 
 		unsigned int texId = 0;
 		if (Rendering::Texture* t; Resources::TryGetTexture(tempFile->DisplayTexture.c_str(), t)) texId = t->GetTextureID();
-		ImGui::Text("Tile Icon");
+		ImGuiHelper::TextWithToolTip("Tile Icon", "Texture that will represent this tile in menus");
 		ImGuiHelper::Image(texId, ImVec2(32, 32));
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
 				const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
-				DisplayTexture = t->GetRelativeFilePath();
+				tempFile->DisplayTexture = t->GetRelativeFilePath();
 			}
 			ImGui::EndDragDropTarget();
 		}
+
+		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
 		tempFile->pattern.DearImGuiEditPattern();
 
 		if (hasError) ImGui::Text(("Error: " + errorMessage).c_str());
 		if (fileNameAlreadyExists) ImGui::Text("Tile with same name already exists.");
 
-		if (tempFile->Name.empty() || hasError) ImGui::BeginDisabled();
+		bool disableSave = tempFile->Name.empty() || hasError || fileNameAlreadyExists;
+		if (disableSave) ImGui::BeginDisabled();
 
 		if (ImGui::Button("Save")) {
 			if (Name != tempFile->Name) {
@@ -153,7 +151,7 @@ namespace Tiles {
 
 			return true;
 		}
-
+		if (disableSave) ImGui::EndDisabled();
 
 
 		return false;

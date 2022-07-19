@@ -9,6 +9,8 @@ namespace  Tiles {
 	class TileMap;
 
 	class Tile {
+		TilePattern pattern;
+		
 	public:
 		Tile(const Tile& other) = default;
 		Tile(Tile&& other) = default;
@@ -23,9 +25,7 @@ namespace  Tiles {
 		std::string DisplayTexture; //TODO: change this from string to something else
 		std::string Name;
 
-		TilePattern pattern;
-
-		void Update(glm::ivec2 position, TileMap tileMap);
+		const TilePattern* GetPattern() const { return &pattern; }
 
 		static bool Deserialize(std::istream& iStream, Tile*& out_tile);
 		void Serialize(std::ostream& oStream) const;

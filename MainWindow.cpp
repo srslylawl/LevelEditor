@@ -157,8 +157,8 @@ void MainWindow::RenderImGui() {
 	Camera::Main->DearImGuiWindow();
 
 	auto onFileEdit = [](FileBrowserFile& file) {
-		if(file.FileType == FileBrowserFileType::Tile) {
-			FileEditWindow<Tiles::Tile>::NewEditWindow(static_cast<Tiles::Tile*>(file.Data));
+		if (file.FileType == FileBrowserFileType::Tile) {
+			FileEditWindow<Tiles::Tile>::NewEditWindow(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
 		}
 	};
 
@@ -254,7 +254,7 @@ void MainWindow::RenderImGui() {
 		if (BeginMenu("Tiles")) {
 			if (Files::VerifyDirectory("Tiles")) {
 				if (ImGui::MenuItem("New Tile")) {
-					FileEditWindow<Tiles::Tile>::NewFileCreationWindow();
+					FileEditWindow<Tiles::Tile>::NewFileCreationWindow([] {tileFileBrowser.RefreshCurrentDirectory(); });
 				}
 			}
 			ImGui::EndMenu();

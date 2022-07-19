@@ -6,10 +6,7 @@
 #include "ImGuiHelper.h"
 
 template class FileEditWindow<Tiles::Tile>;
-//template <>
-//FileEditWindow<Tiles::Tile>::FileEditWindow(Tiles::Tile* data, std::unique_ptr<Tiles::Tile> tempCopy) {
-//	
-//}
+
 template <class T>
 bool FileEditWindow<T>::RenderImGui() {
 	using namespace ImGui;
@@ -18,8 +15,20 @@ bool FileEditWindow<T>::RenderImGui() {
 	oss << (void*)this;
 	std::string s(oss.str());
 	std::string name = "File Properties##" + s;
-	if (Begin(name.c_str(), &showWindow)) {
-		if(EditFile()) showWindow = false;
+
+	if (setFocus) {
+		SetNextWindowFocus();
+		setFocus = false;
+	}
+
+	//Set to middle of screen and offset by amount of open windows so they don't overlap completely
+	auto pos = GetMainViewport()->GetCenter();
+	const auto windowCount = activeWindows.size();
+	pos = ImVec2(pos.x + 10 * windowCount, pos.y + 10 * windowCount);
+	SetNextWindowPos(pos, ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+
+	if (Begin(name.c_str(), &showWindow, ImGuiWindowFlags_NoSavedSettings)) {
+		if (EditFile()) showWindow = false;
 	}
 	End();
 
@@ -32,33 +41,34 @@ bool FileEditWindow<Tiles::Tile>::EditFile() {
 }
 
 template <class T>
-FileEditWindow<T>::FileEditWindow(T* data, std::unique_ptr<T> tempCopy) : fileData(data), temporaryFileCopy(std::move(tempCopy)) {
+FileEditWindow<T>::FileEditWindow(std::unique_ptr<T> tempCopy, const std::function<void()> onClose) : fileData(tempCopy.get()), temporaryFileCopy(std::move(tempCopy)) {
+	IFileEditWindow::onClose = onClose;
 }
 
 template <class T>
-void FileEditWindow<T>::NewEditWindow(T* data) {
-	std::unique_ptr<T> tempCopy = std::make_unique<T>(*data);
-	activeWindows.emplace_back(new FileEditWindow<T>(data, std::move(tempCopy)));
+FileEditWindow<T>::FileEditWindow(T* data, const std::function<void()> onClose) : fileData(data), temporaryFileCopy(std::make_unique<T>(*data)) {
+	IFileEditWindow::onClose = onClose;
 }
 
 template <class T>
-void FileEditWindow<T>::NewFileCreationWindow() {
+void FileEditWindow<T>::NewEditWindow(T* data, const std::function<void()> onClose) {
+	//check if it exists already to avoid duplicate windows
+	for (auto& activeWindowUPTR : activeWindows) {
+		FileEditWindow<T>* fileEditWindow = dynamic_cast<FileEditWindow<T>*>(activeWindowUPTR.get());
+		if (!fileEditWindow) continue;
+		if (fileEditWindow->fileData != data) continue;
+
+		activeWindowUPTR.get()->setFocus = true;
+		return;
+	}
+
+	activeWindows.emplace_back(new FileEditWindow<T>(data, onClose));
+}
+
+template <class T>
+void FileEditWindow<T>::NewFileCreationWindow(const std::function<void()> onClose) {
 	//When creating a new file, the FileEditWindow owns it and the temporary file pointer is the same object as the file being edited
 	//both will be freed when window closes and have to be loaded from memory again
-	//std::unique_ptr<T> fileDataUPTR = std::make_unique<T>();
-	//auto windowUPTR = std::make_unique<FileEditWindow>(fileDataUPTR.get(), fileDataUPTR);
-	//activeWindows.emplace_back(windowUPTR);
-}
-
-template <class T>
-void FileEditWindow<T>::Close() {
-	auto findWindow = [this] (const std::unique_ptr<IFileEditWindow>& item) -> bool {
-		return item.get() == this;
-	};
-	const auto result = std::find_if(activeWindows.begin(), activeWindows.end(), findWindow);
-	if (result == activeWindows.end())
-		std::cout << "unable to find active window" << std::endl;
-	else
-		activeWindows.erase(result);
-
+	std::unique_ptr<T> fileDataUPTR = std::make_unique<T>();
+	activeWindows.emplace_back(new FileEditWindow<T>(std::move(fileDataUPTR), onClose));
 }

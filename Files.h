@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
-#include <iostream>
 
 namespace Files {
 	using namespace std;
@@ -29,7 +28,7 @@ namespace Files {
 		std::string result = absolutePath;
 		const std::string currentPath = std::filesystem::current_path().lexically_normal().string() + "\\";
 		const auto subStringPos = result.find(currentPath);
-		if(subStringPos != std::string::npos)
+		if (subStringPos != std::string::npos)
 			result.erase(subStringPos, currentPath.length());
 		//std::cout << "GetRelativePath for " << absolutePath << ":" << std::endl;
 		//std::cout << "CurrentPath: " << currentPath << std::endl;
@@ -58,7 +57,7 @@ namespace Files {
 		return serializable->ParentDirectory + "\\" + serializable->Name + serializable->FileEnding;
 	}
 
-		template<typename Serializable>
+	template<typename Serializable>
 	std::string GetRelativePathTo(Serializable* serializable, std::string nameOverride) {
 		return serializable->ParentDirectory + "\\" + nameOverride + serializable->FileEnding;
 	}
@@ -66,9 +65,12 @@ namespace Files {
 
 	template<typename Serializable>
 	void SaveToFile(Serializable* serializable) {
-		//TODO: make secure
-		const std::string fileName = GetRelativePathTo(serializable);
-		ofstream o(fileName, iostream::binary);
+		const std::filesystem::path filePath = GetRelativePathTo(serializable);
+		if (!exists(filePath.parent_path())) {
+			create_directory(filePath.parent_path());
+		}
+
+		ofstream o(filePath, iostream::binary);
 		serializable->Serialize(o);
 		o.close();
 	}
@@ -79,7 +81,7 @@ namespace Files {
 		//TODO: secure this
 		ifstream file(GetAbsolutePath(fileName));
 
-		if(!file) return false; // Check for error
+		if (!file) return false; // Check for error
 
 		bool success = Serializable::Deserialize(file, out);
 		file.close();
@@ -90,7 +92,10 @@ namespace Files {
 	template<typename Serializable>
 	void RenameFile(Serializable* serializable, const std::string& new_name) {
 		std::string oldPath = GetRelativePathTo(serializable);
-		std::string newPath = GetRelativePathTo(serializable, new_name);
+		std::filesystem::path newPath = GetRelativePathTo(serializable, new_name);
+		if (!exists(newPath.parent_path())) {
+			create_directory(newPath.parent_path());
+		}
 		std::filesystem::rename(oldPath, newPath);
 	}
 
