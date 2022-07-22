@@ -52,6 +52,7 @@ void Input::RemoveMouseBinding(InputMouseBinding* binding) {
 	}
 
 	delete binding;
+	binding = nullptr;
 }
 
 void Input::ReceiveMouseMotion(const SDL_MouseMotionEvent& e) {

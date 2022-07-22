@@ -15,36 +15,27 @@ namespace Rendering {
 namespace Tiles {
 	class Tile;
 
+	enum class TileMapType {
+		Any,
+		Floor,
+		Wall,
+		Ceiling
+	};
+
 	class TileMap : public Rendering::Renderable {
 		std::unordered_map<glm::ivec2, TileInstance> data;
 	public:
 		Rendering::Shader* shader = nullptr;
 
 		void SetTile(const Tile* tile, glm::ivec2 grid_position);
+		void RemoveTile(glm::ivec2 grid_position);
+		bool TryGetTile(glm::ivec2 grid_position, TileInstance*& out_tileInstance);
+		bool TryGetTile(const glm::ivec2 grid_position, const TileInstance*& out_tileInstance) const;
 
-		void RemoveTile(glm::ivec2 grid_position) {
-			data.erase(grid_position);
-		}
+		std::string Name;
+		TileMapType Type;
 
-		bool TryGetTile(glm::ivec2 grid_position, TileInstance*& out_tileInstance) {
-			const auto iterator = data.find(grid_position);
-			if(iterator != data.end()) {
-				out_tileInstance = &iterator->second;
-				return true;
-			}
-			out_tileInstance = nullptr;
-			return false;
-		}
-
-		bool TryGetTile(const glm::ivec2 grid_position, const TileInstance*& out_tileInstance) const {
-			const auto iterator = data.find(grid_position);
-			if(iterator != data.end()) {
-				out_tileInstance = &iterator->second;
-				return true;
-			}
-			out_tileInstance = nullptr;
-			return false;
-		}
+		TileMap(std::string name, TileMapType type = TileMapType::Any, Rendering::Shader* shader = nullptr);
 
 		void Render() const override;
 	};

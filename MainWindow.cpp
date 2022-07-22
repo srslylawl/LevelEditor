@@ -64,14 +64,13 @@ bool MainWindow::Initialize() {
 	if (!Renderer::Init()) return false;
 	if (!InitDearImGui()) return false;
 
-	tileMap = new Tiles::TileMap();
-	tileMap->shader = Renderer::defaultShader;
+	//TODO: fix this
+	auto tileMap = new Tiles::TileMap("Default");
+	tileMaps.push_back(tileMap);
 	gridToolBar = new GridTools::GridToolBar(tileMap);
-
 	Renderer::RenderObjects.push_back(tileMap);
-	//update while resizing - does not work though, according to google its a backend limitation?
 
-
+	// update while resizing - does not work though, according to google its a backend limitation?
 	//SDL_AddEventWatch(WindowResizeEvent, this);
 	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
 
@@ -373,9 +372,8 @@ void MainWindow::OnResized(int width, int height) {
 }
 void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
-	binding = nullptr;
-	delete tileMap;
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
+	for (auto& tileMap : tileMaps) delete tileMap;
 	SDLWindow = nullptr;
 }

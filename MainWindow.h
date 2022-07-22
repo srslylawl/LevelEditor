@@ -1,5 +1,7 @@
 #pragma once
 #include <SDL_video.h>
+#include <vector>
+#include <memory>
 
 class InputMouseEvent;
 struct InputMouseBinding;
@@ -25,6 +27,8 @@ class MainWindow {
 	InputMouseBinding* binding = nullptr;
 
 	GridTools::GridToolBar* gridToolBar = nullptr;
+	std::vector<Tiles::TileMap*> tileMaps;
+
 
 	void RenderImGui();
 	bool InitSDL();
@@ -37,7 +41,6 @@ public:
 	bool Initialize();
 	void Render();
 
-	Tiles::TileMap* tileMap = nullptr;
 
 	static void OnResized(int width, int height);
 	void Close();
