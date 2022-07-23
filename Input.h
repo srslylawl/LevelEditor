@@ -1,5 +1,4 @@
 #pragma once
-#include <combaseapi.h>
 #include <functional>
 #include <map>
 #include <SDL.h>
@@ -25,9 +24,8 @@ enum class MouseButton {
 
 struct InputKeyBinding {
 	std::function<void(KeyEvent)> Action;
-	GUID BindingGUID;
 	SDL_Keycode Keycode;
-	InputKeyBinding(const GUID guid, std::function<void(KeyEvent)> action, SDL_Keycode keycode) : Action(std::move(action)), BindingGUID(guid), Keycode(keycode) { }
+	InputKeyBinding(std::function<void(KeyEvent)> action, SDL_Keycode keycode) : Action(std::move(action)), Keycode(keycode) { }
 };
 
 struct MouseMotion {
@@ -73,9 +71,8 @@ public:
 
 struct InputMouseBinding {
 	std::function<void(const InputMouseEvent*)> Action;
-	GUID BindingGUID;
 
-	InputMouseBinding(std::function<void(const InputMouseEvent*)> action, GUID guid) : Action(std::move(action)), BindingGUID(guid) {}
+	InputMouseBinding(std::function<void(const InputMouseEvent*)> action) : Action(std::move(action)) {}
 };
 
 class Input {

@@ -8,12 +8,12 @@ namespace Serialization {
 	template<typename T>
 	void writeToStream(std::ostream& oStream, const T& item) {
 		static_assert(!std::is_same_v<T, std::string>, "Use 'DeserializeStdString' for string serialization.");
-		oStream.write((char*)&item, sizeof T);
+		oStream.write((char*)&item, sizeof(T));
 	}
 
 	template<typename T>
 	void readFromStream(std::istream& iStream, T& item) {
-		iStream.read((char*)&item, sizeof T);
+		iStream.read((char*)&item, sizeof(T));
 	}
 
 	inline std::ostream& Serialize(std::ostream& oStream, const std::string& str) {

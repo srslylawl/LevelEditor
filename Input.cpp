@@ -7,9 +7,7 @@
 Input::Input() = default;
 
 InputKeyBinding* Input::AddKeyBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action) {
-	GUID newGUID;
-	CoCreateGuid(&newGUID);
-	auto* newBinding = new InputKeyBinding(newGUID, action, keycode);
+	auto* newBinding = new InputKeyBinding(action, keycode);
 	keyBindings[keycode].insert(newBinding);
 	return newBinding;
 }
@@ -37,9 +35,7 @@ void Input::ReceiveKeyUpInput(const SDL_Keycode& keycode) {
 }
 
 InputMouseBinding* Input::AddMouseBinding(const std::function<void(const InputMouseEvent*)>& action) {
-	GUID newGuid;
-	CoCreateGuid(&newGuid);
-	const auto binding = new InputMouseBinding(action, newGuid);
+	const auto binding = new InputMouseBinding(action);
 
 	mouseBindings.insert(binding);
 

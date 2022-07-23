@@ -16,11 +16,12 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 #pragma once
+
 #include "imgui.h"      // IMGUI_IMPL_API
 
 struct SDL_Window;
 struct SDL_Renderer;
-typedef union SDL_Event SDL_Event;
+union SDL_Event;
 
 IMGUI_IMPL_API bool     ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context);
 IMGUI_IMPL_API bool     ImGui_ImplSDL2_InitForVulkan(SDL_Window* window);

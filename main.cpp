@@ -1,5 +1,4 @@
 #include <SDL.h>
-#include <cstdio>
 #include "MainWindow.h"
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
@@ -8,8 +7,6 @@
 #include "Resources.h"
 #include "Time.h"
 
-using namespace Rendering;
-
 void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit);
 
 int main(int arg, char** args) {
@@ -17,7 +14,7 @@ int main(int arg, char** args) {
 	Time::Init();
 	{
 		//Create SDL Window
-		MainWindow mainWindow = MainWindow(1200, 800, "LevelEditor");
+		Rendering::MainWindow mainWindow = Rendering::MainWindow(1200, 800, "LevelEditor");
 		if (!mainWindow.Initialize()) {
 			printf("Failed to init main window");
 			return 1;
@@ -72,7 +69,7 @@ void HandleSDLEvents(SDL_Event& sdlEvent, bool& quit) {
 			case SDL_WINDOWEVENT_RESIZED:
 				const int w = sdlEvent.window.data1;
 				const int h = sdlEvent.window.data2;
-				MainWindow::OnResized(w, h);
+				Rendering::MainWindow::OnResized(w, h);
 				break;
 			}
 			break;

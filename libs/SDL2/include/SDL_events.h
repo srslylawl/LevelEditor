@@ -653,11 +653,12 @@ typedef union SDL_Event
        the next multiple of 16, 64, and on architectures where pointers are
        even larger the size of SDL_UserEvent will dominate as being 3 pointers.
     */
+    SDL_Event() {}
     Uint8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
 } SDL_Event;
 
 /* Make sure we haven't broken binary compatibility */
-SDL_COMPILE_TIME_ASSERT(SDL_Event, sizeof(SDL_Event) == sizeof(((SDL_Event *)NULL)->padding));
+static_assert(sizeof(SDL_Event) == sizeof(((SDL_Event *)NULL)->padding));
 
 
 /* Function prototypes */

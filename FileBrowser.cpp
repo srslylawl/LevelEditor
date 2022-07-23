@@ -74,7 +74,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 			}
 			ImGui::SetDragDropPayload(payloadType.c_str(), &payload, sizeof(void*));
 			ImGuiHelper::Image(texture->GetTextureID());
-			Text(file->directory_entry.path().filename().string().c_str());
+			TextUnformatted(file->directory_entry.path().filename().string().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}
@@ -83,7 +83,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	PopID();
 	if (IsItemHovered()) {
 		BeginTooltip();
-		Text(description.c_str());
+		TextUnformatted(description.c_str());
 		EndTooltip();
 	}
 	return clicked;
@@ -123,7 +123,6 @@ void FileBrowser::RenderRearImGuiWindow() {
 		for (auto& file : currentItems) {
 			const std::string currButton = imguiID + "_Items_" + std::to_string(buttonIndex);
 			const bool highlight = shouldHighlight == nullptr ? false : shouldHighlight(file);
-			const bool isSupportedFile = file.FileType != FileBrowserFileType::Unsupported;
 			bool wasRightClicked = false;
 			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.directory_entry.path().filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
 				if (onFileClick != nullptr)

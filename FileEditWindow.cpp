@@ -5,7 +5,7 @@
 #include "Tile.h"
 #include "ImGuiHelper.h"
 
-template class FileEditWindow<Tiles::Tile>;
+//template class FileEditWindow<Tiles::Tile>;
 
 template <class T>
 bool FileEditWindow<T>::RenderImGui() {
@@ -72,3 +72,7 @@ void FileEditWindow<T>::NewFileCreationWindow(const std::function<void()> onClos
 	std::unique_ptr<T> fileDataUPTR = std::make_unique<T>();
 	activeWindows.emplace_back(new FileEditWindow<T>(std::move(fileDataUPTR), onClose));
 }
+
+
+template void FileEditWindow<Tiles::Tile>::NewFileCreationWindow(const std::function<void()> onClose);
+template void FileEditWindow<Tiles::Tile>::NewEditWindow(Tiles::Tile* data, const std::function<void()> onClose);

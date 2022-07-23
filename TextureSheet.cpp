@@ -109,7 +109,8 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 
 	if (IsItemHovered()) {
 		BeginTooltip();
-		Text(texture->GetFileName().c_str());
+		TextUnformatted(texture->GetFileName().c_str());
+		TextUnformatted(texture->GetFileName().c_str());
 		EndTooltip();
 	}
 
@@ -120,9 +121,9 @@ void TextureSheet::RenderImGuiWindow() {
 	using namespace ImGui;
 	// Assuming this is inside some window
 	auto props = mainTexture->GetImageProperties();
-	Text(mainTexture->GetFileName().c_str());
+	TextUnformatted(mainTexture->GetFileName().c_str());
 	std::string sizeT("Size: " + std::to_string(props.width) + " x " + std::to_string(props.height));
-	Text(sizeT.c_str());
+	TextUnformatted(sizeT.c_str());
 
 	size_t total = SubTextures.size();
 	size_t rows = total * spriteSize / mainTexture->GetImageProperties().height;

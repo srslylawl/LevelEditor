@@ -28,11 +28,8 @@ namespace detail
 			return std::string();
 
 		va_start(list, msg);
-#		if (GLM_COMPILER & GLM_COMPILER_VC)
-			vsprintf_s(text, STRING_BUFFER, msg, list);
-#		else//
-			std::vsprintf(text, msg, list);
-#		endif//
+
+		vsprintf_s(text, msg, list);
 		va_end(list);
 
 		return std::string(text);

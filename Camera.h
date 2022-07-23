@@ -99,6 +99,8 @@ namespace Rendering {
 			case SDLK_d:
 				Move(Right);
 				break;
+			default: 
+				break;
 			}
 		}
 		void HandleMoveInput3D(SDL_KeyCode keyCode) {
@@ -120,6 +122,8 @@ namespace Rendering {
 				break;
 			case SDLK_x:
 				Move(-Up);
+				break;
+			default: 
 				break;
 			}
 		}
@@ -439,7 +443,7 @@ namespace Rendering {
 				const char* columns[] = { "X:", "Y:", "Z:" };
 				const int columnCount = twoDEnabled ? 2 : 3;
 				constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame;
-				ImGui::Text("Transform Position");
+				ImGui::TextUnformatted("Transform Position");
 				if (ImGui::BeginTable("table_Camera_Main_Transform", columnCount, tableFlags)) {
 					ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
 					ImGui::TableSetupColumn("X", columnFlags);
@@ -452,7 +456,7 @@ namespace Rendering {
 					for (int column = 0; column < columnCount; column++) {
 						ImGui::TableSetColumnIndex(column);
 						ImGui::AlignTextToFramePadding();
-						Text(columns[column]);
+						TextUnformatted(columns[column]);
 						SameLine();
 						// allow empty label by pushing ID and inputting "##" as label name
 						PushID(column);
@@ -468,7 +472,7 @@ namespace Rendering {
 
 				if (!twoDEnabled) {
 					// Rotation
-					ImGui::Text("Transform Rotation");
+					ImGui::TextUnformatted("Transform Rotation");
 					if (ImGui::BeginTable("table_Camera_Main_Rotation", 3, tableFlags)) {
 						ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoHeaderLabel;
 						ImGui::TableSetupColumn("X", columnFlags);
@@ -479,7 +483,7 @@ namespace Rendering {
 						for (int column = 0; column < 3; column++) {
 							ImGui::TableSetColumnIndex(column);
 							ImGui::AlignTextToFramePadding();
-							Text(columns[column]);
+							TextUnformatted(columns[column]);
 							SameLine();
 							// allow empty label by pushing ID and inputting "##" as label name
 							PushID(column);

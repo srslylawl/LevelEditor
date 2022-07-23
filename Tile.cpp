@@ -68,12 +68,12 @@ namespace Tiles {
 				for (auto it = Resources::GetTextures().begin(); it != Resources::GetTextures().end(); ++it) {
 					const auto& tex = it->second;
 					const auto textureID = tex->GetTextureID();
-					if (ImageButton((void*)textureID, ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
+					if (ImageButton(reinterpret_cast<ImTextureID>(textureID), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
 						texID = textureID;
 						strcpy_s(texPathBuff, it->first.c_str());
 						CloseCurrentPopup();
 					}
-					Text(it->second->GetFileName().c_str());
+					TextUnformatted(it->second->GetFileName().c_str());
 				}
 				EndPopup();
 			}
@@ -133,8 +133,8 @@ namespace Tiles {
 
 		tempFile->pattern.DearImGuiEditPattern();
 
-		if (hasError) ImGui::Text(("Error: " + errorMessage).c_str());
-		if (fileNameAlreadyExists) ImGui::Text("Tile with same name already exists.");
+		if (hasError) ImGui::TextUnformatted(("Error: " + errorMessage).c_str());
+		if (fileNameAlreadyExists) ImGui::TextUnformatted("Tile with same name already exists.");
 
 		bool disableSave = tempFile->Name.empty() || hasError || fileNameAlreadyExists;
 		if (disableSave) ImGui::BeginDisabled();

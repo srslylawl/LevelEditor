@@ -2,13 +2,15 @@
 
 #include "Texture.h"
 
+#pragma clang diagnostic ignored "-Wformat-security"
+
 namespace ImGuiHelper {
 	void DragSourceTexture(Rendering::Texture*& texture) {
 		if(texture == nullptr) return;
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
 			ImGui::SetDragDropPayload("Texture", &texture, sizeof(void*));
 			Image(texture->GetTextureID());
-			ImGui::Text(texture->GetRelativeFilePath().c_str());
+			ImGui::TextUnformatted(texture->GetRelativeFilePath().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}

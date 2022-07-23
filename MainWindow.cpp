@@ -222,7 +222,6 @@ void MainWindow::RenderImGui() {
 				static int offsetY = 0;
 				static int width = 0;
 				static int height = 0;
-				static int channels = 0;
 				static TextureSheet* sheet = nullptr;
 				ImGuiHelper::Image(texID, ImVec2(128, 128));
 				if (ImGui::BeginDragDropTarget()) {
@@ -321,7 +320,7 @@ void MainWindow::RenderImGui() {
 			if (Rendering::Texture* tex = nullptr; Resources::TryGetInternalTexture(iconStrings[i], tex))
 				textureID = tex->GetTextureID();
 
-			if (ImageButton((void*)textureID, buttonSize, ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
+			if (ImageButton(reinterpret_cast<ImTextureID*>(textureID), buttonSize, ImVec2(0, 1), ImVec2(1, 0), framePadding)) {
 				auto toolType = static_cast<GridTools::GridToolType>(i);
 				std::cout << "Selected: " << i << std::endl;
 				gridToolBar->SelectTool(toolType);

@@ -28,14 +28,14 @@ namespace ImGuiHelper {
 	}
 
 	inline void TextWithToolTip(const char* text, const char* tooltip) {
-		ImGui::Text(text);
+		ImGui::TextUnformatted(text);
 		ImGui::SameLine();
 		ImGui::TextDisabled("(?)");
 
 		if(!ImGui::IsItemHovered()) return;
 
 		ImGui::BeginTooltip();
-		ImGui::Text(tooltip);
+		ImGui::TextUnformatted(tooltip);
 		ImGui::EndTooltip();
 	}
 	void DragSourceTexture(Rendering::Texture*& texture);

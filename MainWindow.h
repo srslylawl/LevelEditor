@@ -1,7 +1,6 @@
 #pragma once
 #include <SDL_video.h>
 #include <vector>
-#include <memory>
 
 class InputMouseEvent;
 struct InputMouseBinding;

@@ -44,7 +44,7 @@ void Tiles::TilePattern::DearImGuiEditPattern() {
 			BeginTooltip();
 			std::string descriptionString = description;
 			if(tileSlot && tileSlot->TileSprites.size() > 1) descriptionString += " (+" + std::to_string(tileSlot->TileSprites.size()-1) + " more textures.) \nRight-click to view.";
-			Text(descriptionString.c_str());
+			TextUnformatted(descriptionString.c_str());
 			EndTooltip();
 		}
 		if (!tileSlot || !BeginPopupContextItem(id.c_str())) return;
@@ -65,9 +65,9 @@ void Tiles::TilePattern::DearImGuiEditPattern() {
 			if (IsItemHovered()) {
 				BeginTooltip();
 				if (variantTex != nullptr) {
-					Text(variantTex->GetRelativeFilePath().c_str());
+					TextUnformatted(variantTex->GetRelativeFilePath().c_str());
 				}
-				Text("Press 'X' while hovering to remove");
+				TextUnformatted("Press 'X' while hovering to remove");
 				EndTooltip();
 				if (IsKeyPressed(ImGuiKey_X, false)) {
 					it = tileSlot->TileSprites.erase(it);
