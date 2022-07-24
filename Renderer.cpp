@@ -50,7 +50,7 @@ bool Renderer::InitOpenGL(SDL_Window* window) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// enable z testing
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 	glEnable(GL_CULL_FACE);
 
@@ -86,7 +86,6 @@ void Renderer::Render() {
 	//___ LOOPED RENDERING CODE
 	// use shader program
 	defaultShader->Use();
-	//glUniform1i(glGetUniformLocation(shaderProgramUPTR->ID, "texture1"), 0); // -- redundant?
 
 	// view matrix transforms world space to view (camera) space
 	defaultShader->setMat4("view", *Camera::Main->GetViewMatrix());
@@ -94,13 +93,15 @@ void Renderer::Render() {
 	// projection matrix transforms view space to however we want to display (orthogonal, perspective)
 	defaultShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
 
-	for (const auto & render_object : RenderObjects)
-		render_object->Render();
+	for (const auto& renderObject : RenderObjects) {
+		if (!renderObject->renderingEnabled) continue;
+		renderObject->Render();
+	}
 
 	glActiveTexture(GL_TEXTURE0);
 
 	/* Render Cubes
-	
+
 	if (Resources::GetTextures().begin() != Resources::GetTextures().end()) {
 		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second->GetTextureID());
 	}
@@ -137,17 +138,21 @@ void Renderer::Render() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Draw 2D Grid
-	// clear depth buffer to always draw grid on top
-	glClear(GL_DEPTH_BUFFER_BIT);
-	auto mousePos = Input::GetMousePosition();
-	auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
+	// clear depth buffer to always draw grid on top -- in this case no depth buffer is active
+	// glClear(GL_DEPTH_BUFFER_BIT);
 
-	gridShader->Use();
-	gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
-	gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
-	gridShader->setVec("mousePos", mouseGridPos);
-	gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
-	Mesh::StaticMesh::GetDefaultQuad()->Draw();
+	if (DrawGrid) {
+		auto mousePos = Input::GetMousePosition();
+		auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
+
+		gridShader->Use();
+		gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
+		gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
+		gridShader->setVec("mousePos", mouseGridPos);
+		gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
+		Mesh::StaticMesh::GetDefaultQuad()->Draw();
+	}
+
 
 	//unbind vertex array
 	glBindVertexArray(0);

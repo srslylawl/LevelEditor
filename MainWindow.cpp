@@ -24,6 +24,7 @@
 #include "Strings.h"
 #include "Texture.h"
 #include "TileMap.h"
+#include "TileMapManager.h"
 #include "Tile.h"
 
 using namespace Rendering;
@@ -64,11 +65,16 @@ bool MainWindow::Initialize() {
 	if (!Renderer::Init()) return false;
 	if (!InitDearImGui()) return false;
 
-	//TODO: fix this
-	auto tileMap = new Tiles::TileMap("Default");
-	tileMaps.push_back(tileMap);
-	gridToolBar = new GridTools::GridToolBar(tileMap);
-	Renderer::RenderObjects.push_back(tileMap);
+	gridToolBar = new GridTools::GridToolBar();
+	tileMapManager = new Tiles::TileMapManager(gridToolBar);
+	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
+	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall));
+	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
+
+	Renderer::RenderObjects.push_back(tileMapManager);
+
+	gridToolBar->SetActiveTileMap(tileMapManager->activeTileMaps[0]);
+
 
 	// update while resizing - does not work though, according to google its a backend limitation?
 	//SDL_AddEventWatch(WindowResizeEvent, this);
@@ -189,8 +195,6 @@ void MainWindow::RenderImGui() {
 		openTexSheetPopup = true;
 	}, true);
 
-
-
 	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -280,6 +284,9 @@ void MainWindow::RenderImGui() {
 		}
 
 		if (ImGui::BeginMenu("View")) {
+			if (ImGui::MenuItem("Show Grid ", 0, Renderer::DrawGrid)) {
+				Renderer::DrawGrid = !Renderer::DrawGrid;
+			}
 			if (ImGui::BeginMenu("Render mode")) {
 				bool selected = renderMode == 0;
 				if (ImGui::MenuItem("Default", 0, selected) && !selected) {
@@ -295,6 +302,7 @@ void MainWindow::RenderImGui() {
 				}
 				ImGui::EndMenu();
 			}
+
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -336,6 +344,7 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
+	tileMapManager->RenderImGuiWindow();
 	tileFileBrowser.RenderRearImGuiWindow();
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
@@ -373,6 +382,7 @@ void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
-	for (auto& tileMap : tileMaps) delete tileMap;
+	delete tileMapManager;
+	delete gridToolBar;
 	SDLWindow = nullptr;
 }

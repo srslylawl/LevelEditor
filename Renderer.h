@@ -16,6 +16,7 @@ namespace Rendering {
 		inline static Shader* defaultShader = nullptr;
 		inline static Shader* gridShader = nullptr;
 
+		inline static bool DrawGrid = true;
 
 		inline static SDL_GLContext gl_context = nullptr;
 		inline static std::vector<Renderable*> RenderObjects;

@@ -199,6 +199,7 @@
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileInstance.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="TileMapManager.cpp" />
     <ClCompile Include="TilePattern.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -244,6 +245,7 @@
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileInstance.h" />
     <ClInclude Include="TileMap.h" />
+    <ClInclude Include="TileMapManager.h" />
     <ClInclude Include="TilePattern.h" />
     <ClInclude Include="Time.h" />
   </ItemGroup>

@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <glm/vec2.hpp>
 
 #include "Strings.h"
 #include "TilePattern.h"
@@ -22,7 +21,7 @@ namespace  Tiles {
 		inline static const std::string FileEnding = ".tile";
 		inline static const std::string ParentDirectory = Strings::Directory_Tiles;
 
-		std::string DisplayTexture; //TODO: change this from string to something else
+		std::string DisplayTexture;
 		std::string Name;
 
 		const TilePattern* GetPattern() const { return &pattern; }

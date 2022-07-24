@@ -28,10 +28,15 @@ namespace GridTools {
 		glm::ivec2 lastMouseGridPos = { INT_MAX, INT_MAX };
 
 	public:
-		TileMap* tileMap;
-
-		explicit GridToolBar(TileMap* tile_map);
+		GridToolBar(GridToolBar&& other) = delete;
+		GridToolBar(GridToolBar& other) = delete;
+		GridToolBar operator=(GridToolBar& other) = delete;
+		GridToolBar operator=(GridToolBar&& other) = delete;
+		GridToolBar();
 		~GridToolBar();
+
+		TileMap* activeTileMap = nullptr;
+
 
 		void SelectTool(GridToolType type);
 		void OnMouseEvent(const InputMouseEvent* event);
@@ -41,6 +46,8 @@ namespace GridTools {
 		glm::ivec2 GetMouseGridPos() const;
 
 		const Tile* GetSelectedTile() const;
+
+		void SetActiveTileMap(TileMap* tileMap) { activeTileMap = tileMap; }
 
 		void SetSelectedTile(Tile* tile);
 	};

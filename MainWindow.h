@@ -1,11 +1,11 @@
 #pragma once
 #include <SDL_video.h>
-#include <vector>
 
 class InputMouseEvent;
 struct InputMouseBinding;
 
 namespace Tiles {
+	class TileMapManager;
 	class TileMap;
 }
 
@@ -26,7 +26,7 @@ class MainWindow {
 	InputMouseBinding* binding = nullptr;
 
 	GridTools::GridToolBar* gridToolBar = nullptr;
-	std::vector<Tiles::TileMap*> tileMaps;
+	Tiles::TileMapManager* tileMapManager = nullptr;
 
 
 	void RenderImGui();

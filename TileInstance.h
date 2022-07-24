@@ -11,6 +11,7 @@ namespace Tiles {
 	class TileMap;
 	class Tile;
 
+	// Is stored in a tileMap, has reference to its parent tile.
 	class TileInstance {
 		const Tile* parent;
 		Rendering::Texture* texture;

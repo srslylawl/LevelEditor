@@ -8,7 +8,7 @@
 
 namespace GridTools {
 
-	GridToolBar::GridToolBar(TileMap* tile_map) : tileMap(tile_map){
+	GridToolBar::GridToolBar() {
 		tools = {
 			{GridToolType::Place, new PlacerTool(this)},
 			{GridToolType::Erase, new EraserTool(this)}
@@ -24,7 +24,7 @@ namespace GridTools {
 	void GridToolBar::SelectTool(GridToolType type) {
 		if (activeTool == type) return;
 
-		if(tools.find(type) == tools.end()) {
+		if (tools.find(type) == tools.end()) {
 			std::cout << "Type: " << (int)type << " not found in tools dict!" << std::endl;
 			return;
 		}
@@ -37,8 +37,12 @@ namespace GridTools {
 	}
 
 	void GridToolBar::OnMouseEvent(const InputMouseEvent* event) {
+		if (activeTileMap == nullptr) {
+			std::cout << "No tileMap selected!" << std::endl;
+			return;
+		}
 		const auto gridPos = GetMouseGridPos();
-		if(gridPos != lastMouseGridPos) isStale = false;
+		if (gridPos != lastMouseGridPos) isStale = false;
 
 		tools[activeTool]->OnInteract(event, gridPos, isStale);
 
