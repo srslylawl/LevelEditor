@@ -105,8 +105,8 @@ namespace Tiles {
 	};
 
 	class SimpleTilePattern : public ITilePattern {
-		TileSlot tileSlot;
 	public:
+		TileSlot tileSlot;
 		void AddTextureVariant(int patternFlag, TextureVariant variant) override {
 			if (variant.Texture.empty()) return;
 			tileSlot.TileSprites.push_back(variant);
@@ -142,8 +142,9 @@ namespace Tiles {
 		}
 		void RenderDearImGui() override;
 		const TileSlot* GetTileSlot(const SurroundingTileFlags& mask) const override;
-		uint8_t GetTypeByte() const override { return 3; }
-		//~AutoWallPattern() override = default;
+		uint8_t GetTypeByte() const override {
+			return 3;
+		}
 	};
 }
 
@@ -182,26 +183,34 @@ namespace Serialization {
 		return oStream;
 	}
 
+	inline std::ostream& Serialize(std::ostream& oStream, const Tiles::SimpleTilePattern& tilePattern) {
+		Serialize(oStream, tilePattern.tileSlot);
+
+		return oStream;
+	}
+
 	inline std::ostream& Serialize(std::ostream& oStream, const Tiles::ITilePattern* iTilePattern) {
 		const auto typeByte = iTilePattern->GetTypeByte();
 		writeToStream(oStream, typeByte);
 		switch (typeByte) {
 			case 1:
-				break;
+			{
+				const Tiles::SimpleTilePattern& pattern = *dynamic_cast<const Tiles::SimpleTilePattern*>(iTilePattern);
+				Serialize(oStream, pattern);
+			}
+			break;
 			case 2:
 			{
-				const auto pattern = dynamic_cast<const Tiles::AutoTilePattern*>(iTilePattern);
+				const Tiles::AutoTilePattern& pattern = *dynamic_cast<const Tiles::AutoTilePattern*>(iTilePattern);
 				Serialize(oStream, pattern);
-				break;
 			}
+			break;
 			case 3:
+				throw std::exception("serializing autowall not yet implemented");
 				break;
 			default:
 				break;
 		}
-
-
-
 
 		return oStream;
 	}
@@ -217,21 +226,27 @@ namespace Serialization {
 		return tilePattern;
 	}
 
+	inline Tiles::SimpleTilePattern DeserializeSimpleTilePattern(std::istream& stream) {
+		Tiles::SimpleTilePattern tilePattern;
+		tilePattern.tileSlot = DeserializeTileSlot(stream);
+
+		return tilePattern;
+	}
+
 	inline std::unique_ptr<Tiles::ITilePattern> DeserializeITilePattern(std::istream& stream) {
 		uint8_t typeByte;
 		readFromStream(stream, typeByte);
 
-
 		switch (typeByte) {
 			case 1:
 				//SimpleTile
-				return nullptr;
+				return DeserializeSimpleTilePattern(stream).Clone();
 			case 2:
 				//AutoTile
-				return std::make_unique<Tiles::AutoTilePattern>(DeserializeAutoTilePattern(stream));
+				return DeserializeAutoTilePattern(stream).Clone();
 			case 3:
 				//AutoWall
-				return nullptr;
+				throw std::exception("deserializing autowall not yet implemented");
 			default:
 				std::cout << "unable to deserialize ITilePattern, as typeByte was not recognized: " << typeByte << std::endl;
 				return nullptr;

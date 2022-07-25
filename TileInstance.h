@@ -22,7 +22,6 @@ namespace Tiles {
 
 	public:
 		TileInstance(const Tile* parent, const glm::vec2 position, const TileMap* tileMap) : parent(parent), texture(GetTextureFromSurroundingTiles(position, tileMap)) {}
-		TileInstance() = default;
 
 		static void RefreshSurroundingTileInstances(glm::ivec2 position, TileMap* tileMap);
 		unsigned int GetActiveTextureId() const { return texture->GetTextureID(); }

@@ -105,7 +105,6 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 void Tiles::TileMapManager::Render() const {
 	for (const auto& tileMap : tileMaps) if (tileMap->renderingEnabled) tileMap->Render();
 
-	return;
 	// render grid
 	glm::ivec2 gridDimensions(1, 1);
 	if (activeTileMap != nullptr) {

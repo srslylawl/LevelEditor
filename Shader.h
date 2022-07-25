@@ -68,8 +68,7 @@ namespace Rendering {
 				stringStream << stream.rdbuf();
 				stream.close();
 				result = stringStream.str();
-			}
-			catch (std::ifstream::failure e) {
+			} catch (std::ifstream::failure e) {
 				std::cout << "ERROR: SHADER '" << name << " 'FILE_NOT_SUCCESSFULLY_READ " << e.what() << std::endl;
 				std::cout << "PATH: " << path << std::endl;
 			}
@@ -81,10 +80,7 @@ namespace Rendering {
 		unsigned int ID;
 		std::string name;
 
-		~Shader() {
-			Delete();
-			//std::cout << "Shader " << name << " destructor called and deleted" << std::endl;
-		}
+
 		Shader(const char* name) {
 			this->name = name;
 			auto shaderPath = std::filesystem::current_path().append("Shaders\\").append(name);
@@ -119,12 +115,14 @@ namespace Rendering {
 		void setVec(const std::string& name, glm::vec2 value) {
 			glUniform2f(glGetUniformLocation(ID, name.c_str()), value.x, value.y);
 		}
-		void setVec(const std::string& name, glm::ivec2 value) {
-			glUniform2i(glGetUniformLocation(ID, name.c_str()), value.x, value.y);
-		}
 
 		void Delete() {
 			glDeleteProgram(ID);
+		}
+
+		~Shader() {
+			Delete();
+			//std::cout << "Shader " << name << " destructor called and deleted" << std::endl;
 		}
 	};
 }

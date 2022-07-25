@@ -16,7 +16,6 @@ void main() {
 
 	float gridDiffX = dFdx(vertexPos.x);
 	float gridDiffY = dFdy(vertexPos.y);
-//	vec2 vertexDistanceFromGrid = vec2(mod(vertexPos.x, gridDimensions.x), mod(vertexPos.y, gridDimensions.y));
 	vec2 vertexDistanceFromGrid = mod(vertexPos.xy, gridDimensions);
 	float drawGridX = vertexDistanceFromGrid.x <= gridDiffX ? 1 : 0;
 	float drawGridY = vertexDistanceFromGrid.y <= gridDiffY ? 1 : 0;

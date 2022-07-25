@@ -9,7 +9,7 @@ void Tiles::TileMap::SetTile(const Tile* tile, glm::ivec2 grid_position) {
 	if (auto it = data.find(grid_position); it != data.end())
 		it->second = ti;
 	else
-		data[grid_position] = ti;
+		data.emplace(grid_position, ti);
 	TileInstance::RefreshSurroundingTileInstances(grid_position, this);
 }
 

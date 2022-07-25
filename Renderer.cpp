@@ -98,65 +98,10 @@ void Renderer::Render() {
 		renderObject->Render();
 	}
 
-	glActiveTexture(GL_TEXTURE0);
-
-	/* Render Cubes
-
-	if (Resources::GetTextures().begin() != Resources::GetTextures().end()) {
-		glBindTexture(GL_TEXTURE_2D, Resources::Textures.begin()->second->GetTextureID());
-	}
-
-	const vec3 cubePositions[] = {
-	vec3(0.0f,  0.0f,  0.0f),
-	vec3(2.0f,  2.0f, 2.0f),
-	vec3(-2.0f, -2.0f, -2.0f)
-	};
-
-	for (int i = 0; i < 3; i++) {
-		auto pos = cubePositions[i];
-		// model matrix transforms coords to world space
-		auto xPos = sin(Time::GetTime()) * 3.0f;
-		auto yPos = cos(Time::GetTime()) * 3.0f;
-		if(i == 0) {
-			xPos = -xPos;
-		}
-
-		if(i == 2) {
-			yPos = -yPos;
-		}
-		pos.x += xPos;
-		pos.y += yPos;
-		mat4 modelM = translate(mat4(1.0f), pos);
-
-		defaultShader->setMat4("model", modelM);
-
-		Mesh::StaticMesh::GetDefaultCube()->Draw();
-	}
-
-	*/
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// Draw 2D Grid
-	// clear depth buffer to always draw grid on top -- in this case no depth buffer is active
-	// glClear(GL_DEPTH_BUFFER_BIT);
-
-	if (DrawGrid) {
-		auto mousePos = Input::GetMousePosition();
-		auto mouseGridPos = camera->ScreenToGridPosition(mousePos.x, mousePos.y);
-
-		gridShader->Use();
-		gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
-		gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
-		gridShader->setVec("mousePos", mouseGridPos);
-		gridShader->setVec("gridDimensions", ivec2(1,1));
-		gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
-		Mesh::StaticMesh::GetDefaultQuad()->Draw();
-	}
-
-
-	//unbind vertex array
-	glBindVertexArray(0);
+	glActiveTexture(GL_TEXTURE0); // next commands affect texture slot 0
+	glBindTexture(GL_TEXTURE_2D, 0); // bind texture with id 0 (none) to active texture slot
+	
+	glBindVertexArray(0); //unbind vertex array
 }
 
 

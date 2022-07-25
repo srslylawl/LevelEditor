@@ -68,7 +68,7 @@ bool MainWindow::Initialize() {
 	gridToolBar = new GridTools::GridToolBar();
 	tileMapManager = new Tiles::TileMapManager(gridToolBar);
 	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
-	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(2, 2)));
+	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(1, 2)));
 	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
 
 	Renderer::RenderObjects.push_back(tileMapManager);

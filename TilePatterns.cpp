@@ -41,7 +41,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 		TextUnformatted(descriptionString.c_str());
 		EndTooltip();
 	}
-	if (!tileSlot || !BeginPopupContextItem(id.c_str())) return;
+	if (!tileSlot || tileSlot->TileSprites.empty() || !BeginPopupContextItem(id.c_str())) return;
 	//when right-clicked, display all variants in a popup, aligned in a square pattern
 	const auto squareRoot = (int)sqrt(tileSlot->TileSprites.size());
 	int index = 0;
