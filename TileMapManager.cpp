@@ -1,6 +1,15 @@
 ﻿#include "TileMapManager.h"
+
+#include "Camera.h"
 #include "ImGuiHelper.h"
 #include "GridToolBar.h"
+#include "Input.h"
+#include "Mesh.h"
+#include "Renderer.h"
+#include "Shader.h"
+
+Tiles::TileMapManager::TileMapManager(GridTools::GridToolBar* grid_tool_bar) : gridToolBar(grid_tool_bar) {
+}
 
 void Tiles::TileMapManager::RenderImGuiWindow() {
 	using namespace ImGui;
@@ -12,12 +21,12 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 	if (Begin("TileMaps", &tileMapWindowOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove)) {
 		ImGuiHelper::TextCentered("Active TileMap");
 
-		int tileMapCount = activeTileMaps.size();
+		int tileMapCount = tileMaps.size();
 		static int selectedIndex = 0;
 		bool reorder = false;
 		int reorderFirst = 0;
 		int reorderSecond = 0;
-		if (BeginTable("###TileMapListBox", 5, ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit| ImGuiTableFlags_ScrollY, ImVec2(GetWindowSize().x-30, 150))) {
+		if (BeginTable("###TileMapListBox", 5, ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY, ImVec2(GetWindowSize().x - 30, 150))) {
 			TableSetupColumn("id", ImGuiTableColumnFlags_WidthFixed, 10);
 			TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch, 50);
 			TableSetupColumn("-", ImGuiTableColumnFlags_WidthFixed, 10);
@@ -27,12 +36,13 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 				bool isSelected = i == selectedIndex;
 				TableNextRow();
 				TableNextColumn();
-				Tiles::TileMap* currentTileMap = activeTileMaps[i];
+				Tiles::TileMap* currentTileMap = tileMaps[i];
 				TextUnformatted(std::to_string(i + 1).c_str());
 				TableNextColumn();
 				if (Selectable(currentTileMap->Name.c_str(), isSelected)) {
 					selectedIndex = i;
 					gridToolBar->SetActiveTileMap(currentTileMap);
+					activeTileMap = currentTileMap;
 				}
 				TableNextColumn();
 				bool allowMinus = i > 0;
@@ -63,7 +73,7 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 				TableNextColumn();
 				PushID(i);
 				Checkbox("Visible", &currentTileMap->renderingEnabled);
-				if(IsItemHovered()) {
+				if (IsItemHovered()) {
 					BeginTooltip();
 					TextUnformatted("Show/Hide TileMap");
 					EndTooltip();
@@ -80,9 +90,9 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 		}
 
 		if (reorder) {
-			auto temp = activeTileMaps[reorderFirst];
-			activeTileMaps[reorderFirst] = activeTileMaps[reorderSecond];
-			activeTileMaps[reorderSecond] = temp;
+			auto temp = tileMaps[reorderFirst];
+			tileMaps[reorderFirst] = tileMaps[reorderSecond];
+			tileMaps[reorderSecond] = temp;
 		}
 		float xPos = main_viewport->Size.x - ImGui::GetWindowSize().x;
 		float yPos = main_viewport->Size.y - main_viewport->WorkSize.y;
@@ -90,4 +100,33 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 	}
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+void Tiles::TileMapManager::Render() const {
+	for (const auto& tileMap : tileMaps) if (tileMap->renderingEnabled) tileMap->Render();
+
+	return;
+	// render grid
+	glm::ivec2 gridDimensions(1, 1);
+	if (activeTileMap != nullptr) {
+		gridDimensions = activeTileMap->GridDimensions;
+	}
+
+	auto mousePos = Input::GetMousePosition();
+	auto mouseGridPos = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
+
+	glActiveTexture(GL_TEXTURE0); //TODO: is this required?
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	const auto& gridShader = Rendering::Renderer::gridShader;
+	gridShader->Use();
+	gridShader->setMat4("view", *Rendering::Camera::Main->GetViewMatrix());
+	gridShader->setMat4("projection", *Rendering::Camera::Main->GetProjectionMatrix());
+	gridShader->setVec("mousePos", mouseGridPos);
+	gridShader->setVec("gridDimensions", gridDimensions);
+	gridShader->setMat4("model", glm::scale(glm::mat4(1.0f), glm::vec3(1000)));
+
+	// clear depth buffer to always draw grid on top -- in this case no depth buffer is active
+	// glClear(GL_DEPTH_BUFFER_BIT);
+	Mesh::StaticMesh::GetDefaultQuad()->Draw();
 }

@@ -5,13 +5,7 @@ in vec3 vertexPos;
 in vec2 texCoord;
 
 uniform vec2 mousePos;
-
-float drawGridLine(float thickness, float pos, float p) {
-	float f = fract(pos+(thickness/2)) / thickness;
-	f = clamp(f, 0, 1)* 2 - 1;
-	f = pow(f, p);
-	return 1-(abs(f));
-}
+uniform vec2 gridDimensions;
 
 void main() {
 
@@ -19,23 +13,29 @@ void main() {
 	float gridGradient = .65;
 	vec4 col;
 	col.rgb = gridGradient.xxx;
-	float thickness = 0.01f;
-	float exponent = 1;
-	float gridDvX = length(vec2(dFdx(vertexPos.x), dFdy(vertexPos.x))) + 0.01;
-	float gridDvY = length(vec2(dFdx(vertexPos.y), dFdy(vertexPos.y))) + 0.01;
-	float gridX = drawGridLine(max(thickness, gridDvX), vertexPos.x, exponent);
-	float gridY = drawGridLine(max(thickness, gridDvY), vertexPos.y, exponent);
-	col.a = max(gridX, gridY);
+
+	float gridDiffX = dFdx(vertexPos.x);
+	float gridDiffY = dFdy(vertexPos.y);
+//	vec2 vertexDistanceFromGrid = vec2(mod(vertexPos.x, gridDimensions.x), mod(vertexPos.y, gridDimensions.y));
+	vec2 vertexDistanceFromGrid = mod(vertexPos.xy, gridDimensions);
+	float drawGridX = vertexDistanceFromGrid.x <= gridDiffX ? 1 : 0;
+	float drawGridY = vertexDistanceFromGrid.y <= gridDiffY ? 1 : 0;
+
+	col.a = max(drawGridX, drawGridY);
 
 	// Is Mouse is same grid cell as vertex?
-	vec2 cellDiff = min(vec2(1), abs(floor(vertexPos.xy) - floor(mousePos)));
-	float isSame = 1-length(cellDiff); // + gridX + gridY;
-    if (isSame == 1) {
+	vec2 mouseDistFromGrid = mod(mousePos, gridDimensions);
+	vec2 mouseGridPos = mousePos - mouseDistFromGrid;
+	vec2 vertGridPos = vertexPos.xy - vertexDistanceFromGrid;
+	bool isSame = vertGridPos == mouseGridPos;;
+//	bool isSame = length(abs(vertGridPos - mouseGridPos)) < 0.001;
+    if (isSame) {
 		// Highlight Cell
-		vec2 closeToEdge = abs(fract(vertexPos.xy) * 2 - (1).xx);
+		vec2 closeToEdge = abs(vertexDistanceFromGrid / gridDimensions * 2 - (1).xx);
 		float exponent = 20;
 		closeToEdge.x = pow(closeToEdge.x, exponent);
 		closeToEdge.y = pow(closeToEdge.y, exponent);
+
 		col.a = length(closeToEdge);
 
 		col.rgb = (1).xxx;

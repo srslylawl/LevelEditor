@@ -149,6 +149,7 @@ void Renderer::Render() {
 		gridShader->setMat4("view", *Camera::Main->GetViewMatrix());
 		gridShader->setMat4("projection", *Camera::Main->GetProjectionMatrix());
 		gridShader->setVec("mousePos", mouseGridPos);
+		gridShader->setVec("gridDimensions", ivec2(1,1));
 		gridShader->setMat4("model", scale(mat4(1.0f), vec3(1000)));
 		Mesh::StaticMesh::GetDefaultQuad()->Draw();
 	}

@@ -109,7 +109,7 @@
     <ClCompile Include="SubTextureData.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="TilePattern.cpp">
+    <ClCompile Include="TilePatterns.cpp">
       <Filter>Source Files\Tiles</Filter>
     </ClCompile>
     <ClCompile Include="libs\imgui\misc\cpp\imgui_stdlib.cpp">
@@ -246,7 +246,7 @@
     <ClInclude Include="SubTextureData.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="TilePattern.h">
+    <ClInclude Include="TilePatterns.h">
       <Filter>Source Files\Tiles</Filter>
     </ClInclude>
     <ClInclude Include="libs\imgui\misc\cpp\imgui_stdlib.h">

@@ -9,7 +9,7 @@ void Tiles::TileMap::SetTile(const Tile* tile, glm::ivec2 grid_position) {
 	if (auto it = data.find(grid_position); it != data.end())
 		it->second = ti;
 	else
-		data.insert({ grid_position, ti });
+		data[grid_position] = ti;
 	TileInstance::RefreshSurroundingTileInstances(grid_position, this);
 }
 
@@ -37,10 +37,11 @@ bool Tiles::TileMap::TryGetTile(const glm::ivec2 grid_position, const TileInstan
 	out_tileInstance = nullptr;
 	return false;
 }
-Tiles::TileMap::TileMap(std::string name, TileMapType type, Rendering::Shader* shader) : shader(shader != nullptr
-		? shader
-		: Rendering::Renderer::defaultShader), Name(name),
-	Type(type) { }
+Tiles::TileMap::TileMap(std::string name, TileMapType type, glm::ivec2 gridDimensions, Rendering::Shader* shader) :
+	shader(shader != nullptr ? shader
+	: Rendering::Renderer::defaultShader),
+	Name(name), Type(type), GridDimensions(gridDimensions) {
+}
 
 void Tiles::TileMap::Render() const {
 	// TODO: GPU instancing and pack textures in atlas to render in one draw call as this is highly inefficient

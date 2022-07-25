@@ -12,12 +12,24 @@
 #include "TileMap.h"
 
 namespace Tiles {
+	void Tile::TileMapSet(TileMap* tileMap, glm::vec2 position) const {
+		tileMap->SetTile(this, position);
+	}
+
+	void Tile::TileMapErase(TileMap* tileMap, glm::vec2 position) const {
+		//*this can be null here
+		tileMap->RemoveTile(position);
+
+	}
+
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
 		out_tile = new Tile();
 
 		out_tile->Name = Serialization::DeserializeStdString(iStream);
 		out_tile->DisplayTexture = Serialization::DeserializeStdString(iStream);
-		out_tile->pattern = Serialization::DeserializeTilePattern(iStream);
+		int tileType = 0; Serialization::readFromStream(iStream, tileType);
+		out_tile->Type = static_cast<TileType>(tileType);
+		out_tile->patternUPTR = Serialization::DeserializeITilePattern(iStream);
 
 		const std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
 		bool valid = fileEndingCheck == FileEnding;
@@ -32,76 +44,9 @@ namespace Tiles {
 	void Tile::Serialize(std::ostream& oStream) const {
 		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, DisplayTexture);
-		Serialization::Serialize(oStream, pattern);
+		Serialization::writeToStream(oStream, static_cast<int>(Type));
+		Serialization::Serialize(oStream, patternUPTR.get());
 		Serialization::Serialize(oStream, FileEnding);
-	}
-
-	// Menu for Tile Creation; Returns True on success
-	bool Tile::ImGuiCreateTile(bool& displayWindow, Tile*& out_tile) {
-		using namespace ImGui;
-
-		bool created = false;
-		if (Begin("New Tile", &displayWindow)) {
-			static char nameBuff[256];
-			static char texPathBuff[1024];
-			static unsigned int texID = 0;
-
-			ImGui::InputTextWithHint("Name", "<enter tile name>", nameBuff, IM_ARRAYSIZE(nameBuff));
-			ImGuiHelper::Image(texID, ImVec2(32, 32));
-			if (ImGui::BeginDragDropTarget()) {
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
-					const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
-					texID = t->GetTextureID();
-					strcpy_s(texPathBuff, t->GetRelativeFilePath().c_str());
-				}
-				ImGui::EndDragDropTarget();
-			}
-
-			SameLine();
-			constexpr char popupWindow[] = "Select Sprite";
-			if (ImGui::Button("Select...")) {
-				OpenPopup(popupWindow);
-			}
-
-			if (BeginPopup(popupWindow)) {
-				const auto t = Resources::GetTextures();
-				for (auto it = Resources::GetTextures().begin(); it != Resources::GetTextures().end(); ++it) {
-					const auto& tex = it->second;
-					const auto textureID = tex->GetTextureID();
-					if (ImageButton(reinterpret_cast<ImTextureID>(textureID), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
-						texID = textureID;
-						strcpy_s(texPathBuff, it->first.c_str());
-						CloseCurrentPopup();
-					}
-					TextUnformatted(it->second->GetFileName().c_str());
-				}
-				EndPopup();
-			}
-
-			bool canCreate = true;
-			if (nameBuff[0] == '\0') canCreate = false;
-			if (texPathBuff[0] == '\0') canCreate = false;
-
-			if (!canCreate) BeginDisabled();
-			if (ImGui::Button("Create Tile")) {
-				out_tile = new Tile();
-				out_tile->Name = nameBuff;
-				out_tile->DisplayTexture = texPathBuff;
-
-				std::cout << "Created Tile: " << out_tile->Name << " with Tex: " << out_tile->DisplayTexture << std::endl;
-
-				//clear buffers for next tile
-				sprintf_s(nameBuff, "");
-				sprintf_s(texPathBuff, "");
-				texID = 0;
-
-				created = true;
-			}
-			if (!canCreate) EndDisabled();
-		}
-		End();
-
-		return created;
 	}
 
 	bool Tile::ImGuiEditTile(Tile* tempFile) {
@@ -116,6 +61,10 @@ namespace Tiles {
 			errorMessage = error.message();
 		}
 
+		const char* const items[] = { "Simple", "AutoTile", "AutoWall" };
+		if (ImGui::Combo("Type", (int*)&tempFile->Type, items, 3)) {
+			tempFile->SetPatternFromType();
+		}
 
 		unsigned int texId = 0;
 		if (Rendering::Texture* t; Resources::TryGetTexture(tempFile->DisplayTexture.c_str(), t)) texId = t->GetTextureID();
@@ -129,10 +78,12 @@ namespace Tiles {
 			ImGui::EndDragDropTarget();
 		}
 
+		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");
 		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
-		tempFile->pattern.DearImGuiEditPattern();
+		tempFile->patternUPTR->RenderDearImGui();
 
+		ImGui::Separator();
 		if (hasError) ImGui::TextUnformatted(("Error: " + errorMessage).c_str());
 		if (fileNameAlreadyExists) ImGui::TextUnformatted("Tile with same name already exists.");
 
@@ -152,6 +103,8 @@ namespace Tiles {
 			return true;
 		}
 		if (disableSave) ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel")) return true;
 
 
 		return false;

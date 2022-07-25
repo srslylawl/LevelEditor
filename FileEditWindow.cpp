@@ -12,7 +12,7 @@ bool FileEditWindow<T>::RenderImGui() {
 	using namespace ImGui;
 	bool showWindow = true;
 	std::ostringstream oss;
-	oss << (void*)this;
+	oss << static_cast<void*>(this);
 	std::string s(oss.str());
 	std::string name = "File Properties##" + s;
 
@@ -54,11 +54,11 @@ template <class T>
 void FileEditWindow<T>::NewEditWindow(T* data, const std::function<void()> onClose) {
 	//check if it exists already to avoid duplicate windows
 	for (auto& activeWindowUPTR : activeWindows) {
-		FileEditWindow<T>* fileEditWindow = dynamic_cast<FileEditWindow<T>*>(activeWindowUPTR.get());
+		auto* fileEditWindow = dynamic_cast<FileEditWindow<T>*>(activeWindowUPTR.get());
 		if (!fileEditWindow) continue;
 		if (fileEditWindow->fileData != data) continue;
 
-		activeWindowUPTR.get()->setFocus = true;
+		activeWindowUPTR->setFocus = true;
 		return;
 	}
 

@@ -67,13 +67,13 @@ bool MainWindow::Initialize() {
 
 	gridToolBar = new GridTools::GridToolBar();
 	tileMapManager = new Tiles::TileMapManager(gridToolBar);
-	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
-	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall));
-	tileMapManager->activeTileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
+	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
+	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(2, 2)));
+	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
 
 	Renderer::RenderObjects.push_back(tileMapManager);
 
-	gridToolBar->SetActiveTileMap(tileMapManager->activeTileMaps[0]);
+	gridToolBar->SetActiveTileMap(tileMapManager->tileMaps[0]);
 
 
 	// update while resizing - does not work though, according to google its a backend limitation?
@@ -198,7 +198,7 @@ void MainWindow::RenderImGui() {
 	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New")) {
+			if (ImGui::MenuItem("[Testing] Open...")) {
 				//Do something
 				std::string path;
 				constexpr char filter[] = "Image Files (JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM)\0*.jpeg;*.png;*.tga;*.bmp;*.psd;*.gif;*.hdr;*.pic;*.pnm\0\0";
@@ -210,7 +210,7 @@ void MainWindow::RenderImGui() {
 			ImGui::EndMenu();
 		}
 
-		if (MenuItem("Recompile Shader")) {
+		if (MenuItem("[Debug] Recompile Shader")) {
 			Renderer::CompileShader();
 		}
 

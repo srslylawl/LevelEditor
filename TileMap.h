@@ -34,8 +34,9 @@ namespace Tiles {
 
 		std::string Name;
 		TileMapType Type;
+		glm::ivec2 GridDimensions;
 
-		TileMap(std::string name, TileMapType type = TileMapType::Any, Rendering::Shader* shader = nullptr);
+		TileMap(std::string name, TileMapType type = TileMapType::Any, glm::ivec2 gridDimensions = glm::ivec2(1,1), Rendering::Shader* shader = nullptr);
 
 		void Render() const override;
 	};

@@ -12,24 +12,21 @@ namespace Tiles {
 	// Holds tileMaps and renders them in user defined order.
 	class TileMapManager : public Rendering::Renderable {
 	public:
+		explicit TileMapManager(GridTools::GridToolBar* grid_tool_bar);
 
-		explicit TileMapManager(GridTools::GridToolBar* grid_tool_bar)
-			: gridToolBar(grid_tool_bar) {}
-
-		std::vector<TileMap*> activeTileMaps;
+		std::vector<TileMap*> tileMaps;
 		GridTools::GridToolBar* gridToolBar;
+		TileMap* activeTileMap = nullptr;
 
 		bool autoSelectTileMapOnTileSelect = false;
 
 		void RenderImGuiWindow();
 
-		void Render() const override {
-			for (const auto& tileMap : activeTileMaps) if (tileMap->renderingEnabled) tileMap->Render();
-		}
+		void Render() const override;
 
 		~TileMapManager() override {
-			for (const auto& atm : activeTileMaps) {
-				delete atm;
+			for (const auto& tm : tileMaps) {
+				delete tm;
 			}
 		}
 	};
