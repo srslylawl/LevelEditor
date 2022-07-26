@@ -100,6 +100,21 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 	}
 	ImGui::End();
 	ImGui::PopStyleVar();
+
+	if (Begin("Debug")) {
+		auto mousePos = Input::GetMousePosition();
+		auto mouseGridPos = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
+		mouseGridPos.x = floor(mouseGridPos.x);
+		mouseGridPos.y = floor(mouseGridPos.y);
+		if (activeTileMap != nullptr) {
+			std::string gridPos = "X: " + std::to_string(mouseGridPos.x) + " Y: " + std::to_string(mouseGridPos.y);
+			TextUnformatted(gridPos.c_str());
+			auto tileMapGridPos = activeTileMap->ConvertToTileMapGridPosition(mouseGridPos);
+			std::string tmGridPos = "Tilemap: X: " + std::to_string(tileMapGridPos.x) + " Y: " + std::to_string(tileMapGridPos.y);
+			TextUnformatted(tmGridPos.c_str());
+		}
+	}
+	End();
 }
 
 void Tiles::TileMapManager::Render() const {

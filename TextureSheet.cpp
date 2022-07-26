@@ -110,7 +110,6 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 	if (IsItemHovered()) {
 		BeginTooltip();
 		TextUnformatted(texture->GetFileName().c_str());
-		TextUnformatted(texture->GetFileName().c_str());
 		EndTooltip();
 	}
 
@@ -134,7 +133,6 @@ void TextureSheet::RenderImGuiWindow() {
 		}
 		PushID(i);
 		DrawSubSpriteButton(SubTextures[i], buttonSize);
-
 	}
 }
 

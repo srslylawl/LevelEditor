@@ -69,11 +69,12 @@ bool MainWindow::Initialize() {
 	tileMapManager = new Tiles::TileMapManager(gridToolBar);
 	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
 	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(1, 2)));
-	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
+	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling, ivec2(1, 3)));
 
 	Renderer::RenderObjects.push_back(tileMapManager);
 
 	gridToolBar->SetActiveTileMap(tileMapManager->tileMaps[0]);
+	tileMapManager->activeTileMap = tileMapManager->tileMaps[0];
 
 
 	// update while resizing - does not work though, according to google its a backend limitation?
