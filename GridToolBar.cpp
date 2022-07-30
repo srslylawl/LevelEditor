@@ -36,17 +36,19 @@ namespace GridTools {
 		isStale = false;
 	}
 
-	void GridToolBar::OnMouseEvent(const InputMouseEvent* event) {
+	bool GridToolBar::OnMouseEvent(const InputMouseEvent* event) {
 		if (activeTileMap == nullptr) {
 			std::cout << "No tileMap selected!" << std::endl;
-			return;
+			return false;
 		}
 		const auto gridPos = GetMouseGridPos();
 		if (gridPos != lastMouseGridPos) isStale = false;
 
-		tools[activeTool]->OnInteract(event, gridPos, isStale);
+		bool success = tools[activeTool]->OnInteract(event, gridPos, isStale);
 
 		lastMouseGridPos = gridPos;
+
+		return success;
 	}
 	glm::ivec2 GridToolBar::GetMouseGridPos() const {
 		const auto mousePos = Input::GetMousePosition();

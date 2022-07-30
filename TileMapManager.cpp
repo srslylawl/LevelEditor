@@ -41,8 +41,7 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 				TableNextColumn();
 				if (Selectable(currentTileMap->Name.c_str(), isSelected)) {
 					selectedIndex = i;
-					gridToolBar->SetActiveTileMap(currentTileMap);
-					activeTileMap = currentTileMap;
+					SetActiveTileMap(currentTileMap);
 				}
 				TableNextColumn();
 				bool allowMinus = i > 0;
@@ -83,11 +82,11 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 			EndTable();
 		}
 
-		if (TreeNode("More...")) {
-			Checkbox("Auto-select on tile select <NYI>", &autoSelectTileMapOnTileSelect); SameLine();
-			ImGuiHelper::TextWithToolTip("", "When selecting a different tile, will attempt to automatically select the matching type of tileMap");
-			TreePop();
-		}
+		//if (TreeNode("More...")) {
+		//	Checkbox("Auto-select on tile select <NYI>", &autoSelectTileMapOnTileSelect); SameLine();
+		//	ImGuiHelper::TextWithToolTip("", "When selecting a different tile, will attempt to automatically select the matching type of tileMap");
+		//	TreePop();
+		//}
 
 		if (reorder) {
 			auto temp = tileMaps[reorderFirst];
@@ -98,29 +97,16 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 		float yPos = main_viewport->Size.y - main_viewport->WorkSize.y;
 		ImGui::SetWindowPos(ImVec2(xPos, yPos));
 	}
-	ImGui::End();
-	ImGui::PopStyleVar();
-
-	if (Begin("Debug")) {
-		auto mousePos = Input::GetMousePosition();
-		auto mouseGridPos = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
-		mouseGridPos.x = floor(mouseGridPos.x);
-		mouseGridPos.y = floor(mouseGridPos.y);
-		if (activeTileMap != nullptr) {
-			std::string gridPos = "X: " + std::to_string(mouseGridPos.x) + " Y: " + std::to_string(mouseGridPos.y);
-			TextUnformatted(gridPos.c_str());
-			auto tileMapGridPos = activeTileMap->ConvertToTileMapGridPosition(mouseGridPos);
-			std::string tmGridPos = "Tilemap: X: " + std::to_string(tileMapGridPos.x) + " Y: " + std::to_string(tileMapGridPos.y);
-			TextUnformatted(tmGridPos.c_str());
-		}
-	}
 	End();
+	PopStyleVar();
 }
 
 void Tiles::TileMapManager::Render() const {
 	for (const auto& tileMap : tileMaps) if (tileMap->renderingEnabled) tileMap->Render();
 
 	// render grid
+	if (!Rendering::Renderer::DrawGrid) return;
+
 	glm::ivec2 gridDimensions(1, 1);
 	if (activeTileMap != nullptr) {
 		gridDimensions = activeTileMap->GridDimensions;
@@ -129,7 +115,7 @@ void Tiles::TileMapManager::Render() const {
 	auto mousePos = Input::GetMousePosition();
 	auto mouseGridPos = Rendering::Camera::Main->ScreenToGridPosition(mousePos.x, mousePos.y);
 
-	glActiveTexture(GL_TEXTURE0); //TODO: is this required?
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	const auto& gridShader = Rendering::Renderer::gridShader;
@@ -143,4 +129,9 @@ void Tiles::TileMapManager::Render() const {
 	// clear depth buffer to always draw grid on top -- in this case no depth buffer is active
 	// glClear(GL_DEPTH_BUFFER_BIT);
 	Mesh::StaticMesh::GetDefaultQuad()->Draw();
+}
+
+inline void Tiles::TileMapManager::SetActiveTileMap(TileMap* tileMap) {
+	activeTileMap = tileMap;
+	gridToolBar->activeTileMap = tileMap;
 }

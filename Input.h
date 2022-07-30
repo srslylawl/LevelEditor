@@ -85,7 +85,7 @@ class Input {
 	inline static std::map<MouseButton, std::unordered_set<KeyEvent>> mouseKeyEvents;
 	inline static MouseMotion mouseMotion;
 	inline static MouseWheel mouseWheel;
-	inline static std::pair<int, int> savedMousePosition;
+	inline static std::pair<int, int> savedMousePosition = std::make_pair<int, int>(0, 0);
 public:
 	static InputKeyBinding* AddKeyBinding(const SDL_Keycode keycode, std::function<void(KeyEvent)> action);
 
@@ -114,6 +114,15 @@ public:
 	static void ClearKeyboardActions();
 
 	static void SetMouseCapture(bool set);
+
+	//Is key currently pressed down?
+	static bool GetKeyDown(const SDL_Keycode& keycode) {
+		auto it = keysHeldDown.find(keycode);
+		if(it != keysHeldDown.end()) {
+			return it->second;
+		}
+		return false;
+	}
 
 	static glm::vec2 GetMousePosition();
 	static void GetMousePosition(int& x, int& y);

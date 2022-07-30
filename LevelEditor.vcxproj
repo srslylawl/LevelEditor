@@ -126,7 +126,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4244;4312</DisableSpecificWarnings>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalOptions>-Wformat-security %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wformat-security /showFilenames %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,7 +153,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4244;4312</DisableSpecificWarnings>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalOptions>-Wformat-security %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wformat-security /showFilenames %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -178,6 +178,7 @@
     <ClCompile Include="GridToolBar.cpp" />
     <ClCompile Include="ImGuiHelper.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Level.cpp" />
     <ClCompile Include="libs\glad\src\glad.c" />
     <ClCompile Include="libs\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="libs\imgui\backends\imgui_impl_sdl.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="GridToolType.h" />
     <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Level.h" />
     <ClInclude Include="libs\glad\include\glad\glad.h" />
     <ClInclude Include="libs\glad\include\KHR\khrplatform.h" />
     <ClInclude Include="libs\glm\glm.hpp" />

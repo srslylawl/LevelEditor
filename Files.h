@@ -44,8 +44,9 @@ namespace Files {
 		return std::filesystem::directory_iterator(GetAbsolutePath(directory));
 	}
 
-	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function) {
+	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function, bool skipFolders = true) {
 		for (auto& entry : GetDirectoryIterator(directory)) {
+			if(entry.is_directory() && skipFolders) continue;
 			string relativePath = directory;
 			relativePath += "\\" + entry.path().filename().string();
 			function(relativePath.c_str());
@@ -77,9 +78,9 @@ namespace Files {
 
 	// Loads a Serializable Class from File and allocates on Free Store (has to be deleted manually)
 	template<typename Serializable>
-	bool LoadFromFile(const char* fileName, Serializable*& out) {
+	bool LoadFromFile(const char* relativePathToFile, Serializable*& out) {
 		//TODO: secure this
-		ifstream file(GetAbsolutePath(fileName));
+		ifstream file(GetAbsolutePath(relativePathToFile));
 
 		if (!file) return false; // Check for error
 

@@ -1,13 +1,10 @@
 #pragma once
 #include <SDL_video.h>
+#include <string>
 
 class InputMouseEvent;
 struct InputMouseBinding;
-
-namespace Tiles {
-	class TileMapManager;
-	class TileMap;
-}
+class Level;
 
 namespace GridTools {
 	class GridToolBar;
@@ -20,18 +17,22 @@ class MainWindow {
 
 	static int width;
 	static int height;
-	const char* m_title = "New Window";
+	std::string windowTitle;
 	short renderMode = 0;
 
 	InputMouseBinding* binding = nullptr;
 
-	GridTools::GridToolBar* gridToolBar = nullptr;
-	Tiles::TileMapManager* tileMapManager = nullptr;
+	Level* loadedLevel = nullptr;
 
+	GridTools::GridToolBar* gridToolBar = nullptr;
 
 	void RenderImGui();
 	bool InitSDL();
 	bool InitDearImGui();
+
+	void LoadLevel(Level* level);
+	void UnloadLevel();
+	void SaveCurrentLevel(std::string nameOverride = "");
 
 public:
 	static SDL_Window* GetSDLWindow() { return SDLWindow; }
@@ -39,6 +40,9 @@ public:
 	void OnMouseInput(const InputMouseEvent* event);
 	bool Initialize();
 	void Render();
+
+	void SetWindowDirtyFlag(bool dirty);
+	void SetWindowTitle(std::string title = "");
 
 
 	static void OnResized(int width, int height);

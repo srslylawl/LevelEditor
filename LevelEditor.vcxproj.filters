@@ -124,6 +124,9 @@
     <ClCompile Include="TileMapManager.cpp">
       <Filter>Source Files\Tiles</Filter>
     </ClCompile>
+    <ClCompile Include="Level.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -260,6 +263,9 @@
     </ClInclude>
     <ClInclude Include="TileMapManager.h">
       <Filter>Source Files\Tiles</Filter>
+    </ClInclude>
+    <ClInclude Include="Level.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

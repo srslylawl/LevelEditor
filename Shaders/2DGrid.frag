@@ -11,14 +11,15 @@ void main() {
 
 	// Grid Display
 	float gridGradient = .65;
+	float gridAlpha = .35;
 	vec4 col;
 	col.rgb = gridGradient.xxx;
 
 	float gridDiffX = dFdx(vertexPos.x);
 	float gridDiffY = dFdy(vertexPos.y);
 	vec2 vertexDistanceFromGrid = mod(vertexPos.xy, gridDimensions);
-	float drawGridX = vertexDistanceFromGrid.x <= gridDiffX ? 1 : 0;
-	float drawGridY = vertexDistanceFromGrid.y <= gridDiffY ? 1 : 0;
+	float drawGridX = vertexDistanceFromGrid.x <= gridDiffX ? gridAlpha : 0;
+	float drawGridY = vertexDistanceFromGrid.y <= gridDiffY ? gridAlpha : 0;
 
 	col.a = max(drawGridX, drawGridY);
 

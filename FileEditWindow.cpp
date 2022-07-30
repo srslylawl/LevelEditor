@@ -26,7 +26,7 @@ bool FileEditWindow<T>::RenderImGui() {
 	const auto windowCount = activeWindows.size();
 	pos = ImVec2(pos.x + 10 * windowCount, pos.y + 10 * windowCount);
 	SetNextWindowPos(pos, ImGuiCond_Once, ImVec2(0.5f, 0.5f));
-
+	SetNextWindowSizeConstraints(ImVec2(250, 200), GetMainViewport()->Size);
 	if (Begin(name.c_str(), &showWindow, ImGuiWindowFlags_NoSavedSettings)) {
 		if (EditFile()) showWindow = false;
 	}

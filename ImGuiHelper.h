@@ -2,6 +2,8 @@
 #include <imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 #include <functional>
+#include "Files.h"
+
 namespace Rendering {
 	class Texture;
 }
@@ -32,14 +34,19 @@ namespace ImGuiHelper {
 		ImGui::SameLine();
 		ImGui::TextDisabled("(?)");
 
-		if(!ImGui::IsItemHovered()) return;
+		if (!ImGui::IsItemHovered()) return;
 
 		ImGui::BeginTooltip();
 		ImGui::TextUnformatted(tooltip);
 		ImGui::EndTooltip();
 	}
-	void DragSourceTexture(Rendering::Texture*& texture);
 
+	inline void CenterNextWindow(ImVec2 offset = ImVec2(0, 0), ImGuiCond conditions = ImGuiCond_Once, ImVec2 pivot = ImVec2(0.5f, 0.5f)) {
+		auto pos = ImGui::GetMainViewport()->GetCenter();
+		pos = ImVec2(pos.x + offset.x, pos.y + offset.y);
+		ImGui::SetNextWindowPos(pos, conditions, pivot);
+	}
+	void DragSourceTexture(Rendering::Texture*& texture);
 
 	void TextCentered(const char* text);
 

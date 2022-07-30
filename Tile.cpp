@@ -19,7 +19,6 @@ namespace Tiles {
 	void Tile::TileMapErase(TileMap* tileMap, glm::vec2 position) const {
 		//*this can be null here
 		tileMap->RemoveTile(position);
-
 	}
 
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
@@ -65,6 +64,7 @@ namespace Tiles {
 		if (ImGui::Combo("Type", (int*)&tempFile->Type, items, 3)) {
 			tempFile->SetPatternFromType();
 		}
+		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");
 
 		unsigned int texId = 0;
 		if (Rendering::Texture* t; Resources::TryGetTexture(tempFile->DisplayTexture.c_str(), t)) texId = t->GetTextureID();
@@ -78,7 +78,7 @@ namespace Tiles {
 			ImGui::EndDragDropTarget();
 		}
 
-		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");
+		
 		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
 		tempFile->patternUPTR->RenderDearImGui();

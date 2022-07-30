@@ -26,24 +26,23 @@
 #include "TileMap.h"
 #include "TileMapManager.h"
 #include "Tile.h"
+#include "Level.h"
 
 using namespace Rendering;
 
-MainWindow::MainWindow(const int new_width, const int new_height, const char* title) : m_title(title) {
+MainWindow::MainWindow(const int new_width, const int new_height, const char* title) : windowTitle(title) {
 	width = new_width;
 	height = new_height;
+
+	SetWindowTitle();
 }
 
 int MainWindow::width = 0;
 int MainWindow::height = 0;
 
-
-
-
-
-
 void MainWindow::OnMouseInput(const InputMouseEvent* event) {
-	gridToolBar->OnMouseEvent(event);
+	bool success = gridToolBar->OnMouseEvent(event);
+	if (success) SetWindowDirtyFlag(true);
 }
 int WindowResizeEvent(void* data, SDL_Event* event) {
 	if (event->type != SDL_WINDOWEVENT
@@ -66,20 +65,13 @@ bool MainWindow::Initialize() {
 	if (!InitDearImGui()) return false;
 
 	gridToolBar = new GridTools::GridToolBar();
-	tileMapManager = new Tiles::TileMapManager(gridToolBar);
-	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
-	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(1, 2)));
-	tileMapManager->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling, ivec2(1, 3)));
-
-	Renderer::RenderObjects.push_back(tileMapManager);
-
-	gridToolBar->SetActiveTileMap(tileMapManager->tileMaps[0]);
-	tileMapManager->activeTileMap = tileMapManager->tileMaps[0];
-
 
 	// update while resizing - does not work though, according to google its a backend limitation?
 	//SDL_AddEventWatch(WindowResizeEvent, this);
 	binding = Input::AddMouseBinding([this](const InputMouseEvent* e) {this->OnMouseInput(e); });
+
+	Level* level = Level::CreateDefaultLevel();
+	LoadLevel(level);
 
 
 	// Load Sprites and Tool Icons to Memory
@@ -113,7 +105,7 @@ bool MainWindow::InitSDL() {
 													 | SDL_WINDOW_RESIZABLE
 													 | SDL_WINDOW_ALLOW_HIGHDPI);
 
-	SDLWindow = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, window_flags);
+	SDLWindow = SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, window_flags);
 	if (SDLWindow == nullptr) {
 		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 		SDL_DestroyWindow(SDLWindow);
@@ -133,6 +125,32 @@ bool MainWindow::InitDearImGui() {
 
 	return true;
 }
+void Rendering::MainWindow::LoadLevel(Level* level) {
+	if (loadedLevel != nullptr) UnloadLevel();
+	loadedLevel = level;
+	level->TileMapManagerUPTR->gridToolBar = gridToolBar;
+	Renderer::RenderObjects.push_back(level->TileMapManagerUPTR.get());
+
+	if (level->TileMapManagerUPTR->tileMaps.size() > 0) {
+		level->TileMapManagerUPTR->SetActiveTileMap(level->TileMapManagerUPTR->tileMaps[0]);
+	}
+	SetWindowDirtyFlag(false);
+	SetWindowTitle(level->Name);
+}
+void Rendering::MainWindow::UnloadLevel() {
+	if (loadedLevel == nullptr) return;
+	Rendering::Renderable* tileMapManager = static_cast<Rendering::Renderable*>(loadedLevel->TileMapManagerUPTR.get());
+	auto removeIt = std::remove(Renderer::RenderObjects.begin(), Renderer::RenderObjects.end(), tileMapManager);
+	Renderer::RenderObjects.erase(removeIt);
+
+
+	delete loadedLevel;
+}
+void Rendering::MainWindow::SaveCurrentLevel(std::string nameOverride) {
+	if (!nameOverride.empty()) loadedLevel->Name = nameOverride;
+	Files::SaveToFile(loadedLevel);
+	SetWindowDirtyFlag(false);
+}
 void MainWindow::Render() {
 	// clear color, depth and stencil buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -142,6 +160,23 @@ void MainWindow::Render() {
 	RenderImGui();
 
 	SDL_GL_SwapWindow(SDLWindow);
+}
+
+void Rendering::MainWindow::SetWindowDirtyFlag(bool dirty) {
+	bool wasAlreadyDirty = loadedLevel->isDirty == dirty;
+	loadedLevel->isDirty = dirty;
+
+	if (!wasAlreadyDirty) SetWindowTitle();
+}
+
+void Rendering::MainWindow::SetWindowTitle(std::string title) {
+	std::string newTitle = windowTitle;
+	if (!title.empty()) {
+		windowTitle = "LevelEditor: " + title;
+		newTitle = windowTitle;
+	}
+	if (loadedLevel && loadedLevel->isDirty) newTitle += "*";
+	SDL_SetWindowTitle(SDLWindow, newTitle.c_str());
 }
 
 void MainWindow::RenderImGui() {
@@ -177,7 +212,11 @@ void MainWindow::RenderImGui() {
 		if (file.FileType != FileBrowserFileType::Tile) return false;
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		return tile == gridToolBar->GetSelectedTile();
-	}, onFileEdit);
+	}, onFileEdit, [](FileBrowser* browser) {
+		FileEditWindow<Tiles::Tile>::NewFileCreationWindow([browser] {
+			browser->RefreshCurrentDirectory();
+		});
+	});
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.FileType != FileBrowserFileType::Sprite) return;
@@ -196,28 +235,87 @@ void MainWindow::RenderImGui() {
 		openTexSheetPopup = true;
 	}, true);
 
+	static bool saveLevelDialogue = false;
+
+	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
+		if (!loadedLevel->Name.empty() && loadedLevel->Name != "untitled") SaveCurrentLevel();
+		else saveLevelDialogue = true;
+	}
+
 	// Menu Bar
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("[Testing] Open...")) {
-				//Do something
-				std::string path;
-				constexpr char filter[] = "Image Files (JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM)\0*.jpeg;*.png;*.tga;*.bmp;*.psd;*.gif;*.hdr;*.pic;*.pnm\0\0";
-				if (Files::OpenFileDialog(path, filter)) {
-					// success!
-					std::cout << path << std::endl;
+			if (ImGui::MenuItem("New...")) {
+				//open dialogue asking for name
+				Level* level = Level::CreateDefaultLevel();
+				LoadLevel(level);
+			}
+			if (ImGui::MenuItem("Open Level...")) {
+				std::string absolutePath;
+				//constexpr char filter[] = "Image Files (JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM)\0*.jpeg;*.png;*.tga;*.bmp;*.psd;*.gif;*.hdr;*.pic;*.pnm\0\0";
+				constexpr char filter[] = "Level File (.level)\0*.level\0\0";
+				if (Files::OpenFileDialog(absolutePath, filter)) {
+					Level* level = nullptr;
+					if (Files::LoadFromFile(Files::GetRelativePath(absolutePath).c_str(), level)) {
+						LoadLevel(level);
+					}
 				}
+			}
+			if (ImGui::MenuItem("Save", "CTRL + S")) {
+				if (!loadedLevel->Name.empty() && loadedLevel->Name != "untitled") SaveCurrentLevel();
+				else saveLevelDialogue = true;
+			}
+			if (ImGui::MenuItem("Save as...")) {
+				saveLevelDialogue = true;
 			}
 			ImGui::EndMenu();
 		}
 
-		if (MenuItem("[Debug] Recompile Shader")) {
-			Renderer::CompileShader();
-		}
+
 
 		static bool openSpriteSheetEditor = false;
 		if (MenuItem("SpriteSheetEditor")) {
 			openSpriteSheetEditor = true;
+		}
+
+		if (saveLevelDialogue) {
+			ImGuiHelper::CenterNextWindow(ImVec2(0, 0), ImGuiCond_Appearing);
+			if (Begin("Saving - Enter a name for current Level:", &saveLevelDialogue, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+				static std::string buffer;
+				static bool allowSave = !buffer.empty() && buffer != "untitled";
+				static bool hasError = false;
+				static std::string errorMessage;
+
+				if (ImGui::InputTextWithHint("Name", "cool_level_69", &buffer)) {
+					std::error_code error;
+					bool exists = std::filesystem::exists(Files::GetRelativePathTo(loadedLevel, buffer), error);
+					hasError = error.value() != 0 || exists;
+					errorMessage = error.value() != 0 ? error.message() : "A file with that name already exists.";
+					allowSave = !hasError && !buffer.empty() && buffer != "untitled";
+				}
+				if (hasError) {
+					ImGui::TextUnformatted(errorMessage.c_str());
+				}
+
+				if (!allowSave) BeginDisabled();
+				bool savePressed = Button("Save");
+				if (!allowSave) EndDisabled();
+				SameLine();
+				bool quitPressed = Button("Cancel");
+
+				if (savePressed || quitPressed) {
+					if (savePressed) {
+						SaveCurrentLevel(buffer);
+					}
+					//Reset everything
+					buffer.clear();
+					allowSave = false;
+					hasError = false;
+					errorMessage.clear();
+					saveLevelDialogue = false;
+				}
+			}
+			End();
 		}
 
 		if (openSpriteSheetEditor) {
@@ -254,16 +352,9 @@ void MainWindow::RenderImGui() {
 			}
 			End();
 		}
-		if (BeginMenu("Tiles")) {
-			if (Files::VerifyDirectory("Tiles")) {
-				if (ImGui::MenuItem("New Tile")) {
-					FileEditWindow<Tiles::Tile>::NewFileCreationWindow([] {tileFileBrowser.RefreshCurrentDirectory(); });
-				}
-			}
-			ImGui::EndMenu();
-		}
 		static bool showTextureDebugViewer = false;
 
+#ifdef _DEBUG
 		if (ImGui::BeginMenu("Debug")) {
 			if (ImGui::MenuItem("Show Demo Window", 0, showDebugWindow)) {
 				showDebugWindow = !showDebugWindow;
@@ -271,8 +362,12 @@ void MainWindow::RenderImGui() {
 			if (ImGui::MenuItem("Show TextureDebugViewer", nullptr, showTextureDebugViewer)) {
 				showTextureDebugViewer = !showTextureDebugViewer;
 			}
+			if (MenuItem("Recompile Shader")) {
+				Renderer::CompileShader();
+			}
 			ImGui::EndMenu();
 		}
+#endif
 
 		if (showTextureDebugViewer) {
 			if (ImGui::Begin("TextureDebugViewer", &showTextureDebugViewer, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -345,7 +440,7 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-	tileMapManager->RenderImGuiWindow();
+	loadedLevel->TileMapManagerUPTR->RenderImGuiWindow();
 	tileFileBrowser.RenderRearImGuiWindow();
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
@@ -383,7 +478,7 @@ void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
-	delete tileMapManager;
+	UnloadLevel();
 	delete gridToolBar;
 	SDLWindow = nullptr;
 }

@@ -39,7 +39,7 @@ namespace GridTools {
 
 
 		void SelectTool(GridToolType type);
-		void OnMouseEvent(const InputMouseEvent* event);
+		bool OnMouseEvent(const InputMouseEvent* event);
 
 		GridToolType GetActiveTool() const;
 

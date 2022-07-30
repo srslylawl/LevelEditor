@@ -13,19 +13,22 @@
 
 
 FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick,
-						 bool isTileSheetBrowser, std::function<bool(FileBrowserFile)> shouldHighlight, std::function<void(FileBrowserFile&)> onFileEdit) :
+						 bool isTileSheetBrowser, std::function<bool(FileBrowserFile)> shouldHighlight, 
+						 std::function<void(FileBrowserFile&)> onFileEdit, std::function<void(FileBrowser*)> onNewFile) :
 	name(std::move(title)),
 	fileBrowserID(++currentID),
 	isTileSheetBrowser(isTileSheetBrowser),
 	onFileClick(std::move(onFileClick)),
 	shouldHighlight(std::move(shouldHighlight)),
-	onFileEdit(std::move(onFileEdit)) {
+	onFileEdit(std::move(onFileEdit)),
+	onNewFile(onNewFile) {
 
 	const auto path = Files::GetAbsolutePath(start_directory);
 	currentDirectory = path;
 
 	Resources::TryGetInternalTexture(Strings::Folder, folderTexture);
 	Resources::TryGetInternalTexture(Strings::Previous_Directory, returnTexture);
+	Resources::TryGetInternalTexture(Strings::New_File, newFileTexture);
 
 	RefreshCurrentDirectory();
 }
@@ -48,7 +51,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	const bool clicked = ImageButton(reinterpret_cast<void*>(texture->GetTextureID()), ImVec2(iconSideLength, iconSideLength), ImVec2(0, 1), ImVec2(1, 0));
 	const bool wasRightClicked = IsItemClicked(ImGuiMouseButton_Right);
 
-	if(wasRightClicked && out_rightClicked != nullptr) {
+	if (wasRightClicked && out_rightClicked != nullptr) {
 		*out_rightClicked = true;
 	}
 
@@ -114,6 +117,7 @@ void FileBrowser::RenderRearImGuiWindow() {
 			const std::string currButton = imguiID + "_Subdirectories_" + std::to_string(buttonIndex);
 			if (DrawFileButton(folderTexture, buttonIndex, currButton, subDir.path().filename().string(), buttonSize)) {
 				ChangeDirectory(subDir.path());
+				break;
 			}
 
 			++buttonIndex;
@@ -128,11 +132,18 @@ void FileBrowser::RenderRearImGuiWindow() {
 				if (onFileClick != nullptr)
 					onFileClick(file);
 			}
-			if(wasRightClicked) {
-				if(onFileEdit != nullptr)
+			if (wasRightClicked) {
+				if (onFileEdit != nullptr)
 					onFileEdit(file);
 			}
 			++buttonIndex;
+		}
+
+		if (onNewFile != nullptr) {
+			//Show a "create new file" button
+			if (DrawFileButton(newFileTexture, buttonIndex++, "Create new...", "Click to create a new object.", buttonSize)) {
+				onNewFile(this);
+			}
 		}
 		//resize window with title
 		SetCursorPosX(CalcTextSize(windowTitle.c_str()).x);

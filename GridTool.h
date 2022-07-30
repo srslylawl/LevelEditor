@@ -11,7 +11,9 @@ namespace GridTools {
 		GridTool(GridToolBar* toolBar) : toolBar(toolBar) {}
 		virtual void OnSelect() = 0;
 		virtual void OnDeselect() = 0;
-		virtual void OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) = 0;
+
+		//Returns whether interaction was successful
+		virtual bool OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) = 0;
 	};
 
 	class PlacerTool : public GridTool {
@@ -20,7 +22,7 @@ namespace GridTools {
 
 		void OnSelect() override { }
 		void OnDeselect() override { }
-		void OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
+		bool OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
 	};
 
 	class EraserTool : public GridTool {
@@ -29,7 +31,7 @@ namespace GridTools {
 
 		void OnSelect() override {}
 		void OnDeselect() override {}
-		void OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
+		bool OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
 	};
 }
 

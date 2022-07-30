@@ -10,6 +10,7 @@
 #include "Time.h"
 #include "imgui.h"
 #include "ImGuiHelper.h"
+#include "Input.h"
 
 namespace Rendering {
 	using namespace glm;
@@ -56,7 +57,7 @@ namespace Rendering {
 			}
 
 			if (viewMode == ViewMode::Orthographic) {
-				const float zoomedOrthoSize = orthoSize/zoom2D;
+				const float zoomedOrthoSize = orthoSize / zoom2D;
 				aspectRatio = width / static_cast<float>(height);
 				const float halfW = zoomedOrthoSize * aspectRatio;
 				const float halfH = zoomedOrthoSize;
@@ -76,65 +77,66 @@ namespace Rendering {
 		}
 
 		void HandleMoveInput(SDL_KeyCode keyCode) {
+			if (Input::GetKeyDown(SDLK_LCTRL) || Input::GetKeyDown(SDLK_LSHIFT)) return;
 			switch (dimensionMode) {
-			case DimensionMode::ThreeDimensional:
-				HandleMoveInput3D(keyCode);
-				break;
-			case DimensionMode::TwoDimensional:
-				HandleMoveInput2D(keyCode);
-				break;
+				case DimensionMode::ThreeDimensional:
+					HandleMoveInput3D(keyCode);
+					break;
+				case DimensionMode::TwoDimensional:
+					HandleMoveInput2D(keyCode);
+					break;
 			}
 		}
 		void HandleMoveInput2D(SDL_KeyCode keyCode) {
 			switch (keyCode) {
-			case SDLK_w:
-				Move(Up);
-				break;
-			case SDLK_s:
-				Move(-Up);
-				break;
-			case SDLK_a:
-				Move(-Right);
-				break;
-			case SDLK_d:
-				Move(Right);
-				break;
-			default: 
-				break;
+				case SDLK_w:
+					Move(Up);
+					break;
+				case SDLK_s:
+					Move(-Up);
+					break;
+				case SDLK_a:
+					Move(-Right);
+					break;
+				case SDLK_d:
+					Move(Right);
+					break;
+				default:
+					break;
 			}
 		}
 		void HandleMoveInput3D(SDL_KeyCode keyCode) {
 			switch (keyCode) {
-			case SDLK_w:
-				Move(Forward);
-				break;
-			case SDLK_s:
-				Move(-Forward);
-				break;
-			case SDLK_a:
-				Move(-Right);
-				break;
-			case SDLK_d:
-				Move(Right);
-				break;
-			case SDLK_SPACE:
-				Move(Up);
-				break;
-			case SDLK_x:
-				Move(-Up);
-				break;
-			default: 
-				break;
+				case SDLK_w:
+					Move(Forward);
+					break;
+				case SDLK_s:
+					Move(-Forward);
+					break;
+				case SDLK_a:
+					Move(-Right);
+					break;
+				case SDLK_d:
+					Move(Right);
+					break;
+				case SDLK_SPACE:
+					Move(Up);
+					break;
+				case SDLK_x:
+					Move(-Up);
+					break;
+				default:
+					break;
 			}
 		}
 		void HandleMouseInput(const InputMouseEvent* e) {
 			switch (dimensionMode) {
-			case DimensionMode::ThreeDimensional:
-				HandleMouseInput3D(e);
-				break;
-			case DimensionMode::TwoDimensional:
-				HandleMouseInput2D(e);
-				break;
+				case DimensionMode::ThreeDimensional:
+					HandleMouseInput3D(e);
+					break;
+				case DimensionMode::TwoDimensional:
+					HandleMouseInput2D(e);
+					break;
 			}
 		}
 		void HandleMouseInput2D(const InputMouseEvent* e) {
@@ -153,17 +155,17 @@ namespace Rendering {
 			const auto wheelDelta = e->GetMouseWheelDelta();
 			if (wheelDelta != 0) {
 				float newZoom = zoom2D;
-				if(wheelDelta > 0) {
-					if(zoom2D >= 1) newZoom++;
-					else newZoom*=1.25f;
+				if (wheelDelta > 0) {
+					if (zoom2D >= 1) newZoom++;
+					else newZoom *= 1.25f;
 				}
 
-				if(wheelDelta < 0) {
-					if(zoom2D >= 2) newZoom--;
+				if (wheelDelta < 0) {
+					if (zoom2D >= 2) newZoom--;
 					else newZoom /= 1.25f;
 				}
 
-				if(newZoom > 1) {
+				if (newZoom > 1) {
 					newZoom = round(newZoom);
 				}
 
@@ -270,20 +272,22 @@ namespace Rendering {
 
 		void SetDimensionMode(DimensionMode dimension_mode) {
 			switch (dimension_mode) {
-			case DimensionMode::ThreeDimensional:
-				SetViewMode(ViewMode::Perspective);
-				break;
-			case DimensionMode::TwoDimensional:
-				SetViewMode(ViewMode::Orthographic);
-				SetRotation({ 0, -90, 0 });
-				SetPosition({ position.x, position.y, -5 });
-				break;
+				case DimensionMode::ThreeDimensional:
+					SetViewMode(ViewMode::Perspective);
+					break;
+				case DimensionMode::TwoDimensional:
+					SetViewMode(ViewMode::Orthographic);
+					SetRotation({ 0, -90, 0 });
+					SetPosition({ position.x, position.y, -5 });
+					break;
 			}
 
 			dimensionMode = dimension_mode;
 		}
 
-		DimensionMode GetDimensionMode() const { return dimensionMode; }
+		DimensionMode GetDimensionMode() const {
+			return dimensionMode;
+		}
 
 		vec3 GetRotation() const {
 			return rotation;
@@ -325,7 +329,9 @@ namespace Rendering {
 			UpdateProjectionMatrix();
 		}
 
-		float GetOrthoSize() const { return orthoSize; }
+		float GetOrthoSize() const {
+			return orthoSize;
+		}
 
 		void SetViewMode(ViewMode view_mode) {
 			viewMode = view_mode;
@@ -527,7 +533,7 @@ namespace Rendering {
 				else {
 					// 2D mode active
 					float zoom_2d = GetZoom2D();
-					constexpr float minZoom = 1.0f/25.0f;
+					constexpr float minZoom = 1.0f / 25.0f;
 					if (ImGui::SliderFloat("Size", &zoom_2d, minZoom, 25, "%.5f")) {
 						SetZoom2D(zoom_2d);
 					}
