@@ -1,6 +1,6 @@
 #pragma once
 #include <imgui.h>
-#include <imgui/misc/cpp/imgui_stdlib.h>
+#include <imgui/misc/cpp/imgui_stdlib.h> //Required for string inputText
 #include <functional>
 #include "Files.h"
 
@@ -18,6 +18,8 @@ namespace ImGuiHelper {
 	inline bool ImageButton(const int textureId, const ImVec2 size = ImVec2(32, 32), int framePadding = -1) {
 		return ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureId), size, ImVec2(0, 1), ImVec2(1, 0), framePadding);
 	}
+
+	bool RectButton(const ImVec2 pos, const ImVec2 size, const char* id, bool* out_isHovered, bool* out_isHeld, ImColor color = ImColor(255, 255, 255, 255) );
 
 	inline void DropTargetTexture(std::function<void(Rendering::Texture*)> onDrop) {
 		if (ImGui::BeginDragDropTarget()) {

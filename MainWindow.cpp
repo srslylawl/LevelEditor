@@ -11,6 +11,7 @@
 #include <filesystem>
 
 
+#include "AssetId.h"
 #include "Files.h"
 
 #include "Camera.h"
@@ -364,6 +365,26 @@ void MainWindow::RenderImGui() {
 			}
 			if (MenuItem("Recompile Shader")) {
 				Renderer::CompileShader();
+			}
+			if(MenuItem("test GUID")) {
+				auto assetid1 = AssetId::CreateNewAssetId();
+				auto assetid2 = AssetId::CreateNewAssetId();
+
+				bool same1 = assetid1 == assetid2;
+
+				AssetId assetid1Copy = assetid1;
+
+				bool same2 = assetid1 == assetid1Copy;
+
+				std::string assetId1Str = assetid1;
+
+				AssetId assetId1FromString(assetId1Str);
+
+				bool same3 = assetid1 == assetId1FromString;
+
+				printf("AssetId1: %s, AssetId2: %s, same? %s\n", assetid1.ToString().c_str(), assetid2.ToString().c_str(), same1 ? "Yes" : "No");
+				printf("AssetId1: %s, AssetId1Copy: %s, same? %s\n", assetid1.ToString().c_str(), assetid1Copy.ToString().c_str(), same2 ? "Yes" : "No");
+				printf("AssetId1: %s, assetId1FromString: %s, same? %s\n", assetid1.ToString().c_str(), assetId1FromString.ToString().c_str(), same3 ? "Yes" : "No");
 			}
 			ImGui::EndMenu();
 		}

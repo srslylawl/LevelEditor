@@ -120,20 +120,51 @@ void TextureSheet::RenderImGuiWindow() {
 	using namespace ImGui;
 	// Assuming this is inside some window
 	auto props = mainTexture->GetImageProperties();
-	TextUnformatted(mainTexture->GetFileName().c_str());
-	std::string sizeT("Size: " + std::to_string(props.width) + " x " + std::to_string(props.height));
-	TextUnformatted(sizeT.c_str());
-
-	size_t total = SubTextures.size();
-	size_t rows = total * spriteSize / mainTexture->GetImageProperties().height;
-	int buttonSize = 32;
-	for (size_t i = 0; i < SubTextures.size(); ++i) {
-		if (i % rows != 0) {
-			SameLine();
-		}
-		PushID(i);
-		DrawSubSpriteButton(SubTextures[i], buttonSize);
+	std::string text(mainTexture->GetFileName() + " " + std::to_string(props.width) + " x " + std::to_string(props.height));
+	TextUnformatted(text.c_str());
+	static int zoomLevel = 1;
+	SliderInt("Zoom", &zoomLevel, 1, 10);
+	SameLine();
+	if (Button("Save")) {
+		Files::SaveToFile(this);
 	}
+
+	const auto startPos = GetCursorScreenPos();
+	ImGuiHelper::Image(mainTexture->GetTextureID(), ImVec2(mainTexture->GetImageProperties().width * zoomLevel, mainTexture->GetImageProperties().height * zoomLevel));
+	int removeAtPos = -1;
+	for (size_t i = 0; i < SubTextureData.size(); ++i) {
+		auto data = SubTextureData[i];
+		auto pos = ImVec2(startPos.x + data.xOffset * zoomLevel, startPos.y + data.yOffset * zoomLevel);
+		bool isHovered = false;
+		bool isHeld = false;
+		ImGuiHelper::RectButton(pos, ImVec2(data.width * zoomLevel, data.height * zoomLevel), std::to_string(i).c_str(), &isHovered, &isHeld);
+		if (isHovered) {
+			BeginTooltip();
+			TextUnformatted("Press 'X' to delete.");
+			EndTooltip();
+
+			if (IsKeyPressed(ImGuiKey_X, false)) {
+				removeAtPos = i;
+			}
+		}
+	}
+
+	if (removeAtPos > -1) {
+		SubTextureData.erase(SubTextureData.begin() + removeAtPos);
+		SubTextures.erase(SubTextures.begin() + removeAtPos);
+	}
+
+
+	//size_t total = SubTextures.size();
+	//size_t rows = total * spriteSize / mainTexture->GetImageProperties().height;
+	//int buttonSize = 32;
+	//for (size_t i = 0; i < SubTextures.size(); ++i) {
+	//	if (i % rows != 0) {
+	//		SameLine();
+	//	}
+	//	PushID(i);
+	//	DrawSubSpriteButton(SubTextures[i], buttonSize);
+	//}
 }
 
 TextureSheet::~TextureSheet() = default;

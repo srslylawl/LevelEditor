@@ -1,7 +1,6 @@
 #pragma once
 #include <istream>
 #include <ostream>
-#include <vector>
 #include <iostream>
 
 namespace Serialization {

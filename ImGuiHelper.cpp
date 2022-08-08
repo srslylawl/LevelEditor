@@ -1,10 +1,36 @@
 #include "ImGuiHelper.h"
 
+#include "imgui_internal.h"
 #include "Texture.h"
 
 #pragma clang diagnostic ignored "-Wformat-security"
 
 namespace ImGuiHelper {
+	bool RectButton(const ImVec2 pos, const ImVec2 size, const char* id, bool* out_isHovered, bool* out_isHeld,
+		ImColor color) {
+		const auto drawList = ImGui::GetWindowDrawList();
+		const auto window = ImGui::GetCurrentWindow();
+
+		ImVec2 max = pos;
+		max.x += size.x;
+		max.y += size.y;
+		drawList->AddRect(pos, max, color);
+		const ImRect bb(pos, max);
+
+		ImGui::PushID(id);
+		const ImGuiID imGuiId = window->GetID(id);
+		ImGui::PopID();
+		bool isHovered, isHeld;
+		bool pressed = ImGui::ButtonBehavior(bb, imGuiId, &isHovered, &isHeld);
+		if(isHovered) {
+			drawList->AddRectFilled(pos, max, ImColor(255, 255, 255, 255/2));
+		}
+		*out_isHovered = isHovered;
+		*out_isHeld = isHeld;
+
+		return pressed;
+	}
+
 	void DragSourceTexture(Rendering::Texture*& texture) {
 		if(texture == nullptr) return;
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {

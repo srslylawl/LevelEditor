@@ -176,6 +176,7 @@
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GridTool.cpp" />
     <ClCompile Include="GridToolBar.cpp" />
+    <ClCompile Include="AssetId.cpp" />
     <ClCompile Include="ImGuiHelper.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Level.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="GridTool.h" />
     <ClInclude Include="GridToolBar.h" />
     <ClInclude Include="GridToolType.h" />
+    <ClInclude Include="AssetId.h" />
     <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Level.h" />

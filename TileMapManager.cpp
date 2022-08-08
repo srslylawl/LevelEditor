@@ -131,7 +131,7 @@ void Tiles::TileMapManager::Render() const {
 	Mesh::StaticMesh::GetDefaultQuad()->Draw();
 }
 
-inline void Tiles::TileMapManager::SetActiveTileMap(TileMap* tileMap) {
+void Tiles::TileMapManager::SetActiveTileMap(TileMap* tileMap) {
 	activeTileMap = tileMap;
 	gridToolBar->activeTileMap = tileMap;
 }
