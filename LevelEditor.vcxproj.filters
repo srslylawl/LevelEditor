@@ -128,7 +128,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AssetId.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -204,9 +204,6 @@
     <ClInclude Include="Mesh.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -270,8 +267,14 @@
     <ClInclude Include="Level.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Asset.h">
+      <Filter>Source Files\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
     <ClInclude Include="AssetId.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -8,9 +8,7 @@
 struct AssetId_private {
 	GUID guid{};
 
-	AssetId_private(const GUID guid) : guid(guid) {
-		std::cout << "empty guid\n";
-	}
+	AssetId_private(const GUID guid) : guid(guid) { }
 
 	static AssetId_private Create() {
 		AssetId_private result;
@@ -35,6 +33,21 @@ AssetId AssetId::CreateNewAssetId() {
 	return result;
 }
 
+bool AssetId::TryParse(std::string& string, AssetId& out_assetId) {
+	if(string.size() != 38) return false;
+
+	GUID guid;
+	sscanf_s(&string[0],
+			 "{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}",
+			 &guid.Data1, &guid.Data2, &guid.Data3,
+			 &guid.Data4[0], &guid.Data4[1], &guid.Data4[2],
+			 &guid.Data4[3], &guid.Data4[4], &guid.Data4[5],
+			 &guid.Data4[6], &guid.Data4[7]);
+	out_assetId.assetId_privateSPTR = std::make_shared<AssetId_private>(guid);
+
+	return true;
+}
+
 std::string AssetId::ToString() const {
 	auto& guid = assetId_privateSPTR->guid;
 
@@ -49,29 +62,9 @@ std::string AssetId::ToString() const {
 	return guidStr;
 }
 
-AssetId::AssetId(const std::string& string) {
-	GUID guid;
-	sscanf_s(&string[0],
-			 "{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}",
-			 &guid.Data1, &guid.Data2, &guid.Data3,
-			 &guid.Data4[0], &guid.Data4[1], &guid.Data4[2],
-			 &guid.Data4[3], &guid.Data4[4], &guid.Data4[5],
-			 &guid.Data4[6], &guid.Data4[7]);
-	assetId_privateSPTR = std::make_shared<AssetId_private>(guid);
-}
-
 bool AssetId::operator==(const AssetId& other) const {
 	return other.assetId_privateSPTR->guid == assetId_privateSPTR->guid;
 }
-
-//AssetId& AssetId::operator=(const AssetId& other) noexcept {
-//	if (&other == this) return *this;
-//
-//	assetId_privateSPTR = other.assetId_privateSPTR;
-//	return *this;
-//}
-//
-//AssetId::AssetId(const AssetId& other) : assetId_privateSPTR(other.assetId_privateSPTR) { }
 
 AssetId::operator std::string() const {
 	return ToString();

@@ -25,7 +25,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 	Rendering::Texture* tex = nullptr;
 
 	if (tileSlot != nullptr) {
-		if (!tileSlot->TileSprites.empty() && Resources::TryGetTexture(tileSlot->TileSprites.back().Texture.c_str(), tex)) {
+		if (!tileSlot->TileSprites.empty() && Resources::TryGetTexture(tileSlot->TileSprites.back().TextureId, tex)) {
 			texId = tex->GetTextureID();
 		}
 	}
@@ -49,7 +49,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 		if (index++ % squareRoot != 0) ImGui::SameLine();
 		unsigned int textureId = 0;
 		Rendering::Texture* variantTex = nullptr;
-		if (Resources::TryGetTexture(it->Texture.c_str(), variantTex))
+		if (Resources::TryGetTexture(it->TextureId, variantTex))
 			textureId = variantTex->GetTextureID();
 
 		ImGuiHelper::Image(textureId);
@@ -59,7 +59,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 		if (IsItemHovered()) {
 			BeginTooltip();
 			if (variantTex != nullptr) {
-				TextUnformatted(variantTex->GetRelativeFilePath().c_str());
+				TextUnformatted(variantTex->GetRelativePath().c_str());
 			}
 			TextUnformatted("Press 'X' while hovering to remove");
 			EndTooltip();
@@ -82,7 +82,7 @@ void Tiles::AutoTilePattern::RenderDearImGui() {
 
 		DrawTileSlotButton(tileSlot, description, (int)pattern,
 						   [this, &pattern](Rendering::Texture* t) {
-			AddTextureVariant(static_cast<int>(pattern), t->GetRelativeFilePath());
+			AddTextureVariant(static_cast<int>(pattern), t->AssetId);
 		});
 	};
 	// Show regular grid first
@@ -115,7 +115,7 @@ void Tiles::AutoTilePattern::RenderDearImGui() {
 
 void Tiles::SimpleTilePattern::RenderDearImGui() {
 	DrawTileSlotButton(&tileSlot, "Tile Texture", 0, [this](Rendering::Texture* t){
-		AddTextureVariant(0, t->GetRelativeFilePath());
+		AddTextureVariant(0, t->AssetId);
 	});
 }
 

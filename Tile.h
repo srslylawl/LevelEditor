@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <glm/vec2.hpp>
+
+#include "Asset.h"
 #include "Strings.h"
 #include "TilePatterns.h"
 
@@ -13,55 +15,62 @@ namespace  Tiles {
 		AutoWall
 	};
 
-	class Tile {
-		std::unique_ptr<ITilePattern> patternUPTR;
+	class Tile : public StandaloneAsset<Tile> {
+		std::unique_ptr<ITilePattern> patternUPtr;
 		void SetPatternFromType() {
-			switch(Type) {
-			case TileType::Simple:
-				patternUPTR = std::make_unique<SimpleTilePattern>();
-				break;
-			case TileType::AutoTile:
-				patternUPTR = std::make_unique<AutoTilePattern>();
-				break;
-			case TileType::AutoWall:
-				break;
+			switch (Type) {
+				case TileType::Simple:
+					patternUPtr = std::make_unique<SimpleTilePattern>();
+					break;
+				case TileType::AutoTile:
+					patternUPtr = std::make_unique<AutoTilePattern>();
+					break;
+				case TileType::AutoWall:
+					break;
 			}
 		}
 	public:
-		Tile(const Tile& other) : DisplayTexture(other.DisplayTexture), Name(other.Name), Type(other.Type) {
-			patternUPTR = other.patternUPTR->Clone();
+		Tile(const Tile& other) : DisplayTexture(other.DisplayTexture), Type(other.Type) {
+			Name = other.Name;
+			patternUPtr = other.patternUPtr->Clone();
 		}
 		Tile& operator=(const Tile& other) {
 			DisplayTexture = other.DisplayTexture;
 			Name = other.Name;
 			Type = other.Type;
-			patternUPTR = other.patternUPTR->Clone();
+			patternUPtr = other.patternUPtr->Clone();
 			return *this;
 		}
 
 
 		Tile(Tile&& other) = default;
 		Tile& operator=(Tile&& other) = default;
-		Tile() { SetPatternFromType(); }
-		~Tile() = default;
+		Tile() {
+			SetPatternFromType();
+		}
+		~Tile() override = default;
 
-		inline static const std::string FileEnding = ".tile";
-		inline static const std::string ParentDirectory = Strings::Directory_Tiles;
-
-		std::string DisplayTexture;
-		std::string Name;
+		::AssetId DisplayTexture;
 		TileType Type = TileType::Simple;
 
-		const ITilePattern* GetPattern() const { return patternUPTR.get(); }
+		const ITilePattern* GetPattern() const {
+			return patternUPtr.get();
+		}
 
 		void TileMapSet(TileMap* tileMap, glm::vec2 position) const;
 		void TileMapErase(TileMap* tileMap, glm::vec2 position) const;
 
+		void Serialize(std::ostream& oStream) const override;
 		static bool Deserialize(std::istream& iStream, Tile*& out_tile);
-		void Serialize(std::ostream& oStream) const;
 
 		bool ImGuiEditTile(Tile* tempFile);
-
 	};
+
+}
+template<> inline const std::string StandaloneAsset<Tiles::Tile>::GetFileEnding() {
+	return ".tile";
+}
+template<> inline const std::string StandaloneAsset<Tiles::Tile>::GetParentDirectory() {
+	return Strings::Directory_Tiles;
 }
 

@@ -1,6 +1,7 @@
 #include "Resources.h"
 
 #include <iostream>
+#include <unordered_set>
 
 #include "Texture.h"
 #include "Tile.h"
@@ -9,93 +10,164 @@
 #include "TextureSheet.h"
 
 
-inline void LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture, bool isInternal) {
+inline bool LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture, bool isInternal) {
 	out_texture = nullptr;
 
 	const auto texIterator = map.find(relative_path);
 	if (const bool exists = texIterator != map.end()) {
 		if (refresh) texIterator->second->Refresh();
 		out_texture = texIterator->second;
-		return;
+		return true;
 	}
 
-	if (!Rendering::Texture::Create(relative_path, out_texture, isInternal)) return;
+	if (!Rendering::Texture::CreateNew(relative_path, out_texture, isInternal)) return false;
+
+	return true;
 }
-void Resources::LoadTexture(const char* relative_path, const bool refresh) {
+
+bool Resources::LoadTexture(const char* relative_path, const bool refresh) {
 	Rendering::Texture* _;
-	LoadTex(relative_path, refresh, Textures, _, false);
+	return LoadTex(relative_path, refresh, Textures, _, false);
 }
 
 bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, const bool refresh) {
-	LoadTex(relative_path, refresh, Textures, out_texture, false);
-	return out_texture != nullptr;
+	return LoadTex(relative_path, refresh, Textures, out_texture, false);
+}
+
+
+bool Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
+	Rendering::Texture* _;
+	return LoadTex(relative_path, refresh, InternalTextures, _, true);
 }
 
 void Resources::AddTexture(Rendering::Texture* texture, bool isInternal) {
 	auto& map = isInternal ? InternalTextures : Textures;
-	map[texture->GetRelativeFilePath()] = texture;
+	map[isInternal ? texture->GetRelativePath() : texture->AssetId] = texture;
 }
 
-void Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
-	Rendering::Texture* _;
-	LoadTex(relative_path, refresh, InternalTextures, _, true);
+bool TryLoadAssetFromHeader(const AssetHeader& header, bool refresh) {
+	const auto relativePath = Files::GetRelativePath(header.aPath);
+	switch (header.aType) {
+		case AssetType::TextureInternal:
+			return Resources::LoadInternalTexture(relativePath.c_str(), refresh);
+		case AssetType::Texture:
+			return Resources::LoadTexture(relativePath.c_str(), refresh);
+		case AssetType::TextureSheet:
+			return Resources::LoadTextureSheet(relativePath.c_str(), refresh);
+		case AssetType::Tile:
+			return Resources::LoadTile(relativePath.c_str(), refresh);
+		case AssetType::Level:
+		case AssetType::UNKNOWN:
+		default: throw std::exception("unexpected case reached");
+	}
 }
 
-void Resources::HandleTextureSheetFolder(bool refresh) {
-	//TODO: this only handles the root directory currently
-	auto it = Files::GetDirectoryIterator(Strings::Directory_TextureSheets);
+void Resources::LoadDirectory(const char* directory, bool refresh, bool includeSubdirectories, std::vector<AssetHeader>* out_Assets) {
+	auto dir_iterator = Files::GetDirectoryIterator(directory);
 
-	//Load all textures first
-	for (auto& entry : it) {
-		std::string absolutePath = entry.path().string();
+	// we want to match each file with their corresponding .asset meta file
+	// first pass will sort items into either a collection of meta files or non meta file
+	std::vector<AssetHeader> metaFiles;
+	std::unordered_set<std::string> nonMetaFiles;
 
-		if (!Rendering::Texture::CanCreateFromPath(absolutePath.c_str())) continue;
-
-		std::string relativePathStr = Files::GetRelativePath(absolutePath);
-		Rendering::Texture* loadedTexture = nullptr;
-		if (!LoadTexture(relativePathStr.c_str(), loadedTexture, refresh)) continue;
-
-		//Check if texture has a corresponding SpriteSheet
-		std::filesystem::path relativeTexSheetPath = std::filesystem::path(relativePathStr).replace_extension(TextureSheet::FileEnding);;
-		std::string relativeTexSheetPathStr = relativeTexSheetPath.string();
-
-		if (std::filesystem::exists(relativeTexSheetPath)) {
-			LoadTextureSheet(relativeTexSheetPathStr.c_str(), refresh);
+	for (auto& entry : dir_iterator) {
+		if (includeSubdirectories && entry.is_directory()) {
+			LoadDirectory(entry.path().string().c_str(), refresh, includeSubdirectories, out_Assets);
+		}
+		AssetHeader aHeader;
+		if (AssetHeader::ReadFromFile(entry.path(), &aHeader)) {
+			if (aHeader.HasCorrespondingFile()) {
+				metaFiles.push_back(aHeader);
+			}
 			continue;
 		}
 
-		//Texture does not have a corresponding texture sheet, so we create one!
-		TextureSheets[relativeTexSheetPathStr] = new TextureSheet(loadedTexture);
-		Files::SaveToFile(TextureSheets[relativeTexSheetPathStr]);
+		nonMetaFiles.insert(entry.path().string());
 	}
 
-	//Check the remaining TextureSheet files - if one is not loaded yet, that means that its corresponding image file is missing
-	for (auto& entry : it) {
-		if (entry.path().extension().string() == TextureSheet::FileEnding) {
-			auto relPath = Files::GetRelativePath(entry.path());
-			if (TextureSheets.find(relPath) == TextureSheets.end()) {
-				// not loaded, which means its texture was not found
-				std::cout << "TextureSheet " << relPath << " 's corresponding Image file was not found." << std::endl;
+	// try to match meta files with their respective files and add to out if successful
+	for (auto it = metaFiles.begin(); it != metaFiles.end();) {
+		auto& entry = it;
+		if (TryLoadAssetFromHeader(*it, refresh)) {
+			nonMetaFiles.erase(entry->aPath.string());
+			if (out_Assets != nullptr) out_Assets->push_back(*entry);
+			continue;
+		}
+		//did not find corresponding asset file, display warning
+		std::cout << "Unable to find corresponding file: " << entry->aPath.c_str() << " delete meta file if no longer needed" << std::endl;
+		++it;
+	}
+
+	// TODO: metaFiles now contains only unused meta files. delete automatically?
+
+	// now check the remaining non-meta assets and create a meta file if necessary
+	for (auto it = nonMetaFiles.begin(); it != nonMetaFiles.end(); ++it) {
+
+		// only create a meta file for supported image
+		if (!Rendering::Texture::CanCreateFromPath(it->c_str())) continue;
+
+		// create a texture meta file depending on which folder its in
+		auto spriteFolderPath = Files::GetAbsolutePath(Strings::Directory_Sprites);
+		bool isSpriteSubFolder = Files::PathIsSubPathOf(*it, spriteFolderPath);
+		auto internalSpriteFolderPath = Files::GetAbsolutePath(Strings::Directory_Icon);
+		bool isInternalSpriteSubFolder = Files::PathIsSubPathOf(*it, internalSpriteFolderPath);
+		if (isSpriteSubFolder || isInternalSpriteSubFolder) {
+			// create texture meta file
+			Rendering::Texture* tex = nullptr;
+			if (Rendering::Texture::CreateNew(*it, tex, isInternalSpriteSubFolder)) {
+				tex->SaveToFile();
+				if (out_Assets != nullptr) {
+					AssetHeader header;
+					if (!AssetHeader::ReadFromFile(Files::GetAbsolutePath(tex->GetRelativePath()), &header)) {
+						std::cout << "Header does not exist after creating texture!" << std::endl;
+					}
+					out_Assets->push_back(header);
+				}
+			}
+			continue;
+		}
+
+		auto textureSheetFolderPath = Files::GetAbsolutePath(Strings::Directory_TextureSheets);
+		if (Files::PathIsSubPathOf(*it, textureSheetFolderPath)) {
+			// create texturesheet
+			std::string relativePathStr = Files::GetRelativePath(*it);
+			Rendering::Texture* loadedTexture = nullptr;
+			if (!LoadTexture(relativePathStr.c_str(), loadedTexture, refresh)) continue;
+
+			auto relativePath = Files::GetRelativePath(*it);
+			auto sheet = TextureSheet::CreateNew(loadedTexture);
+			sheet->SaveToFile();
+			auto path = sheet->GetRelativePath();
+			delete sheet;
+			LoadTextureSheet(path.c_str());
+			if (out_Assets != nullptr) {
+				AssetHeader header;
+				if (!AssetHeader::ReadFromFile(Files::GetAbsolutePath(path), &header)) {
+					std::cout << "Header does not exist after creating textureSheet!" << std::endl;
+				}
+				out_Assets->push_back(header);
 			}
 		}
 	}
-
 }
 
-void Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
+bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 	const auto tsIt = TextureSheets.find(relative_path);
 	if (tsIt != TextureSheets.end()) {
 		if (refresh) {
+			throw std::exception("texture sheet refresh not implemented");
 		} //TODO: implement refresh
-		return;
+		return true;
 	}
 
 	TextureSheet* t = nullptr;
-	if (!Files::LoadFromFile(relative_path, t)) {
+	if (!TextureSheet::LoadFromFile(relative_path, t)) {
 		std::cout << "Unable to load Texturesheet: " << relative_path << std::endl;
-		return;
+		return false;
 	}
-	TextureSheets[relative_path] = t;
+	TextureSheets[t->AssetId] = t;
+
+	return true;
 }
 
 bool Resources::LoadTile(const char* relative_path, bool refresh) {
@@ -103,59 +175,54 @@ bool Resources::LoadTile(const char* relative_path, bool refresh) {
 	const auto tileIterator = Tiles.find(relative_path);
 	if (tileIterator != Tiles.end()) {
 		if (refresh) {
+			throw std::exception("tile refresh not implemented");
 		} //TODO: implement refresh
 		return true;
 	}
 
 	Tile* t = nullptr;
-	if (!Files::LoadFromFile(relative_path, t)) {
+	if (!Tile::LoadFromFile(relative_path, t)) {
 		std::cout << "unable to load Tile: " << relative_path << std::endl;
 		return false;
 	}
 
-	Tiles[relative_path] = t;
+	Tiles[t->AssetId] = t;
 	return true;
 }
 
-inline bool TryGetTex(const char* relative_path, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
+inline bool TryGetTex(const std::string& assetId, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
 	out_texture = Rendering::Texture::Empty();
-	if (const auto it = map.find(relative_path); it != map.end()) out_texture = it->second;
+	if (const auto it = map.find(assetId); it != map.end()) out_texture = it->second;
 	return out_texture != Rendering::Texture::Empty();
 }
 
 //Returns Texture::Empty() on fail.
-bool Resources::TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture) {
-	return TryGetTex(relative_path, out_texture, Textures);
+bool Resources::TryGetTexture(const std::string& assetId, Rendering::Texture*& out_texture) {
+	return TryGetTex(assetId, out_texture, Textures);
 }
 
-unsigned Resources::TryGetTextureId(const char* relative_path) {
+unsigned Resources::TryGetTextureId(const std::string& assetId) {
 	unsigned int textureId = 0;
-	if(Rendering::Texture* t; TryGetTexture(relative_path, t)) {
+	if (Rendering::Texture* t; TryGetTexture(assetId, t)) {
 		textureId = t->GetTextureID();
 	}
 	return textureId;
 }
 
-bool Resources::TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture) {
-	return TryGetTex(relative_path, out_texture, InternalTextures);
+bool Resources::TryGetInternalTexture(const char* relativePath, Rendering::Texture*& out_texture) {
+	return TryGetTex(relativePath, out_texture, InternalTextures);
 }
 
-bool Resources::TryGetTile(const char* relative_path, Tiles::Tile*& out_tile, bool tryLoad) {
+bool Resources::TryGetTile(const std::string& assetId, Tiles::Tile*& out_tile) {
 	out_tile = nullptr;
-	if (const auto it = Tiles.find(relative_path); it != Tiles.end()) out_tile = it->second;
-
-	if (out_tile == nullptr && tryLoad) {
-		if (LoadTile(relative_path)) {
-			return TryGetTile(relative_path, out_tile, false);
-		}
-	}
+	if (const auto it = Tiles.find(assetId); it != Tiles.end()) out_tile = it->second;
 
 	return out_tile != nullptr;
 }
 
-bool Resources::TryGetTextureSheet(const char* relative_path, TextureSheet*& out_textureSheet) {
+bool Resources::TryGetTextureSheet(const std::string& assetId, TextureSheet*& out_textureSheet) {
 	out_textureSheet = nullptr;
-	if (const auto it = TextureSheets.find(relative_path); it != TextureSheets.end()) out_textureSheet = it->second;
+	if (const auto it = TextureSheets.find(assetId); it != TextureSheets.end()) out_textureSheet = it->second;
 
 	return out_textureSheet != nullptr;
 }

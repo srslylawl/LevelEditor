@@ -21,8 +21,6 @@ class FileBrowser {
 	int fileBrowserID;
 	inline static int currentID = 0;
 
-	bool isTileSheetBrowser = false;
-
 	Rendering::Texture* folderTexture = nullptr;
 	Rendering::Texture* returnTexture = nullptr;
 	Rendering::Texture* newFileTexture = nullptr;
@@ -31,14 +29,10 @@ class FileBrowser {
 	std::function<bool(FileBrowserFile)> shouldHighlight;
 	std::function<void(FileBrowserFile&)> onFileEdit;
 	std::function<void(FileBrowser*)> onNewFile;
-
-	void RefreshCurrentTileSheetDirectory();
-	void RefreshCurrentGenericDirectory();
 public:
-	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick, 
-				bool isTileSheetBrowser = false, std::function<bool(FileBrowserFile)> shouldHighlight = nullptr, 
-				std::function<void(FileBrowserFile&)> onFileEdit = nullptr, std::function<void(FileBrowser*)> onNewFile = nullptr);
-
+	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick = nullptr,
+	            std::function<bool(FileBrowserFile)> shouldHighlight = nullptr, std::function<void(FileBrowserFile&)> onFileEdit = nullptr,
+	            std::function<void(FileBrowser*)> onNewFile = nullptr);
 	void RenderRearImGuiWindow();
 	void RefreshCurrentDirectory();
 	void ChangeDirectory(const std::filesystem::path& new_directory);

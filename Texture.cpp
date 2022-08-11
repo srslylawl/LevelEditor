@@ -10,34 +10,36 @@
 #include "glad.h"
 #include "Files.h"
 #include "Resources.h"
+#include "Serialization.h"
 
 using namespace Rendering;
 
 inline bool ImageProperties::SetColorProfile() {
 	switch (channelCount) {
-	case 3:
-		colorProfile = GL_RGB;
-		break;
-	case 4:
-		colorProfile = GL_RGBA;
-		break;
-	default:
-		std::cout << "Color Profile " << channelCount << " not recognized" << std::endl;
-		return false;
+		case 3:
+			colorProfile = GL_RGB;
+			break;
+		case 4:
+			colorProfile = GL_RGBA;
+			break;
+		default:
+			std::cout << "Color Profile " << channelCount << " not recognized" << std::endl;
+			return false;
 	}
 	return true;
 }
 
-Texture::Texture(const unsigned id, std::string name, std::string path,
-	const ImageProperties imageProperties, bool isInternal) : textureId(id),
+Texture::Texture(const unsigned id, std::string name, std::string path, const ImageProperties imageProperties, bool isInternal) :
+	isInternalTexture(isInternal),
+	textureId(id),
 	imageProperties(imageProperties),
-	relativeFilePath(std::move(path)),
-	fileName(std::move(name)) {
-	std::cout << "Created Texture " << this->fileName << ": Path: " << this->relativeFilePath << std::endl;
+	relativeFilePath(std::move(path)) {
+	Name = std::move(name);
+	std::cout << "Created Texture " << this->Name << ": Path: " << this->relativeFilePath << std::endl;
 	Resources::AddTexture(this, isInternal);
 }
 
-bool Texture::Load(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically) {
+bool Texture::LoadImageData(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically) {
 	stbi_set_flip_vertically_on_load(flipVertically);
 	const std::filesystem::path absolutePath = Files::GetAbsolutePath(relative_path);
 	//Force 4 color channels so ImGui doesn't die
@@ -64,16 +66,17 @@ void Texture::BindToGPU(const unsigned int& texture_id, const ImageProperties& i
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-ImageProperties Texture::GetImageProperties() const { return imageProperties; }
-unsigned Texture::GetTextureID() const { return textureId; }
-std::string Texture::GetRelativeFilePath() const { return relativeFilePath; }
-std::string Texture::GetFileName() const { return fileName; }
+ImageProperties Texture::GetImageProperties() const {
+	return imageProperties;
+}
+unsigned Texture::GetTextureID() const {
+	return textureId;
+}
 
-bool Texture::Create(const std::string& relativePath, Texture*& out_texture, bool isInternal) {
+bool Texture::CreateNew(const std::string& relativePath, Texture*& out_texture, bool isInternal) {
 	ImageProperties imageProperties{};
 	unsigned char* rawImageData = nullptr;
-
-	if (!Load(relativePath, imageProperties, rawImageData)) return false;
+	if (!LoadImageData(relativePath, imageProperties, rawImageData)) return false;
 
 	unsigned int textureId;
 	glGenTextures(1, &textureId);
@@ -88,7 +91,8 @@ bool Texture::Create(const std::string& relativePath, Texture*& out_texture, boo
 	return true;
 }
 
-void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties imProps, const SubTextureData subTextureData, const std::filesystem::path newTexturePath, Texture*& out_TexturePtr) {
+void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties imProps, const SubTextureData& subTextureData,
+									  const std::filesystem::path& newTexturePath, Texture*& out_TexturePtr) const {
 	const size_t pixelByteSize = imProps.channelCount;
 	const size_t originRowByteSize = pixelByteSize * imProps.width;
 
@@ -127,16 +131,16 @@ bool Texture::CreateSubTextures(std::vector<SubTextureData>& subTextureData, std
 	unsigned char* rawImageData = nullptr;
 	ImageProperties imageProperties{};
 	//load without flip so yOffset is from the top instead of the bottom as expected
-	if (!Load(GetRelativeFilePath(), imageProperties, rawImageData, false)) return false;
+	if (!LoadImageData(GetRelativePath(), imageProperties, rawImageData, false)) return false;
 
 	for (const auto& sData : subTextureData) {
 		if (imageProperties.width < sData.xOffset + sData.width || imageProperties.height < sData.yOffset + sData.height) {
-			std::cout << "ERROR: Can't create Subtexture from " << GetRelativeFilePath() << " :" << "Subtexture does not fit within Texture!" << std::endl;
+			std::cout << "ERROR: Can't create Subtexture from " << GetRelativePath() << " :" << "Subtexture does not fit within Texture!" << std::endl;
 			return false;
 		}
 	}
 
-	const std::filesystem::path p = GetRelativeFilePath();
+	const std::filesystem::path p = GetRelativePath();
 	const std::filesystem::path parentPath = p.parent_path();
 
 	int subTextureCount = 0;
@@ -159,17 +163,32 @@ bool Texture::CanCreateFromPath(const char* path) {
 	const int ok = stbi_info(path, &_, &_, &_);
 	return ok;
 }
+
+void Texture::Serialize(std::ostream& oStream) const {
+	AssetHeader::Write(oStream, isInternalTexture ? AssetType::TextureInternal : AssetType::Texture, AssetId);
+	Serialization::Serialize(oStream, GetRelativePath());
+	Serialization::writeToStream(oStream, isInternalTexture);
+}
+
+bool Texture::Deserialize(std::istream& iStream, Texture*& out_texture) {
+	AssetHeader header;
+	if(!AssetHeader::Deserialize(iStream, &header)) return false;
+	std::string relFilePath = Serialization::DeserializeStdString(iStream);
+	bool isInternal = false; Serialization::readFromStream(iStream, isInternal);
+	return CreateNew(relFilePath, out_texture, isInternal);
+}
+
 bool Texture::Refresh() {
 	unsigned char* rawImageData = nullptr;
-	if (!Load(relativeFilePath, imageProperties, rawImageData)) return false;
+	if (!LoadImageData(relativeFilePath, imageProperties, rawImageData)) return false;
 	BindToGPU(textureId, imageProperties, rawImageData);
 	delete[] rawImageData;
 
-	std::cout << "Image " << fileName << " refreshed to textureID: " << textureId << std::endl;
+	std::cout << "Image " << Name << " refreshed to textureID: " << textureId << std::endl;
 
 	return true;
 }
 Texture::~Texture() {
 	glDeleteTextures(1, &textureId);
-	std::cout << "Image " << fileName << " deleted." << std::endl;
+	std::cout << "Image " << Name << " deleted." << std::endl;
 }

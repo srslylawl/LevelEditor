@@ -9,16 +9,33 @@
 #include "ImGuiHelper.h"
 
 
+TextureSheet* TextureSheet::CreateNew(Rendering::Texture* mainTexture) {
+	auto* sheet = new TextureSheet(mainTexture);
+	sheet->AssetId = AssetId::CreateNewAssetId();
+	return sheet;
+}
+
 bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_textureSheet) {
-	std::string mainTextureStr = Serialization::DeserializeStdString(iStream);
+	using namespace Serialization;
+	AssetHeader header;
+	if(!AssetHeader::Deserialize(iStream, &header)) return false;
+
+	std::string name = DeserializeStdString(iStream);
+	::AssetId mainTexId;
+	if(!TryDeserializeAssetId(iStream, mainTexId)) {
+		std::cout << "Unable to find mainTexture asset id: '" << name << "' - unable to load TextureSheet" << std::endl;
+		return false;
+	}
 	Rendering::Texture* mainTexture;
-	if (!Resources::TryGetTexture(mainTextureStr.c_str(), mainTexture)) {
+	if (!Resources::TryGetTexture(mainTexId, mainTexture)) {
 		std::cout << "Unable to find mainTexture: '" << mainTexture << "' - unable to load TextureSheet" << std::endl;
 		return false;
 	}
 	out_textureSheet = new TextureSheet(mainTexture);
+	out_textureSheet->Name = name;
+	out_textureSheet->AssetId = header.aId;
 	size_t subTextureCount = 0;
-	Serialization::readFromStream(iStream, subTextureCount);
+	readFromStream(iStream, subTextureCount);
 	if (subTextureCount == 0) {
 		return true;
 	}
@@ -26,14 +43,14 @@ bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_texture
 	out_textureSheet->SubTextureData.reserve(subTextureCount);
 
 	for (size_t i = 0; i < subTextureCount; ++i) {
-		out_textureSheet->SubTextureData.emplace_back(Serialization::DeserializeSubTextureData(iStream));
+		out_textureSheet->SubTextureData.emplace_back(DeserializeSubTextureData(iStream));
 	}
 
 	mainTexture->CreateSubTextures(out_textureSheet->SubTextureData, out_textureSheet->SubTextures);
 
-	std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
+	std::string fileEndingCheck = DeserializeStdString(iStream);
 
-	bool valid = fileEndingCheck == FileEnding;
+	bool valid = fileEndingCheck == GetFileEnding();
 	if (!valid) {
 		delete out_textureSheet;
 		std::cout << "File ending check failed." << std::endl;
@@ -43,14 +60,17 @@ bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_texture
 }
 
 void TextureSheet::Serialize(std::ostream& oStream) const {
-	Serialization::Serialize(oStream, mainTexture->GetRelativeFilePath());
-	Serialization::writeToStream(oStream, SubTextureData.size());
+	using namespace Serialization;
+	AssetHeader::Write(oStream, AssetType::TextureSheet, AssetId);
+	Serialization::Serialize(oStream, Name);
+	Serialization::Serialize(oStream, mainTexture->AssetId);
+	writeToStream(oStream, SubTextureData.size());
 
 	for (auto data : SubTextureData) {
 		Serialization::Serialize(oStream, data);
 	}
 
-	Serialization::Serialize(oStream, FileEnding);
+	Serialization::Serialize(oStream, GetFileEnding());
 }
 
 void TextureSheet::AutoSlice() {
@@ -86,7 +106,7 @@ void TextureSheet::AutoSlice() {
 	}
 
 	mainTexture->CreateSubTextures(SubTextureData, SubTextures);
-	Files::SaveToFile(this);
+	SaveToFile();
 }
 
 bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shouldHighlight = false) {
@@ -109,7 +129,7 @@ bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shou
 
 	if (IsItemHovered()) {
 		BeginTooltip();
-		TextUnformatted(texture->GetFileName().c_str());
+		TextUnformatted(texture->Name.c_str());
 		EndTooltip();
 	}
 
@@ -120,13 +140,13 @@ void TextureSheet::RenderImGuiWindow() {
 	using namespace ImGui;
 	// Assuming this is inside some window
 	auto props = mainTexture->GetImageProperties();
-	std::string text(mainTexture->GetFileName() + " " + std::to_string(props.width) + " x " + std::to_string(props.height));
+	std::string text(mainTexture->Name + " " + std::to_string(props.width) + " x " + std::to_string(props.height));
 	TextUnformatted(text.c_str());
 	static int zoomLevel = 1;
 	SliderInt("Zoom", &zoomLevel, 1, 10);
 	SameLine();
 	if (Button("Save")) {
-		Files::SaveToFile(this);
+		SaveToFile();
 	}
 
 	const auto startPos = GetCursorScreenPos();

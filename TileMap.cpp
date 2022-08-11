@@ -19,7 +19,7 @@ void Tiles::TileMap::RefreshSurroundingTileInstances(const glm::ivec2 position) 
 }
 
 void Tiles::TileMap::ReduceTileReferences(const Tile* tile) {
-	auto path = Files::GetRelativePathTo(tile);
+	auto path = tile->GetRelativePath();
 	--tileReferences[path];
 
 	if (tileReferences[path] == 0) {
@@ -40,7 +40,7 @@ void Tiles::TileMap::SetTile(const Tile* tile, glm::ivec2 grid_position) {
 	else {
 		//New tile at this position
 		data.emplace(grid_position, ti);
-		++tileReferences[Files::GetRelativePathTo(tile)];
+		++tileReferences[tile->GetRelativePath()];
 	}
 
 
@@ -102,7 +102,8 @@ glm::ivec2 Tiles::TileMap::ConvertToTileMapGridPosition(glm::ivec2 grid_position
 	return grid_position - offset;
 }
 
-Tiles::TileMap::TileMap(std::string name, TileMapType type, glm::ivec2 gridDimensions) : Name(name), Type(type), GridDimensions(gridDimensions) {
+Tiles::TileMap::TileMap(std::string name, TileMapType type, glm::ivec2 gridDimensions) : Type(type), GridDimensions(gridDimensions) {
+	Name = name;
 }
 
 void Tiles::TileMap::Render() const {
@@ -136,11 +137,11 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 		size_t tileRefSize = 0; Serialization::readFromStream(iStream, tileRefSize);
 		std::map<int, const Tile*> tileIndexTable;
 		for (auto i = 0; i < tileRefSize; ++i) {
-			std::string tilePathRel = Serialization::DeserializeStdString(iStream);
+			::AssetId tileId; Serialization::TryDeserializeAssetId(iStream, tileId);
 			int tileIndex = 0; Serialization::readFromStream(iStream, tileIndex);
 			Tiles::Tile* t = nullptr;
-			if (!Resources::TryGetTile(tilePathRel.c_str(), t)) {
-				std::string msg = "unable to load tile " + tilePathRel;
+			if (!Resources::TryGetTile(tileId, t)) {
+				std::string msg = "unable to load tile " + tileId.ToString();
 				throw std::exception(msg.c_str());
 			}
 			tileIndexTable[tileIndex] = t;
@@ -155,7 +156,7 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 			Tiles::SurroundingTileFlags mask = SurroundingTileFlags::NONE; Serialization::readFromStream(iStream, mask);
 			const Tile* tile = tileIndexTable[tileIndex];
 			tileMapUPTR->data.emplace(position, TileInstance(tile, mask, position));
-			++tileMapUPTR->tileReferences[Files::GetRelativePathTo(tile)];
+			++tileMapUPTR->tileReferences[tile->GetRelativePath()];
 		}
 	}
 
@@ -187,8 +188,8 @@ void Tiles::TileMap::Serialize(std::ostream& oStream) const {
 
 		int refIndex = 0;
 		for (auto refIt = tileReferences.begin(); refIt != tileReferences.end(); ++refIt) {
-			Tiles::Tile* t = nullptr;
-			if (!Resources::TryGetTile(refIt->first.c_str(), t)) {
+			Tile* t = nullptr;
+			if (!Resources::TryGetTile(refIt->first, t)) {
 				std::string msg = "unable to serialize tileMap: " + Name + ": tile not found: " + refIt->first;
 				throw std::exception(msg.c_str());
 			}

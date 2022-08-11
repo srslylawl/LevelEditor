@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "AssetId.h"
 #include "Serialization.h"
 
 namespace Tiles {
@@ -58,10 +59,10 @@ namespace Tiles {
 	};
 
 	struct TextureVariant {
-		std::string Texture;
+		AssetId TextureId;
 		float ProbabilityModifier;
 
-		TextureVariant(const std::string& texture, float probabilityModifier = 1) : Texture(texture), ProbabilityModifier(probabilityModifier) {
+		TextureVariant(const AssetId textureId, float probabilityModifier = 1) : TextureId(textureId), ProbabilityModifier(probabilityModifier) {
 		}
 	};
 
@@ -83,9 +84,7 @@ namespace Tiles {
 	public:
 		std::unordered_map<AutoTilePatternFlag, TileSlot> TileSlots;
 
-		//Won't allow empty texture variants.
 		void AddTextureVariant(int flag, TextureVariant variant) override {
-			if (variant.Texture.empty()) return;
 			TileSlots[static_cast<AutoTilePatternFlag>(flag)].TileSprites.emplace_back(std::move(variant));
 		}
 
@@ -108,7 +107,6 @@ namespace Tiles {
 	public:
 		TileSlot tileSlot;
 		void AddTextureVariant(int patternFlag, TextureVariant variant) override {
-			if (variant.Texture.empty()) return;
 			tileSlot.TileSprites.push_back(variant);
 		}
 
@@ -137,7 +135,6 @@ namespace Tiles {
 		}
 
 		void AddTextureVariant(int patternFlag, TextureVariant variant) override {
-			if (variant.Texture.empty()) return;
 			TileSlots[static_cast<AutoWallPatternFlag>(patternFlag)].TileSprites.emplace_back(std::move(variant));
 		}
 		void RenderDearImGui() override;
@@ -153,7 +150,7 @@ namespace Serialization {
 	inline std::ostream& Serialize(std::ostream& oStream, const Tiles::TileSlot& tileSlot) {
 		writeToStream(oStream, tileSlot.TileSprites.size());
 		for (const auto& TileSprite : tileSlot.TileSprites) {
-			Serialize(oStream, TileSprite.Texture);
+			Serialize(oStream, TileSprite.TextureId);
 			writeToStream(oStream, TileSprite.ProbabilityModifier);
 		}
 		return oStream;
@@ -164,9 +161,9 @@ namespace Serialization {
 		size_t count = 0; readFromStream(stream, count);
 
 		for (size_t i = 0; i < count; ++i) {
-			std::string texPath = DeserializeStdString(stream);
+			AssetId assetId; TryDeserializeAssetId(stream, assetId);
 			float probability = 1; readFromStream(stream, probability);
-			tileSlot.TileSprites.emplace_back(texPath, probability);
+			tileSlot.TileSprites.emplace_back(assetId, probability);
 		}
 
 		return tileSlot;

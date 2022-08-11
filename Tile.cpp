@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "Files.h"
 #include "imgui.h"
 #include "ImGuiHelper.h"
 #include "Resources.h"
@@ -22,16 +21,24 @@ namespace Tiles {
 	}
 
 	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
+		AssetHeader header;
+		if(!AssetHeader::Deserialize(iStream, &header)) {
+			std::cout << "Unable to read header of tile" << std::endl;
+			return false;
+		}
 		out_tile = new Tile();
-
+		out_tile->AssetId = header.aId;
 		out_tile->Name = Serialization::DeserializeStdString(iStream);
-		out_tile->DisplayTexture = Serialization::DeserializeStdString(iStream);
+		if(!Serialization::TryDeserializeAssetId(iStream, out_tile->DisplayTexture)) {
+			delete out_tile;
+			return false;
+		}
 		int tileType = 0; Serialization::readFromStream(iStream, tileType);
 		out_tile->Type = static_cast<TileType>(tileType);
-		out_tile->patternUPTR = Serialization::DeserializeITilePattern(iStream);
+		out_tile->patternUPtr = Serialization::DeserializeITilePattern(iStream);
 
 		const std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
-		bool valid = fileEndingCheck == FileEnding;
+		bool valid = fileEndingCheck == GetFileEnding();
 		if (!valid) {
 			delete out_tile;
 			std::cout << "File ending check failed." << std::endl;
@@ -41,11 +48,12 @@ namespace Tiles {
 	}
 
 	void Tile::Serialize(std::ostream& oStream) const {
+		AssetHeader::Write(oStream, AssetType::Tile, AssetId);
 		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, DisplayTexture);
 		Serialization::writeToStream(oStream, static_cast<int>(Type));
-		Serialization::Serialize(oStream, patternUPTR.get());
-		Serialization::Serialize(oStream, FileEnding);
+		Serialization::Serialize(oStream, patternUPtr.get());
+		Serialization::Serialize(oStream, GetFileEnding());
 	}
 
 	bool Tile::ImGuiEditTile(Tile* tempFile) {
@@ -55,7 +63,7 @@ namespace Tiles {
 
 		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name)) {
 			std::error_code error;
-			fileNameAlreadyExists = std::filesystem::exists(Files::GetRelativePathTo(tempFile), error);
+			fileNameAlreadyExists = std::filesystem::exists(tempFile->GetRelativePath(), error);
 			hasError = error.value() != 0;
 			errorMessage = error.message();
 		}
@@ -67,13 +75,13 @@ namespace Tiles {
 		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");
 
 		unsigned int texId = 0;
-		if (Rendering::Texture* t; Resources::TryGetTexture(tempFile->DisplayTexture.c_str(), t)) texId = t->GetTextureID();
+		if (Rendering::Texture* t; Resources::TryGetTexture(DisplayTexture, t)) texId = t->GetTextureID();
 		ImGuiHelper::TextWithToolTip("Tile Icon", "Texture that will represent this tile in menus");
 		ImGuiHelper::Image(texId, ImVec2(32, 32));
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
 				const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
-				tempFile->DisplayTexture = t->GetRelativeFilePath();
+				tempFile->DisplayTexture = t->AssetId;
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -81,7 +89,7 @@ namespace Tiles {
 		
 		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
-		tempFile->patternUPTR->RenderDearImGui();
+		tempFile->patternUPtr->RenderDearImGui();
 
 		ImGui::Separator();
 		if (hasError) ImGui::TextUnformatted(("Error: " + errorMessage).c_str());
@@ -92,11 +100,11 @@ namespace Tiles {
 
 		if (ImGui::Button("Save")) {
 			if (Name != tempFile->Name) {
-				Files::RenameFile(this, tempFile->Name);
+				this->Rename(tempFile->Name);
 			}
 			//move tempfile into this one
 			if (this != tempFile) *this = std::move(*tempFile);
-			Files::SaveToFile(this);
+			SaveToFile();
 			fileNameAlreadyExists = false;
 			hasError = false;
 

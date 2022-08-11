@@ -2,7 +2,8 @@
 #include "Serialization.h"
 #include "TileMapManager.h"
 
-Level::Level(std::string name) : Name(name) {
+Level::Level(std::string name) {
+	Name = name;
 	TileMapManagerUPTR = std::make_unique<Tiles::TileMapManager>();
 }
 
@@ -17,7 +18,7 @@ bool Level::Deserialize(std::istream& iStream, Level*& out_Level) {
 		}
 	}
 	std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
-	if (fileEndingCheck != FileEnding) {
+	if (fileEndingCheck != GetFileEnding()) {
 		std::cout << "Unable to deserialize tileMap: file ending check failed" << std::endl;
 		return false;
 	}
@@ -43,5 +44,5 @@ void Level::Serialize(std::ostream& oStream) const {
 		tileMap->Serialize(oStream);
 	}
 
-	Serialization::Serialize(oStream, FileEnding);
+	Serialization::Serialize(oStream, GetFileEnding());
 }

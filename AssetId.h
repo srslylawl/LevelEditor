@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include "Serialization.h"
 
 struct AssetId_private;
 //wraps GUID
@@ -9,14 +10,11 @@ class AssetId {
 public:
 	AssetId();
 	static AssetId CreateNewAssetId();
-	std::string ToString() const;
-	AssetId(const std::string& string);
+	static bool TryParse(std::string& string, AssetId& out_assetId);
 
 	bool operator==(const AssetId& other) const;
-	//AssetId& operator=(const AssetId& other) noexcept;
-	//AssetId(const AssetId& other) = default;
 	operator std::string() const;
-
+	std::string ToString() const;
 	unsigned short GetHashCode() const;
 };
 
@@ -27,4 +25,15 @@ namespace std {
 			return key.GetHashCode();
 		}
 	};
+}
+
+namespace Serialization {
+	inline std::ostream& Serialize(std::ostream& oStream, const AssetId& assetId) {
+		return Serialize(oStream, assetId.ToString());
+	}
+
+	inline bool TryDeserializeAssetId(std::istream& stream, AssetId& out_AssetId) {
+		auto str = DeserializeStdString(stream);
+		return AssetId::TryParse(str, out_AssetId);
+	}
 }

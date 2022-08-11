@@ -3,6 +3,8 @@
 #include <fstream>
 #include <functional>
 
+#include "Asset.h"
+
 namespace Files {
 	using namespace std;
 	inline bool VerifyDirectory(const char* directory, bool createIfNotExists = true) {
@@ -22,6 +24,16 @@ namespace Files {
 
 	inline std::filesystem::path GetAbsolutePath(const std::string& path) {
 		return std::filesystem::current_path().append(path);
+	}
+
+	inline bool PathIsSubPathOf(const std::filesystem::path subPath, const std::filesystem::path& parentPath) {
+		auto& currentPath = const_cast<std::filesystem::path&>(subPath);
+		while (currentPath.has_parent_path() && currentPath.has_relative_path()) {
+			if (currentPath == parentPath) return true;
+			currentPath = currentPath.parent_path();
+		}
+
+		return false;
 	}
 
 	inline std::string GetRelativePath(const std::string& absolutePath) {
@@ -44,60 +56,29 @@ namespace Files {
 		return std::filesystem::directory_iterator(GetAbsolutePath(directory));
 	}
 
-	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function, bool skipFolders = true) {
-		for (auto& entry : GetDirectoryIterator(directory)) {
-			if(entry.is_directory() && skipFolders) continue;
-			string relativePath = directory;
-			relativePath += "\\" + entry.path().filename().string();
-			function(relativePath.c_str());
+	inline auto GetDirectoryIteratorRecursive(const char* directory) {
+		return std::filesystem::recursive_directory_iterator(GetAbsolutePath(directory));
+	}
+
+
+	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function, bool skipFolders = true, bool recursive = false) {
+		// stinky duplicate code
+		if (recursive) {
+			for (auto& entry : GetDirectoryIteratorRecursive(directory)) {
+				if (entry.is_directory() && skipFolders) continue;
+				string relativePath = directory;
+				relativePath += "\\" + entry.path().filename().string();
+				function(relativePath.c_str());
+			}
 		}
-	}
-
-	template<typename Serializable>
-	std::string GetRelativePathTo(Serializable* serializable) {
-		return serializable->ParentDirectory + "\\" + serializable->Name + serializable->FileEnding;
-	}
-
-	template<typename Serializable>
-	std::string GetRelativePathTo(Serializable* serializable, std::string nameOverride) {
-		return serializable->ParentDirectory + "\\" + nameOverride + serializable->FileEnding;
-	}
-
-
-	template<typename Serializable>
-	void SaveToFile(Serializable* serializable) {
-		const std::filesystem::path filePath = GetRelativePathTo(serializable);
-		if (!exists(filePath.parent_path())) {
-			create_directory(filePath.parent_path());
+		else {
+			for (auto& entry : GetDirectoryIterator(directory)) {
+				if (entry.is_directory() && skipFolders) continue;
+				string relativePath = directory;
+				relativePath += "\\" + entry.path().filename().string();
+				function(relativePath.c_str());
+			}
 		}
-
-		ofstream o(filePath, iostream::binary);
-		serializable->Serialize(o);
-		o.close();
-	}
-
-	// Loads a Serializable Class from File and allocates on Free Store (has to be deleted manually)
-	template<typename Serializable>
-	bool LoadFromFile(const char* relativePathToFile, Serializable*& out) {
-		//TODO: secure this
-		ifstream file(GetAbsolutePath(relativePathToFile));
-
-		if (!file) return false; // Check for error
-
-		bool success = Serializable::Deserialize(file, out);
-		file.close();
-
-		return success && out != nullptr;
-	}
-
-	template<typename Serializable>
-	void RenameFile(Serializable* serializable, const std::string& new_name) {
-		std::string oldPath = GetRelativePathTo(serializable);
-		std::filesystem::path newPath = GetRelativePathTo(serializable, new_name);
-		if (!exists(newPath.parent_path())) {
-			create_directory(newPath.parent_path());
-		}
-		std::filesystem::rename(oldPath, newPath);
 	}
 
 	bool OpenFileDialog(std::string& filePath, const char* filter);

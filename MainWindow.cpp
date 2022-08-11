@@ -77,20 +77,19 @@ bool MainWindow::Initialize() {
 
 	// Load Sprites and Tool Icons to Memory
 	if (Files::VerifyDirectory(Strings::Directory_Sprites))
-		Files::ForEachInDirectory(Strings::Directory_Sprites, [](const char* path) {Resources::LoadTexture(path); });
+		Resources::LoadDirectory(Strings::Directory_Sprites, false, true);
 
 	if (Files::VerifyDirectory(Strings::Directory_Icon))
-		Files::ForEachInDirectory(Strings::Directory_Icon, [](const char* path) {Resources::LoadInternalTexture(path); });
+		Resources::LoadDirectory(Strings::Directory_Icon, false, true);
 
 	// Load all textures in TextureSheets first
 	if (Files::VerifyDirectory(Strings::Directory_TextureSheets)) {
-		Resources::HandleTextureSheetFolder(false);
+		Resources::LoadDirectory(Strings::Directory_TextureSheets, false, true);
 	}
 
 	// Load Tiles from Tiles Folder to Memory
-	constexpr char tileDir[] = "Tiles";
-	if (Files::VerifyDirectory(tileDir))
-		Files::ForEachInDirectory(tileDir, [](const char* path) {Resources::LoadTile(path); });
+	if (Files::VerifyDirectory(Strings::Directory_Tiles))
+		Resources::LoadDirectory(Strings::Directory_Tiles, false, true);
 
 
 	return true;
@@ -149,7 +148,7 @@ void Rendering::MainWindow::UnloadLevel() {
 }
 void Rendering::MainWindow::SaveCurrentLevel(std::string nameOverride) {
 	if (!nameOverride.empty()) loadedLevel->Name = nameOverride;
-	Files::SaveToFile(loadedLevel);
+	loadedLevel->SaveToFile();
 	SetWindowDirtyFlag(false);
 }
 void MainWindow::Render() {
@@ -199,18 +198,18 @@ void MainWindow::RenderImGui() {
 	Camera::Main->DearImGuiWindow();
 
 	auto onFileEdit = [](FileBrowserFile& file) {
-		if (file.FileType == FileBrowserFileType::Tile) {
+		if (file.AssetHeader.aType == AssetType::Tile) {
 			FileEditWindow<Tiles::Tile>::NewEditWindow(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
 		}
 	};
 
 	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
 									   [this](const FileBrowserFile& file) {
-		if (file.FileType != FileBrowserFileType::Tile) return;
+		if (file.AssetHeader.aType != AssetType::Tile) return;
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		gridToolBar->SetSelectedTile(tile);
-	}, false, [this](const FileBrowserFile& file) -> bool {
-		if (file.FileType != FileBrowserFileType::Tile) return false;
+	}, [this](const FileBrowserFile& file) -> bool {
+		if (file.AssetHeader.aType != AssetType::Tile) return false;
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		return tile == gridToolBar->GetSelectedTile();
 	}, onFileEdit, [](FileBrowser* browser) {
@@ -220,8 +219,8 @@ void MainWindow::RenderImGui() {
 	});
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
-		if (file.FileType != FileBrowserFileType::Sprite) return;
-		auto p = file.directory_entry.path().string();
+		if (file.AssetHeader.aType != AssetType::Texture) return;
+		auto p = file.AssetHeader.aPath.string();
 		std::cout << "Pressed: " << p.c_str() << std::endl;
 	});
 
@@ -231,10 +230,10 @@ void MainWindow::RenderImGui() {
 	static bool openTexSheetPopup = false;
 
 	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](const FileBrowserFile& file) {
-		if (file.FileType != FileBrowserFileType::TextureSheet) return;
+		if (file.AssetHeader.aType != AssetType::TextureSheet) return;
 		selectedTextureSheet = static_cast<TextureSheet*>(file.Data);
 		openTexSheetPopup = true;
-	}, true);
+	});
 
 	static bool saveLevelDialogue = false;
 
@@ -257,7 +256,7 @@ void MainWindow::RenderImGui() {
 				constexpr char filter[] = "Level File (.level)\0*.level\0\0";
 				if (Files::OpenFileDialog(absolutePath, filter)) {
 					Level* level = nullptr;
-					if (Files::LoadFromFile(Files::GetRelativePath(absolutePath).c_str(), level)) {
+					if (Level::LoadFromFile(Files::GetRelativePath(absolutePath).c_str(), level)) {
 						LoadLevel(level);
 					}
 				}
@@ -289,7 +288,7 @@ void MainWindow::RenderImGui() {
 
 				if (ImGui::InputTextWithHint("Name", "cool_level_69", &buffer)) {
 					std::error_code error;
-					bool exists = std::filesystem::exists(Files::GetRelativePathTo(loadedLevel, buffer), error);
+					bool exists = std::filesystem::exists(loadedLevel->GetRelativePath(buffer), error);
 					hasError = error.value() != 0 || exists;
 					errorMessage = error.value() != 0 ? error.message() : "A file with that name already exists.";
 					allowSave = !hasError && !buffer.empty() && buffer != "untitled";
@@ -366,7 +365,7 @@ void MainWindow::RenderImGui() {
 			if (MenuItem("Recompile Shader")) {
 				Renderer::CompileShader();
 			}
-			if(MenuItem("test GUID")) {
+			if (MenuItem("test GUID")) {
 				auto assetid1 = AssetId::CreateNewAssetId();
 				auto assetid2 = AssetId::CreateNewAssetId();
 
@@ -378,13 +377,17 @@ void MainWindow::RenderImGui() {
 
 				std::string assetId1Str = assetid1;
 
-				AssetId assetId1FromString(assetId1Str);
-
+				AssetId assetId1FromString;
+				bool parseSuccess = AssetId::TryParse(assetId1Str, assetId1FromString);
 				bool same3 = assetid1 == assetId1FromString;
+
 
 				printf("AssetId1: %s, AssetId2: %s, same? %s\n", assetid1.ToString().c_str(), assetid2.ToString().c_str(), same1 ? "Yes" : "No");
 				printf("AssetId1: %s, AssetId1Copy: %s, same? %s\n", assetid1.ToString().c_str(), assetid1Copy.ToString().c_str(), same2 ? "Yes" : "No");
-				printf("AssetId1: %s, assetId1FromString: %s, same? %s\n", assetid1.ToString().c_str(), assetId1FromString.ToString().c_str(), same3 ? "Yes" : "No");
+				if (parseSuccess)
+					printf("AssetId1: %s, assetId1FromString: %s, same? %s\n", assetid1.ToString().c_str(), assetId1FromString.ToString().c_str(), same3 ? "Yes" : "No");
+				else
+					printf("Parse failed.");
 			}
 			ImGui::EndMenu();
 		}
@@ -431,7 +434,7 @@ void MainWindow::RenderImGui() {
 	if (Begin("Tools", &toolWindowOpen, toolFlags)) {
 		int toolCount = 3;
 		auto buttonSize = ImVec2(32, 32);
-		const char* iconStrings[] = { Strings::Tool_Place, Strings::Tool_Erase, Strings::Tool_Select };
+		const char* iconStrings[] = { Strings::Icon_Tool_Place, Strings::Icon_Tool_Erase, Strings::Icon_Tool_Select };
 		for (int i = 0; i < toolCount; ++i) {
 			std::string buttonName = "ToolButton" + std::to_string(i);
 			ImGui::PushID(buttonName.c_str());

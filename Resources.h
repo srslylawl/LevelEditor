@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "Asset.h"
+
 
 class TextureSheet;
 
@@ -34,22 +36,21 @@ public:
 		return InternalTextures;
 	}
 
-	static void LoadTexture(const char* relative_path, bool refresh = false);
+	static bool LoadTile(const char* relative_path, bool refresh = false);
+	static bool LoadTexture(const char* relative_path, bool refresh = false);
 	static bool LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, bool refresh = false);
-
+	static void LoadDirectory(const char* directory, bool refresh, bool includeSubdirectories,
+	                          std::vector<AssetHeader>* out_Assets = nullptr);
+	static bool LoadTextureSheet(const char* relative_path, bool refresh = false);
+	static bool LoadInternalTexture(const char* relative_path, bool refresh = false);
 	static void AddTexture(Rendering::Texture* texture, bool isInternal = false);
 
-	static void LoadInternalTexture(const char* relative_path, bool refresh = false);
-	static void HandleTextureSheetFolder(bool refresh = false);
-	static void LoadTextureSheet(const char* relative_path, bool refresh = false);
 
-	static bool LoadTile(const char* relative_path, bool refresh = false);
-
-	static bool TryGetTexture(const char* relative_path, Rendering::Texture*& out_texture);
-	static unsigned TryGetTextureId(const char* relative_path);
-	static bool TryGetInternalTexture(const char* relative_path, Rendering::Texture*& out_texture);
-	static bool TryGetTile(const char* relative_path, Tiles::Tile*& out_tile, bool tryLoad = false);
-	static bool TryGetTextureSheet(const char* relative_path, TextureSheet*& out_textureSheet);
+	static bool TryGetTexture(const std::string& assetId, Rendering::Texture*& out_texture);
+	static bool TryGetInternalTexture(const char* relativePath, Rendering::Texture*& out_texture);
+	static bool TryGetTile(const std::string& assetId, Tiles::Tile*& out_tile);
+	static bool TryGetTextureSheet(const std::string& assetId, TextureSheet*& out_textureSheet);
+	static unsigned TryGetTextureId(const std::string& assetId);
 
 	static void FreeAll();
 };

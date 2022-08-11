@@ -13,11 +13,11 @@
 
 
 FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick,
-						 bool isTileSheetBrowser, std::function<bool(FileBrowserFile)> shouldHighlight, 
-						 std::function<void(FileBrowserFile&)> onFileEdit, std::function<void(FileBrowser*)> onNewFile) :
+						 std::function<bool(FileBrowserFile)> shouldHighlight,
+						 std::function<void(FileBrowserFile&)> onFileEdit,
+						 std::function<void(FileBrowser*)> onNewFile) :
 	name(std::move(title)),
 	fileBrowserID(++currentID),
-	isTileSheetBrowser(isTileSheetBrowser),
 	onFileClick(std::move(onFileClick)),
 	shouldHighlight(std::move(shouldHighlight)),
 	onFileEdit(std::move(onFileEdit)),
@@ -26,9 +26,9 @@ FileBrowser::FileBrowser(const char* start_directory, std::string title, std::fu
 	const auto path = Files::GetAbsolutePath(start_directory);
 	currentDirectory = path;
 
-	Resources::TryGetInternalTexture(Strings::Folder, folderTexture);
-	Resources::TryGetInternalTexture(Strings::Previous_Directory, returnTexture);
-	Resources::TryGetInternalTexture(Strings::New_File, newFileTexture);
+	Resources::TryGetInternalTexture(Strings::Icon_Folder, folderTexture);
+	Resources::TryGetInternalTexture(Strings::Icon_Previous_Directory, returnTexture);
+	Resources::TryGetInternalTexture(Strings::Icon_New_File, newFileTexture);
 
 	RefreshCurrentDirectory();
 }
@@ -58,26 +58,26 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	if (shouldHighlight) PopStyleColor();
 
 	const bool allowDragAndDrop = file != nullptr &&
-		(file->FileType == FileBrowserFileType::Sprite || file->FileType == FileBrowserFileType::TextureSheet);
+		(file->AssetHeader.aType == AssetType::Texture || file->AssetHeader.aType == AssetType::TextureSheet);
 	if (allowDragAndDrop) {
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
 			std::string payloadType;
 			void* payload = nullptr;
-			switch (file->FileType) {
-				case FileBrowserFileType::Sprite:
+			switch (file->AssetHeader.aType) {
+				case AssetType::Texture:
 					payloadType = "Texture";
 					payload = (void*)texture;
 					break;
-				case FileBrowserFileType::TextureSheet:
+				case AssetType::TextureSheet:
 					payloadType = "TextureSheet";
 					payload = file->Data;
 					break;
 				default:
-					throw std::exception("unexpected file type for drag and drop", static_cast<int>(file->FileType));
+					throw std::exception("unexpected file type for drag and drop", static_cast<int>(file->AssetHeader.aType));
 			}
 			ImGui::SetDragDropPayload(payloadType.c_str(), &payload, sizeof(void*));
 			ImGuiHelper::Image(texture->GetTextureID());
-			TextUnformatted(file->directory_entry.path().filename().string().c_str());
+			TextUnformatted(file->AssetHeader.aPath.filename().string().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}
@@ -128,7 +128,7 @@ void FileBrowser::RenderRearImGuiWindow() {
 			const std::string currButton = imguiID + "_Items_" + std::to_string(buttonIndex);
 			const bool highlight = shouldHighlight == nullptr ? false : shouldHighlight(file);
 			bool wasRightClicked = false;
-			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.directory_entry.path().filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
+			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.AssetHeader.aPath.filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
 				if (onFileClick != nullptr)
 					onFileClick(file);
 			}
@@ -152,91 +152,62 @@ void FileBrowser::RenderRearImGuiWindow() {
 	PopID();
 }
 
-void FileBrowser::RefreshCurrentTileSheetDirectory() {
-	for (auto& dirEntry : Files::GetDirectoryIterator(currentDirectory.string().c_str())) {
-		if (dirEntry.is_directory()) {
-			currentSubFolders.push_back(dirEntry);
-			continue;
-		}
-
-		if (!dirEntry.exists() || !dirEntry.is_regular_file())
-			continue;
-
-		FileBrowserFile fileBrowserFile(dirEntry, this);
-		fileBrowserFile.Texture = Rendering::Texture::Empty();
-
-		const bool isTextureSheetFile = dirEntry.path().has_extension() && dirEntry.path().extension().string() == TextureSheet::FileEnding;
-		if (!isTextureSheetFile) continue;
-
-		auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-		TextureSheet* textureSheet;
-		if (!Resources::TryGetTextureSheet(relativePath.c_str(), textureSheet)) {
-			std::cout << "ERROR: Unable to get textureSheet: " << relativePath.c_str() << std::endl;
-			continue;
-		}
-		if (textureSheet->GetMainTexture() != nullptr) {
-			fileBrowserFile.Texture = textureSheet->GetMainTexture();
-		}
-
-		fileBrowserFile.Data = textureSheet;
-		fileBrowserFile.FileType = FileBrowserFileType::TextureSheet;
-
-		currentItems.emplace_back(fileBrowserFile);
-	}
-}
-
-void FileBrowser::RefreshCurrentGenericDirectory() {
-	for (auto& dirEntry : Files::GetDirectoryIterator(currentDirectory.string().c_str())) {
-		if (dirEntry.is_directory()) {
-			currentSubFolders.push_back(dirEntry);
-			continue;
-		}
-
-		if (dirEntry.exists() && dirEntry.is_regular_file()) {
-			FileBrowserFile fileBrowserFile(dirEntry, this);
-			fileBrowserFile.Texture = Rendering::Texture::Empty();
-
-			if (Files::IsSupportedImageFormat(dirEntry.path().string().c_str())) {
-				//Is Image
-				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-				Resources::LoadTexture(relativePath.c_str(), fileBrowserFile.Texture, true);
-
-				fileBrowserFile.Data = fileBrowserFile.Texture;
-				fileBrowserFile.FileType = FileBrowserFileType::Sprite;
-			}
-			else if (dirEntry.path().has_extension() && dirEntry.path().extension().string() == Tiles::Tile::FileEnding) {
-				//Is Tile
-				auto relativePath = Files::GetRelativePath(dirEntry.path().string());
-				Tiles::Tile* tile;
-				if (!Resources::TryGetTile(relativePath.c_str(), tile, true)) {
-					std::cout << "ERROR: Unable to get tile: " << relativePath.c_str() << std::endl;
-					continue;
-				}
-				if (!Resources::TryGetTexture(tile->DisplayTexture.c_str(), fileBrowserFile.Texture)) {
-					std::cout << "ERROR: Unable to get texture for tile: " << relativePath.c_str() << " texture: " << tile->DisplayTexture.c_str() << std::endl;
-				}
-				fileBrowserFile.Data = tile;
-				fileBrowserFile.FileType = FileBrowserFileType::Tile;
-
-			}
-			else {
-				Resources::TryGetInternalTexture(Strings::Unknown_File, fileBrowserFile.Texture);
-				fileBrowserFile.FileType = FileBrowserFileType::Unsupported;
-			}
-			currentItems.emplace_back(fileBrowserFile);
-		}
-	}
-}
-
 void FileBrowser::RefreshCurrentDirectory() {
 	currentItems.clear();
 	currentSubFolders.clear();
 
-	if (isTileSheetBrowser) {
-		RefreshCurrentTileSheetDirectory();
+	std::vector<AssetHeader> headers;
+	Resources::LoadDirectory(currentDirectory.string().c_str(), false, false, &headers);
+	for (auto& dirEntry : Files::GetDirectoryIterator(currentDirectory.string().c_str())) {
+		if (dirEntry.is_directory()) {
+			currentSubFolders.push_back(dirEntry);
+		}
 	}
-	else {
-		RefreshCurrentGenericDirectory();
+
+	for (const auto& header : headers) {
+		FileBrowserFile fileBrowserFile(header, this);
+		fileBrowserFile.Texture = Rendering::Texture::Empty();
+
+		switch (header.aType) {
+			case AssetType::Texture:
+			{
+				if (Resources::TryGetTexture(header.aId, fileBrowserFile.Texture)) {
+					fileBrowserFile.Data = fileBrowserFile.Texture;
+				}
+				break;
+			}
+			case AssetType::Tile:
+			{
+				Tiles::Tile* t = nullptr;
+				if (!Resources::TryGetTile(header.aId, t)) {
+					std::cout << "ERROR: Unable to get tile: " << header.aPath.c_str() << std::endl;
+					continue;
+				}
+				fileBrowserFile.Data = t;
+				if (!Resources::TryGetTexture(t->DisplayTexture, fileBrowserFile.Texture)) {
+					std::cout << "ERROR: Unable to get texture for tile: " << header.aPath.c_str() << " texture: " << t->DisplayTexture.ToString() << std::endl;
+				}
+				break;
+			}
+			case AssetType::TextureSheet:
+			{
+				TextureSheet* textureSheet;
+				if (!Resources::TryGetTextureSheet(header.aId, textureSheet)) {
+					std::cout << "ERROR: Unable to get textureSheet: " << header.aPath.c_str() << std::endl;
+					continue;
+				}
+				if (textureSheet->GetMainTexture() != nullptr) {
+					fileBrowserFile.Texture = textureSheet->GetMainTexture();
+				}
+				fileBrowserFile.Data = textureSheet;
+				break;
+			}
+			case AssetType::Level: break;
+			case AssetType::UNKNOWN: break;
+			case AssetType::TextureInternal: break;
+			default: break;
+		}
+		currentItems.emplace_back(fileBrowserFile);
 	}
 
 	//sort directories by name
@@ -244,6 +215,7 @@ void FileBrowser::RefreshCurrentDirectory() {
 		return a.path().filename().string() < b.path().filename().string();
 	});
 }
+
 
 void FileBrowser::ChangeDirectory(const std::filesystem::path& new_directory) {
 	subDirectoryStack.push(currentDirectory);

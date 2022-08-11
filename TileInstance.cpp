@@ -31,7 +31,7 @@ namespace Tiles {
 		auto slot = parent->GetPattern()->GetTileSlot(surroundingTileMask);
 		if (slot) {
 			const TextureVariant& variant = slot->TileSprites.back(); //TODO: get by probability and position instead
-			Resources::TryGetTexture(variant.Texture.c_str(), t);
+			Resources::TryGetTexture(variant.TextureId, t);
 		}
 
 		return t;
