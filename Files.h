@@ -1,20 +1,16 @@
 #pragma once
 #include <filesystem>
-#include <fstream>
 #include <functional>
 
-#include "Asset.h"
-
 namespace Files {
-	using namespace std;
 	inline bool VerifyDirectory(const char* directory, bool createIfNotExists = true) {
-		const filesystem::path path = filesystem::current_path().append(directory);
-		if (filesystem::is_directory(path)) {
+		const std::filesystem::path path = std::filesystem::current_path().append(directory);
+		if (std::filesystem::is_directory(path)) {
 			return true;
 		}
 
 		if (createIfNotExists) {
-			filesystem::create_directory(path);
+			std::filesystem::create_directory(path);
 			return true;
 		}
 
@@ -24,16 +20,6 @@ namespace Files {
 
 	inline std::filesystem::path GetAbsolutePath(const std::string& path) {
 		return std::filesystem::current_path().append(path);
-	}
-
-	inline bool PathIsSubPathOf(const std::filesystem::path subPath, const std::filesystem::path& parentPath) {
-		auto& currentPath = const_cast<std::filesystem::path&>(subPath);
-		while (currentPath.has_parent_path() && currentPath.has_relative_path()) {
-			if (currentPath == parentPath) return true;
-			currentPath = currentPath.parent_path();
-		}
-
-		return false;
 	}
 
 	inline std::string GetRelativePath(const std::string& absolutePath) {
@@ -52,6 +38,22 @@ namespace Files {
 		return GetRelativePath(absolutePath.string());
 	}
 
+	inline bool PathIsSubPathOf(const std::filesystem::path absoluteSubPath, const std::filesystem::path& absoluteParentPath) {
+		auto& currentPath = const_cast<std::filesystem::path&>(absoluteSubPath);
+		if (currentPath == absoluteParentPath) return true;
+		do {
+			currentPath = currentPath.parent_path();
+			if (currentPath == absoluteParentPath) return true;
+			if (currentPath == currentPath.parent_path()) break;
+		} while (true);
+
+		return false;
+	}
+
+	inline bool PathIsSubPathOfRel(const std::filesystem::path relativeSubPath, const std::filesystem::path relativeParentPath) {
+		return PathIsSubPathOf(GetAbsolutePath(relativeSubPath.string()), GetAbsolutePath(relativeParentPath.string()));
+	}
+
 	inline auto GetDirectoryIterator(const char* directory) {
 		return std::filesystem::directory_iterator(GetAbsolutePath(directory));
 	}
@@ -61,12 +63,12 @@ namespace Files {
 	}
 
 
-	inline void ForEachInDirectory(const char* directory, const function<void(const char*)>& function, bool skipFolders = true, bool recursive = false) {
+	inline void ForEachInDirectory(const char* directory, const std::function<void(const char*)>& function, bool skipFolders = true, bool recursive = false) {
 		// stinky duplicate code
 		if (recursive) {
 			for (auto& entry : GetDirectoryIteratorRecursive(directory)) {
 				if (entry.is_directory() && skipFolders) continue;
-				string relativePath = directory;
+				std::string relativePath = directory;
 				relativePath += "\\" + entry.path().filename().string();
 				function(relativePath.c_str());
 			}
@@ -74,7 +76,7 @@ namespace Files {
 		else {
 			for (auto& entry : GetDirectoryIterator(directory)) {
 				if (entry.is_directory() && skipFolders) continue;
-				string relativePath = directory;
+				std::string relativePath = directory;
 				relativePath += "\\" + entry.path().filename().string();
 				function(relativePath.c_str());
 			}

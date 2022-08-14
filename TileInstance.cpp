@@ -38,7 +38,7 @@ namespace Tiles {
 	}
 
 	void TileInstance::Refresh(glm::ivec2 position, const TileMap* tileMap) {
-		auto mask = parent->Type == TileType::Simple ? SurroundingTileFlags::NONE : GetMaskFromSurroundingTiles(position, tileMap);
+		auto mask = parent->TileType == TileType::Simple ? SurroundingTileFlags::NONE : GetMaskFromSurroundingTiles(position, tileMap);
 		surroundingTileMask = mask;
 		texture = GetTextureFromMask(position);
 	}

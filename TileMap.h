@@ -9,7 +9,7 @@
 #include "TileInstance.h"
 #include <map>
 
-#include "Asset.h"
+#include "Assets.h"
 
 namespace Rendering {
 	class Shader;
@@ -27,9 +27,9 @@ namespace Tiles {
 		Ceiling
 	};
 
-	class TileMap : public Rendering::Renderable, public Asset<TileMap> {
-		std::unordered_map<glm::ivec2, TileInstance> data;
-		std::map<std::string, int> tileReferences;
+	class TileMap : public Rendering::Renderable, public Serialization::Serializable<TileMap> {
+		std::unordered_map<glm::ivec2, TileInstance> data{};
+		std::map<std::string, int> tileReferences{};
 
 		void RefreshSurroundingTileInstances(const glm::ivec2 position);
 		void ReduceTileReferences(const Tile* tile);
@@ -44,8 +44,8 @@ namespace Tiles {
 		TileMapType Type;
 		glm::ivec2 GridDimensions;
 
-		TileMap() : Type(TileMapType::Any), GridDimensions(glm::ivec2(1,1)) { }
-		TileMap(std::string name, TileMapType type = TileMapType::Any, glm::ivec2 gridDimensions = glm::ivec2(1,1));
+		TileMap() : TileMap("") { }
+		explicit TileMap(std::string name, TileMapType type = TileMapType::Any, glm::ivec2 gridDimensions = glm::ivec2(1,1)) : Serializable(name), Type(type), GridDimensions(gridDimensions) { }
 
 		void Render() const override;
 

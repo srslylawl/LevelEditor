@@ -2,7 +2,7 @@
 #include <string>
 #include <glm/vec2.hpp>
 
-#include "Asset.h"
+#include "Assets.h"
 #include "Strings.h"
 #include "TilePatterns.h"
 
@@ -15,10 +15,10 @@ namespace  Tiles {
 		AutoWall
 	};
 
-	class Tile : public StandaloneAsset<Tile> {
+	class Tile : public PersistentAsset<Tile> {
 		std::unique_ptr<ITilePattern> patternUPtr;
 		void SetPatternFromType() {
-			switch (Type) {
+			switch (TileType) {
 				case TileType::Simple:
 					patternUPtr = std::make_unique<SimpleTilePattern>();
 					break;
@@ -30,14 +30,14 @@ namespace  Tiles {
 			}
 		}
 	public:
-		Tile(const Tile& other) : DisplayTexture(other.DisplayTexture), Type(other.Type) {
+		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, other.Name), DisplayTexture(other.DisplayTexture), TileType(other.TileType){
 			Name = other.Name;
 			patternUPtr = other.patternUPtr->Clone();
 		}
 		Tile& operator=(const Tile& other) {
 			DisplayTexture = other.DisplayTexture;
 			Name = other.Name;
-			Type = other.Type;
+			TileType = other.TileType;
 			patternUPtr = other.patternUPtr->Clone();
 			return *this;
 		}
@@ -45,13 +45,16 @@ namespace  Tiles {
 
 		Tile(Tile&& other) = default;
 		Tile& operator=(Tile&& other) = default;
-		Tile() {
+		Tile(::AssetId assetId, const std::string& name) : PersistentAsset(assetId, AssetType::Tile, name) {
+			SetPatternFromType();
+		}
+		Tile() : Tile(::AssetId(), "") {
 			SetPatternFromType();
 		}
 		~Tile() override = default;
 
 		::AssetId DisplayTexture;
-		TileType Type = TileType::Simple;
+		TileType TileType = TileType::Simple;
 
 		const ITilePattern* GetPattern() const {
 			return patternUPtr.get();
@@ -61,16 +64,16 @@ namespace  Tiles {
 		void TileMapErase(TileMap* tileMap, glm::vec2 position) const;
 
 		void Serialize(std::ostream& oStream) const override;
-		static bool Deserialize(std::istream& iStream, Tile*& out_tile);
+		static bool Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile);
 
 		bool ImGuiEditTile(Tile* tempFile);
 	};
 
 }
-template<> inline const std::string StandaloneAsset<Tiles::Tile>::GetFileEnding() {
+template<> inline const std::string PersistentAsset<Tiles::Tile>::GetFileEnding() {
 	return ".tile";
 }
-template<> inline const std::string StandaloneAsset<Tiles::Tile>::GetParentDirectory() {
+template<> inline const std::string PersistentAsset<Tiles::Tile>::GetParentDirectory() {
 	return Strings::Directory_Tiles;
 }
 

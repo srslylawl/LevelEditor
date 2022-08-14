@@ -2,24 +2,22 @@
 
 #include <iostream>
 
-#include "Files.h"
 #include "Resources.h"
 #include "Serialization.h"
 #include "Texture.h"
 #include "ImGuiHelper.h"
 
 
-TextureSheet* TextureSheet::CreateNew(Rendering::Texture* mainTexture) {
-	auto* sheet = new TextureSheet(mainTexture);
-	sheet->AssetId = AssetId::CreateNewAssetId();
-	return sheet;
+void TextureSheet::CreateNew(Rendering::Texture* mainTexture, AssetHeader& out_header) {
+	const auto* sheet = new TextureSheet(mainTexture, AssetId::CreateNewAssetId());
+	out_header.aId = sheet->AssetId;
+	out_header.aType = AssetType::TextureSheet;
+	out_header.relativeAssetPath = sheet->GetRelativePath();
+	sheet->SaveToFile();
 }
 
-bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_textureSheet) {
+bool TextureSheet::Deserialize(std::istream& iStream, const AssetHeader& header, TextureSheet*& out_textureSheet) {
 	using namespace Serialization;
-	AssetHeader header;
-	if(!AssetHeader::Deserialize(iStream, &header)) return false;
-
 	std::string name = DeserializeStdString(iStream);
 	::AssetId mainTexId;
 	if(!TryDeserializeAssetId(iStream, mainTexId)) {
@@ -28,12 +26,11 @@ bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_texture
 	}
 	Rendering::Texture* mainTexture;
 	if (!Resources::TryGetTexture(mainTexId, mainTexture)) {
-		std::cout << "Unable to find mainTexture: '" << mainTexture << "' - unable to load TextureSheet" << std::endl;
+		std::cout << "Unable to find mainTexture: '" << mainTexId.ToString() << "' - unable to load TextureSheet" << std::endl;
 		return false;
 	}
-	out_textureSheet = new TextureSheet(mainTexture);
+	out_textureSheet = new TextureSheet(mainTexture, header.aId);
 	out_textureSheet->Name = name;
-	out_textureSheet->AssetId = header.aId;
 	size_t subTextureCount = 0;
 	readFromStream(iStream, subTextureCount);
 	if (subTextureCount == 0) {
@@ -61,7 +58,6 @@ bool TextureSheet::Deserialize(std::istream& iStream, TextureSheet*& out_texture
 
 void TextureSheet::Serialize(std::ostream& oStream) const {
 	using namespace Serialization;
-	AssetHeader::Write(oStream, AssetType::TextureSheet, AssetId);
 	Serialization::Serialize(oStream, Name);
 	Serialization::Serialize(oStream, mainTexture->AssetId);
 	writeToStream(oStream, SubTextureData.size());

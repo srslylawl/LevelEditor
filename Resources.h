@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "Asset.h"
+#include "Assets.h"
 
 
 class TextureSheet;
@@ -20,30 +20,33 @@ namespace Mesh {
 }
 
 class Resources {
+	inline static std::map<std::string, std::string> AssetsIdReferences;
 	inline static std::map<std::string, Rendering::Texture*> Textures;
 	inline static std::map<std::string, Rendering::Texture*> InternalTextures;
-public:
 	inline static std::map<std::string, Tiles::Tile*> Tiles;
 	inline static std::map<std::string, TextureSheet*> TextureSheets;
 	inline static std::vector<Mesh::StaticMesh*> Meshes;
 
-	static const std::map<std::string, Rendering::Texture*>& GetTextures() {
-		const std::map<std::string, Rendering::Texture*>& t = Textures;
-		return t;
-	}
+	static bool LoadTile(const char* relative_path, bool refresh = false);
+	static bool LoadTexture(const char* relative_path, bool refresh = false);
+	static bool LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, bool refresh = false);
+	static bool LoadTextureSheet(const char* relative_path, bool refresh = false);
+	static bool LoadInternalTexture(const char* relative_path, bool refresh = false);
+	static bool TryLoadAssetFromHeader(const AssetHeader& header, bool refresh);
+public:
 
 	static const std::map<std::string, Rendering::Texture*>& GetInternalTextures() {
 		return InternalTextures;
 	}
 
-	static bool LoadTile(const char* relative_path, bool refresh = false);
-	static bool LoadTexture(const char* relative_path, bool refresh = false);
-	static bool LoadTexture(const char* relative_path, Rendering::Texture*& out_texture, bool refresh = false);
+	static void LoadAsset(const char* relativePath, bool refresh = false);
+	static bool AssetIsLoaded(const AssetId& id);
+
 	static void LoadDirectory(const char* directory, bool refresh, bool includeSubdirectories,
 	                          std::vector<AssetHeader>* out_Assets = nullptr);
-	static bool LoadTextureSheet(const char* relative_path, bool refresh = false);
-	static bool LoadInternalTexture(const char* relative_path, bool refresh = false);
-	static void AddTexture(Rendering::Texture* texture, bool isInternal = false);
+	static void AssignOwnership(TextureSheet* sheet);
+	static void AssignOwnership(Rendering::Texture* texture);
+	static void AssignOwnership(Mesh::StaticMesh* mesh);
 
 
 	static bool TryGetTexture(const std::string& assetId, Rendering::Texture*& out_texture);

@@ -74,23 +74,15 @@ bool MainWindow::Initialize() {
 	Level* level = Level::CreateDefaultLevel();
 	LoadLevel(level);
 
-
-	// Load Sprites and Tool Icons to Memory
+	// Load Resources
+	if (Files::VerifyDirectory(Strings::Directory_Resources_Icons))
+		Resources::LoadDirectory(Strings::Directory_Resources_Icons, false, true);
 	if (Files::VerifyDirectory(Strings::Directory_Sprites))
 		Resources::LoadDirectory(Strings::Directory_Sprites, false, true);
-
-	if (Files::VerifyDirectory(Strings::Directory_Icon))
-		Resources::LoadDirectory(Strings::Directory_Icon, false, true);
-
-	// Load all textures in TextureSheets first
-	if (Files::VerifyDirectory(Strings::Directory_TextureSheets)) {
+	if (Files::VerifyDirectory(Strings::Directory_TextureSheets))
 		Resources::LoadDirectory(Strings::Directory_TextureSheets, false, true);
-	}
-
-	// Load Tiles from Tiles Folder to Memory
 	if (Files::VerifyDirectory(Strings::Directory_Tiles))
 		Resources::LoadDirectory(Strings::Directory_Tiles, false, true);
-
 
 	return true;
 }
@@ -220,7 +212,7 @@ void MainWindow::RenderImGui() {
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.AssetHeader.aType != AssetType::Texture) return;
-		auto p = file.AssetHeader.aPath.string();
+		auto p = file.AssetHeader.relativeAssetPath.string();
 		std::cout << "Pressed: " << p.c_str() << std::endl;
 	});
 

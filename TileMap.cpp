@@ -102,10 +102,6 @@ glm::ivec2 Tiles::TileMap::ConvertToTileMapGridPosition(glm::ivec2 grid_position
 	return grid_position - offset;
 }
 
-Tiles::TileMap::TileMap(std::string name, TileMapType type, glm::ivec2 gridDimensions) : Type(type), GridDimensions(gridDimensions) {
-	Name = name;
-}
-
 void Tiles::TileMap::Render() const {
 	using namespace glm;
 	// TODO: GPU instancing and pack textures in atlas to render in one draw call as this is highly inefficient
@@ -127,7 +123,8 @@ void Tiles::TileMap::Render() const {
 bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 	auto tileMapUPTR = std::make_unique<Tiles::TileMap>();
 	tileMapUPTR->Name = Serialization::DeserializeStdString(iStream);
-	Serialization::readFromStream(iStream, tileMapUPTR->Type);
+	int type = 0; Serialization::readFromStream(iStream, type);
+	tileMapUPTR->Type = static_cast<TileMapType>(type);
 	Serialization::readFromStream(iStream, tileMapUPTR->GridDimensions.x);
 	Serialization::readFromStream(iStream, tileMapUPTR->GridDimensions.y);
 
@@ -153,9 +150,9 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 			Serialization::readFromStream(iStream, position.x);
 			Serialization::readFromStream(iStream, position.y);
 			int tileIndex = 0; Serialization::readFromStream(iStream, tileIndex);
-			Tiles::SurroundingTileFlags mask = SurroundingTileFlags::NONE; Serialization::readFromStream(iStream, mask);
+			int mask = 0; Serialization::readFromStream(iStream, mask);
 			const Tile* tile = tileIndexTable[tileIndex];
-			tileMapUPTR->data.emplace(position, TileInstance(tile, mask, position));
+			tileMapUPTR->data.emplace(position, TileInstance(tile, static_cast<SurroundingTileFlags>(mask), position));
 			++tileMapUPTR->tileReferences[tile->GetRelativePath()];
 		}
 	}
@@ -173,7 +170,7 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 
 void Tiles::TileMap::Serialize(std::ostream& oStream) const {
 	Serialization::Serialize(oStream, Name);
-	/*int type = (int)Type; */Serialization::writeToStream(oStream, Type);
+	int type = (int)Type; Serialization::writeToStream(oStream, type);
 	Serialization::writeToStream(oStream, GridDimensions.x);
 	Serialization::writeToStream(oStream, GridDimensions.y);
 
@@ -205,7 +202,7 @@ void Tiles::TileMap::Serialize(std::ostream& oStream) const {
 			Serialization::writeToStream(oStream, pos.x);
 			Serialization::writeToStream(oStream, pos.y);
 			Serialization::writeToStream(oStream, tileIndexTable[tileInstance.GetParent()]);
-			Serialization::writeToStream(oStream, tileInstance.GetMask());
+			Serialization::writeToStream(oStream, static_cast<int>(tileInstance.GetMask()));
 		}
 	}
 	std::string tileMapStringVerification("tileMap");

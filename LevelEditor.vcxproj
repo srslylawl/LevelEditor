@@ -205,7 +205,7 @@
     <ClCompile Include="TilePatterns.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Asset.h" />
+    <ClInclude Include="Assets.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FileBrowser.h" />
     <ClInclude Include="FileBrowserFile.h" />

@@ -24,11 +24,11 @@ struct AssetId_private {
 	AssetId_private() = default;
 };
 
-AssetId::AssetId() : assetId_privateSPTR(std::make_shared<AssetId_private>()) {
+AssetId::AssetId() : assetId_privateSPtr(std::make_shared<AssetId_private>()) {
 }
 AssetId AssetId::CreateNewAssetId() {
 	AssetId result;
-	result.assetId_privateSPTR = std::make_shared<AssetId_private>(AssetId_private::Create());
+	result.assetId_privateSPtr = std::make_shared<AssetId_private>(AssetId_private::Create());
 
 	return result;
 }
@@ -43,13 +43,13 @@ bool AssetId::TryParse(std::string& string, AssetId& out_assetId) {
 			 &guid.Data4[0], &guid.Data4[1], &guid.Data4[2],
 			 &guid.Data4[3], &guid.Data4[4], &guid.Data4[5],
 			 &guid.Data4[6], &guid.Data4[7]);
-	out_assetId.assetId_privateSPTR = std::make_shared<AssetId_private>(guid);
+	out_assetId.assetId_privateSPtr = std::make_shared<AssetId_private>(guid);
 
 	return true;
 }
 
 std::string AssetId::ToString() const {
-	auto& guid = assetId_privateSPTR->guid;
+	auto& guid = assetId_privateSPtr->guid;
 
 	char guidStr[39];
 	sprintf_s(
@@ -58,12 +58,11 @@ std::string AssetId::ToString() const {
 		guid.Data1, guid.Data2, guid.Data3,
 		guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 		guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-
 	return guidStr;
 }
 
 bool AssetId::operator==(const AssetId& other) const {
-	return other.assetId_privateSPTR->guid == assetId_privateSPTR->guid;
+	return other.assetId_privateSPtr->guid == assetId_privateSPtr->guid;
 }
 
 AssetId::operator std::string() const {
@@ -72,7 +71,11 @@ AssetId::operator std::string() const {
 
 unsigned short AssetId::GetHashCode() const {
 	RPC_STATUS status = RPC_S_OK;
-	UUID* uuid = &assetId_privateSPTR->guid;
+	UUID* uuid = &assetId_privateSPtr->guid;
 	const auto res = UuidHash(uuid, &status);
 	return res;
+}
+
+bool AssetId::IsEmpty() const {
+	return assetId_privateSPtr->guid == GUID{};
 }

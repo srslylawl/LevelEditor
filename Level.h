@@ -1,11 +1,11 @@
 #pragma once
-#include "Asset.h"
+#include "Assets.h"
 #include "Strings.h"
 
 namespace Tiles {
 	class TileMapManager;
 }
-class Level : public StandaloneAsset<Level> {
+class Level : public PersistentAsset<Level> {
 
 public:
 	explicit Level(std::string name);
@@ -15,17 +15,17 @@ public:
 
 	static Level* CreateDefaultLevel();
 
-	static bool Deserialize(std::istream& iStream, Level*& out_Level);
+	static bool Deserialize(std::istream& iStream, const AssetHeader& header, Level*& out_Level);
 	void Serialize(std::ostream& oStream) const override;
 };
 
 template <>
-inline const std::string StandaloneAsset<Level>::GetFileEnding() {
+inline const std::string PersistentAsset<Level>::GetFileEnding() {
 	return ".level";
 }
 
 template <>
-inline const std::string StandaloneAsset<Level>::GetParentDirectory() {
+inline const std::string PersistentAsset<Level>::GetParentDirectory() {
 	return Strings::Directory_Levels;
 }
 

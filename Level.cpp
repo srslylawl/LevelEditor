@@ -2,12 +2,11 @@
 #include "Serialization.h"
 #include "TileMapManager.h"
 
-Level::Level(std::string name) {
-	Name = name;
+Level::Level(std::string name) : PersistentAsset(AssetId::CreateNewAssetId(), AssetType::Level, name) {
 	TileMapManagerUPTR = std::make_unique<Tiles::TileMapManager>();
 }
 
-bool Level::Deserialize(std::istream& iStream, Level*& out_Level) {
+bool Level::Deserialize(std::istream& iStream, const AssetHeader& header, Level*& out_Level) {
 	auto levelUPTR = std::make_unique<Level>("default");
 	levelUPTR->Name = Serialization::DeserializeStdString(iStream);
 	size_t tileMapCount = 0; Serialization::readFromStream(iStream, tileMapCount);

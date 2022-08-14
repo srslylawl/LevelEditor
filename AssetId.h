@@ -6,7 +6,7 @@
 struct AssetId_private;
 //wraps GUID
 class AssetId {
-	std::shared_ptr<AssetId_private> assetId_privateSPTR;
+	std::shared_ptr<AssetId_private> assetId_privateSPtr;
 public:
 	AssetId();
 	static AssetId CreateNewAssetId();
@@ -16,6 +16,7 @@ public:
 	operator std::string() const;
 	std::string ToString() const;
 	unsigned short GetHashCode() const;
+	bool IsEmpty() const;
 };
 
 namespace std {

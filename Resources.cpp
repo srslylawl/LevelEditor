@@ -20,7 +20,7 @@ inline bool LoadTex(const char* relative_path, const bool refresh, std::map<std:
 		return true;
 	}
 
-	if (!Rendering::Texture::CreateNew(relative_path, out_texture, isInternal)) return false;
+	if (!Rendering::Texture::LoadFromFile(relative_path, out_texture)) return false;
 
 	return true;
 }
@@ -40,22 +40,34 @@ bool Resources::LoadInternalTexture(const char* relative_path, const bool refres
 	return LoadTex(relative_path, refresh, InternalTextures, _, true);
 }
 
-void Resources::AddTexture(Rendering::Texture* texture, bool isInternal) {
-	auto& map = isInternal ? InternalTextures : Textures;
-	map[isInternal ? texture->GetRelativePath() : texture->AssetId] = texture;
+void Resources::AssignOwnership(Rendering::Texture* texture) {
+	auto& map = texture->IsInternal() ? InternalTextures : Textures;
+	map[texture->IsInternal() ? texture->GetImageFilePath() : texture->AssetId] = texture;
+	// Internal textures are referenced by their path
+
+	AssetsIdReferences[texture->AssetId.ToString()] = texture->relativeFilePath;
 }
 
-bool TryLoadAssetFromHeader(const AssetHeader& header, bool refresh) {
-	const auto relativePath = Files::GetRelativePath(header.aPath);
+void Resources::AssignOwnership(TextureSheet* sheet) {
+	TextureSheets[sheet->AssetId] = sheet;
+	AssetsIdReferences[sheet->AssetId] = sheet->GetRelativePath();
+}
+
+void Resources::AssignOwnership(Mesh::StaticMesh* mesh) {
+	Meshes.push_back(mesh);
+}
+
+bool Resources::TryLoadAssetFromHeader(const AssetHeader& header, bool refresh) {
+	const auto relPath = header.relativeAssetPath.string();
 	switch (header.aType) {
 		case AssetType::TextureInternal:
-			return Resources::LoadInternalTexture(relativePath.c_str(), refresh);
+			return LoadInternalTexture(relPath.c_str(), refresh);
 		case AssetType::Texture:
-			return Resources::LoadTexture(relativePath.c_str(), refresh);
+			return LoadTexture(relPath.c_str(), refresh);
 		case AssetType::TextureSheet:
-			return Resources::LoadTextureSheet(relativePath.c_str(), refresh);
+			return LoadTextureSheet(relPath.c_str(), refresh);
 		case AssetType::Tile:
-			return Resources::LoadTile(relativePath.c_str(), refresh);
+			return LoadTile(relPath.c_str(), refresh);
 		case AssetType::Level:
 		case AssetType::UNKNOWN:
 		default: throw std::exception("unexpected case reached");
@@ -73,83 +85,92 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 	for (auto& entry : dir_iterator) {
 		if (includeSubdirectories && entry.is_directory()) {
 			LoadDirectory(entry.path().string().c_str(), refresh, includeSubdirectories, out_Assets);
+			continue;
 		}
+		if (!entry.is_regular_file() || entry.is_symlink()) continue;
 		AssetHeader aHeader;
-		if (AssetHeader::ReadFromFile(entry.path(), &aHeader)) {
+		if (AssetHeader::TryReadHeaderFromFile(entry.path(), &aHeader)) {
 			if (aHeader.HasCorrespondingFile()) {
 				metaFiles.push_back(aHeader);
+				continue;
 			}
+
+			// Load asset if its a raw file
+			TryLoadAssetFromHeader(aHeader, refresh);
 			continue;
 		}
 
-		nonMetaFiles.insert(entry.path().string());
+		nonMetaFiles.insert(Files::GetRelativePath(entry.path()));
 	}
 
 	// try to match meta files with their respective files and add to out if successful
-	for (auto it = metaFiles.begin(); it != metaFiles.end();) {
+	for (auto it = metaFiles.begin(); it != metaFiles.end(); ++it) {
 		auto& entry = it;
-		if (TryLoadAssetFromHeader(*it, refresh)) {
-			nonMetaFiles.erase(entry->aPath.string());
-			if (out_Assets != nullptr) out_Assets->push_back(*entry);
+		bool loaded = AssetIsLoaded(entry->aId);
+		if (!loaded && !TryLoadAssetFromHeader(*entry, refresh)) {
+			std::cout << "Unable to find corresponding file: " << entry->relativeAssetPath.string().c_str() << " delete meta file if no longer needed" << std::endl;
 			continue;
 		}
-		//did not find corresponding asset file, display warning
-		std::cout << "Unable to find corresponding file: " << entry->aPath.c_str() << " delete meta file if no longer needed" << std::endl;
-		++it;
+
+		auto res = nonMetaFiles.find(entry->GetCorrespondingFilePath());
+		if (res == nonMetaFiles.end()) {
+			std::cerr << "Asset is loaded, but unable to get correct nonMetaFile" << std::endl;
+			continue;
+		}
+		nonMetaFiles.erase(res);
+		if (out_Assets != nullptr) out_Assets->push_back(*entry);
 	}
 
-	// TODO: metaFiles now contains only unused meta files. delete automatically?
+	if (nonMetaFiles.empty()) return;
+	// TODO: handle unused meta files?
 
+	const std::filesystem::path directoryPath = directory;
+	const bool isSpriteSubFolder = Files::PathIsSubPathOfRel(directoryPath, Strings::Directory_Sprites);
+	const bool isInternalSpriteSubFolder = Files::PathIsSubPathOfRel(directoryPath, Strings::Directory_Resources_Icons);
+	const bool isTextureSheetFolder = Files::PathIsSubPathOfRel(directoryPath, Strings::Directory_TextureSheets);
+	const bool isRelevantFolder = isSpriteSubFolder || isInternalSpriteSubFolder || isTextureSheetFolder;
 	// now check the remaining non-meta assets and create a meta file if necessary
 	for (auto it = nonMetaFiles.begin(); it != nonMetaFiles.end(); ++it) {
-
 		// only create a meta file for supported image
 		if (!Rendering::Texture::CanCreateFromPath(it->c_str())) continue;
-
 		// create a texture meta file depending on which folder its in
-		auto spriteFolderPath = Files::GetAbsolutePath(Strings::Directory_Sprites);
-		bool isSpriteSubFolder = Files::PathIsSubPathOf(*it, spriteFolderPath);
-		auto internalSpriteFolderPath = Files::GetAbsolutePath(Strings::Directory_Icon);
-		bool isInternalSpriteSubFolder = Files::PathIsSubPathOf(*it, internalSpriteFolderPath);
-		if (isSpriteSubFolder || isInternalSpriteSubFolder) {
-			// create texture meta file
-			Rendering::Texture* tex = nullptr;
-			if (Rendering::Texture::CreateNew(*it, tex, isInternalSpriteSubFolder)) {
-				tex->SaveToFile();
-				if (out_Assets != nullptr) {
-					AssetHeader header;
-					if (!AssetHeader::ReadFromFile(Files::GetAbsolutePath(tex->GetRelativePath()), &header)) {
-						std::cout << "Header does not exist after creating texture!" << std::endl;
-					}
-					out_Assets->push_back(header);
-				}
-			}
+		if (!isRelevantFolder) continue;
+		// create texture meta file
+		Rendering::Texture* tex = nullptr;
+		AssetHeader header;
+		if (!Rendering::Texture::CreateNew(*it, isInternalSpriteSubFolder, isTextureSheetFolder, tex, header)) {
+			std::cout << "ERROR: Unable to create texture from path: " << *it << std::endl;
 			continue;
 		}
+		if (isTextureSheetFolder) TextureSheet::CreateNew(tex, header);
 
-		auto textureSheetFolderPath = Files::GetAbsolutePath(Strings::Directory_TextureSheets);
-		if (Files::PathIsSubPathOf(*it, textureSheetFolderPath)) {
-			// create texturesheet
-			std::string relativePathStr = Files::GetRelativePath(*it);
-			Rendering::Texture* loadedTexture = nullptr;
-			if (!LoadTexture(relativePathStr.c_str(), loadedTexture, refresh)) continue;
-
-			auto relativePath = Files::GetRelativePath(*it);
-			auto sheet = TextureSheet::CreateNew(loadedTexture);
-			sheet->SaveToFile();
-			auto path = sheet->GetRelativePath();
-			delete sheet;
-			LoadTextureSheet(path.c_str());
-			if (out_Assets != nullptr) {
-				AssetHeader header;
-				if (!AssetHeader::ReadFromFile(Files::GetAbsolutePath(path), &header)) {
-					std::cout << "Header does not exist after creating textureSheet!" << std::endl;
-				}
-				out_Assets->push_back(header);
+		//Debug
+#if _DEBUG
+		////dbg
+		//AssetHeader TESTHEADER;
+		auto fullpath = Files::GetAbsolutePath(header.relativeAssetPath.string());
+		if (isTextureSheetFolder) {
+			TextureSheet* texsheet;
+			if (!TextureSheet::LoadFromFile(header.relativeAssetPath.string().c_str(), texsheet)) {
+				throw std::exception("Unable to load recently created texturesheet");
 			}
+		}
+
+		if (isInternalSpriteSubFolder || isSpriteSubFolder) {
+			Rendering::Texture* t = nullptr;
+			if (!Rendering::Texture::LoadFromFile(header.relativeAssetPath.string().c_str(), t)) {
+				throw std::exception("Unable to load recently created texture file");
+			}
+		}
+		////enddbg
+#endif
+		if (out_Assets != nullptr) {
+			out_Assets->push_back(header);
 		}
 	}
 }
+
+
 
 bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 	const auto tsIt = TextureSheets.find(relative_path);
@@ -165,9 +186,33 @@ bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 		std::cout << "Unable to load Texturesheet: " << relative_path << std::endl;
 		return false;
 	}
-	TextureSheets[t->AssetId] = t;
+	AssignOwnership(t);
 
 	return true;
+}
+
+void Resources::LoadAsset(const char* relativePath, bool refresh) {
+	AssetHeader aHeader;
+	if (!AssetHeader::TryReadHeaderFromFile(Files::GetAbsolutePath(relativePath), &aHeader)) {
+		std::cout << "Unable to load asset: " << relativePath << std::endl;
+		return;
+	}
+
+	if (aHeader.aId.IsEmpty()) {
+		std::cout << "Asset guid empty: " << relativePath << std::endl;
+	}
+
+	if (!refresh && AssetIsLoaded(aHeader.aId)) return;
+
+	if (!TryLoadAssetFromHeader(aHeader, refresh)) {
+		std::cout << "Unable to load asset: " << relativePath << std::endl;
+		return;
+	}
+	AssetsIdReferences[aHeader.aId.ToString()] = relativePath;
+}
+
+bool Resources::AssetIsLoaded(const AssetId& id) {
+	return AssetsIdReferences.find(id.ToString()) != AssetsIdReferences.end();
 }
 
 bool Resources::LoadTile(const char* relative_path, bool refresh) {
@@ -190,9 +235,9 @@ bool Resources::LoadTile(const char* relative_path, bool refresh) {
 	return true;
 }
 
-inline bool TryGetTex(const std::string& assetId, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
+inline bool TryGetTex(const std::string& key, Rendering::Texture*& out_texture, std::map<std::string, Rendering::Texture*>& map) {
 	out_texture = Rendering::Texture::Empty();
-	if (const auto it = map.find(assetId); it != map.end()) out_texture = it->second;
+	if (const auto it = map.find(key); it != map.end()) out_texture = it->second;
 	return out_texture != Rendering::Texture::Empty();
 }
 

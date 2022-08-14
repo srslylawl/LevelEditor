@@ -139,7 +139,7 @@ void Mesh::StaticMesh::Draw() const {
 Mesh::StaticMesh* Mesh::StaticMesh::GetDefaultQuad() {
 	if (defaultQuad == nullptr) {
 		auto quad = CreateDefaultQuad();
-		Resources::Meshes.push_back(quad);
+		Resources::AssignOwnership(quad);
 		defaultQuad = quad;
 	}
 
@@ -148,7 +148,7 @@ Mesh::StaticMesh* Mesh::StaticMesh::GetDefaultQuad() {
 Mesh::StaticMesh* Mesh::StaticMesh::GetDefaultQuadDoubleSided() {
 	if (defaultQuadDouble == nullptr) {
 		auto quad = CreateDefaultQuadDoubleSided();
-		Resources::Meshes.push_back(quad);
+		Resources::AssignOwnership(quad);
 		defaultQuadDouble = quad;
 	}
 
@@ -157,7 +157,7 @@ Mesh::StaticMesh* Mesh::StaticMesh::GetDefaultQuadDoubleSided() {
 Mesh::StaticMesh* Mesh::StaticMesh::GetDefaultCube() {
 	if (defaultCube == nullptr) {
 		auto cube = CreateDefaultCube();
-		Resources::Meshes.push_back(cube);
+		Resources::AssignOwnership(cube);
 		defaultCube = cube;
 	}
 

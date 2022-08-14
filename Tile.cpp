@@ -20,21 +20,15 @@ namespace Tiles {
 		tileMap->RemoveTile(position);
 	}
 
-	bool Tile::Deserialize(std::istream& iStream, Tile*& out_tile) {
-		AssetHeader header;
-		if(!AssetHeader::Deserialize(iStream, &header)) {
-			std::cout << "Unable to read header of tile" << std::endl;
-			return false;
-		}
-		out_tile = new Tile();
-		out_tile->AssetId = header.aId;
-		out_tile->Name = Serialization::DeserializeStdString(iStream);
+	bool Tile::Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile) {
+		const std::string name = Serialization::DeserializeStdString(iStream);
+		out_tile = new Tile(header.aId, name);
 		if(!Serialization::TryDeserializeAssetId(iStream, out_tile->DisplayTexture)) {
 			delete out_tile;
 			return false;
 		}
 		int tileType = 0; Serialization::readFromStream(iStream, tileType);
-		out_tile->Type = static_cast<TileType>(tileType);
+		out_tile->TileType = static_cast<Tiles::TileType>(tileType);
 		out_tile->patternUPtr = Serialization::DeserializeITilePattern(iStream);
 
 		const std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
@@ -48,10 +42,9 @@ namespace Tiles {
 	}
 
 	void Tile::Serialize(std::ostream& oStream) const {
-		AssetHeader::Write(oStream, AssetType::Tile, AssetId);
 		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, DisplayTexture);
-		Serialization::writeToStream(oStream, static_cast<int>(Type));
+		Serialization::writeToStream(oStream, static_cast<int>(TileType));
 		Serialization::Serialize(oStream, patternUPtr.get());
 		Serialization::Serialize(oStream, GetFileEnding());
 	}
@@ -69,7 +62,7 @@ namespace Tiles {
 		}
 
 		const char* const items[] = { "Simple", "AutoTile", "AutoWall" };
-		if (ImGui::Combo("Type", (int*)&tempFile->Type, items, 3)) {
+		if (ImGui::Combo("Type", (int*)&tempFile->TileType, items, 3)) {
 			tempFile->SetPatternFromType();
 		}
 		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");

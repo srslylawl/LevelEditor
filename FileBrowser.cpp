@@ -77,7 +77,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 			}
 			ImGui::SetDragDropPayload(payloadType.c_str(), &payload, sizeof(void*));
 			ImGuiHelper::Image(texture->GetTextureID());
-			TextUnformatted(file->AssetHeader.aPath.filename().string().c_str());
+			TextUnformatted(file->AssetHeader.relativeAssetPath.filename().string().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}
@@ -128,7 +128,7 @@ void FileBrowser::RenderRearImGuiWindow() {
 			const std::string currButton = imguiID + "_Items_" + std::to_string(buttonIndex);
 			const bool highlight = shouldHighlight == nullptr ? false : shouldHighlight(file);
 			bool wasRightClicked = false;
-			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.AssetHeader.aPath.filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
+			if (DrawFileButton(file.Texture, buttonIndex, currButton, file.AssetHeader.relativeAssetPath.filename().string(), buttonSize, highlight, &file, &wasRightClicked)) {
 				if (onFileClick != nullptr)
 					onFileClick(file);
 			}
@@ -180,12 +180,12 @@ void FileBrowser::RefreshCurrentDirectory() {
 			{
 				Tiles::Tile* t = nullptr;
 				if (!Resources::TryGetTile(header.aId, t)) {
-					std::cout << "ERROR: Unable to get tile: " << header.aPath.c_str() << std::endl;
+					std::cout << "ERROR: Unable to get tile: " << header.relativeAssetPath.string().c_str() << std::endl;
 					continue;
 				}
 				fileBrowserFile.Data = t;
 				if (!Resources::TryGetTexture(t->DisplayTexture, fileBrowserFile.Texture)) {
-					std::cout << "ERROR: Unable to get texture for tile: " << header.aPath.c_str() << " texture: " << t->DisplayTexture.ToString() << std::endl;
+					std::cout << "ERROR: Unable to get texture for tile: " << header.relativeAssetPath.string().c_str() << " texture: " << t->DisplayTexture.ToString() << std::endl;
 				}
 				break;
 			}
@@ -193,7 +193,7 @@ void FileBrowser::RefreshCurrentDirectory() {
 			{
 				TextureSheet* textureSheet;
 				if (!Resources::TryGetTextureSheet(header.aId, textureSheet)) {
-					std::cout << "ERROR: Unable to get textureSheet: " << header.aPath.c_str() << std::endl;
+					std::cout << "ERROR: Unable to get textureSheet: " << header.relativeAssetPath.string().c_str() << std::endl;
 					continue;
 				}
 				if (textureSheet->GetMainTexture() != nullptr) {

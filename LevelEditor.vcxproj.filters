@@ -267,7 +267,7 @@
     <ClInclude Include="Level.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Asset.h">
+    <ClInclude Include="Assets.h">
       <Filter>Source Files\Files</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">

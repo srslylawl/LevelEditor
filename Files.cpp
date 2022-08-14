@@ -6,8 +6,6 @@
 
 
 namespace Files {
-
-
 	bool IsSupportedImageFormat(const char* absolutePath) {
 		return Rendering::Texture::CanCreateFromPath(absolutePath);
 	}
@@ -56,7 +54,7 @@ namespace Files {
 
 			return false;
 		}
-		out_filePath = fileName.c_str();
+		out_filePath = fileName;
 		return true;
 	}
 
