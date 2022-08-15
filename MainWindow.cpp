@@ -120,18 +120,18 @@ bool MainWindow::InitDearImGui() {
 void Rendering::MainWindow::LoadLevel(Level* level) {
 	if (loadedLevel != nullptr) UnloadLevel();
 	loadedLevel = level;
-	level->TileMapManagerUPTR->gridToolBar = gridToolBar;
-	Renderer::RenderObjects.push_back(level->TileMapManagerUPTR.get());
+	level->TileMapManagerUPtr->gridToolBar = gridToolBar;
+	Renderer::RenderObjects.push_back(level->TileMapManagerUPtr.get());
 
-	if (level->TileMapManagerUPTR->tileMaps.size() > 0) {
-		level->TileMapManagerUPTR->SetActiveTileMap(level->TileMapManagerUPTR->tileMaps[0]);
+	if (level->TileMapManagerUPtr->tileMaps.size() > 0) {
+		level->TileMapManagerUPtr->SetActiveTileMap(level->TileMapManagerUPtr->tileMaps[0]);
 	}
 	SetWindowDirtyFlag(false);
 	SetWindowTitle(level->Name);
 }
 void Rendering::MainWindow::UnloadLevel() {
 	if (loadedLevel == nullptr) return;
-	Rendering::Renderable* tileMapManager = static_cast<Rendering::Renderable*>(loadedLevel->TileMapManagerUPTR.get());
+	Rendering::Renderable* tileMapManager = static_cast<Rendering::Renderable*>(loadedLevel->TileMapManagerUPtr.get());
 	auto removeIt = std::remove(Renderer::RenderObjects.begin(), Renderer::RenderObjects.end(), tileMapManager);
 	Renderer::RenderObjects.erase(removeIt);
 
@@ -280,7 +280,11 @@ void MainWindow::RenderImGui() {
 
 				if (ImGui::InputTextWithHint("Name", "cool_level_69", &buffer)) {
 					std::error_code error;
-					bool exists = std::filesystem::exists(loadedLevel->GetRelativePath(buffer), error);
+					std::string filePathStr = Strings::Directory_Levels;
+					filePathStr += "\\";
+					filePathStr += buffer;
+					filePathStr += AssetHeader::FileExtension;
+					bool exists = std::filesystem::exists(filePathStr, error);
 					hasError = error.value() != 0 || exists;
 					errorMessage = error.value() != 0 ? error.message() : "A file with that name already exists.";
 					allowSave = !hasError && !buffer.empty() && buffer != "untitled";
@@ -456,7 +460,7 @@ void MainWindow::RenderImGui() {
 	}
 	End();
 
-	loadedLevel->TileMapManagerUPTR->RenderImGuiWindow();
+	loadedLevel->TileMapManagerUPtr->RenderImGuiWindow();
 	tileFileBrowser.RenderRearImGuiWindow();
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();

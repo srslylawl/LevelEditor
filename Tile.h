@@ -3,7 +3,6 @@
 #include <glm/vec2.hpp>
 
 #include "Assets.h"
-#include "Strings.h"
 #include "TilePatterns.h"
 
 namespace  Tiles {
@@ -30,22 +29,24 @@ namespace  Tiles {
 			}
 		}
 	public:
-		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, other.Name), DisplayTexture(other.DisplayTexture), TileType(other.TileType){
-			Name = other.Name;
+		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, [&other]{
+			std::filesystem::path p = other.ParentPath;
+			p.append(other.Name + AssetHeader::GetFileExtension(AssetType::Tile));
+			return p;
+		}()), DisplayTexture(other.DisplayTexture), TileType(other.TileType){
 			patternUPtr = other.patternUPtr->Clone();
 		}
 		Tile& operator=(const Tile& other) {
+			PersistentAsset::operator=(other);
 			DisplayTexture = other.DisplayTexture;
-			Name = other.Name;
 			TileType = other.TileType;
 			patternUPtr = other.patternUPtr->Clone();
 			return *this;
 		}
 
-
 		Tile(Tile&& other) = default;
 		Tile& operator=(Tile&& other) = default;
-		Tile(::AssetId assetId, const std::string& name) : PersistentAsset(assetId, AssetType::Tile, name) {
+		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath) : PersistentAsset(assetId, AssetType::Tile, relativeFilePath) {
 			SetPatternFromType();
 		}
 		Tile() : Tile(::AssetId(), "") {
@@ -70,10 +71,3 @@ namespace  Tiles {
 	};
 
 }
-template<> inline const std::string PersistentAsset<Tiles::Tile>::GetFileEnding() {
-	return ".tile";
-}
-template<> inline const std::string PersistentAsset<Tiles::Tile>::GetParentDirectory() {
-	return Strings::Directory_Tiles;
-}
-

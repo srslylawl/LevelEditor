@@ -22,7 +22,7 @@ namespace Tiles {
 
 	bool Tile::Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile) {
 		const std::string name = Serialization::DeserializeStdString(iStream);
-		out_tile = new Tile(header.aId, name);
+		out_tile = new Tile(header.aId, header.relativeAssetPath);
 		if(!Serialization::TryDeserializeAssetId(iStream, out_tile->DisplayTexture)) {
 			delete out_tile;
 			return false;
@@ -30,15 +30,7 @@ namespace Tiles {
 		int tileType = 0; Serialization::readFromStream(iStream, tileType);
 		out_tile->TileType = static_cast<Tiles::TileType>(tileType);
 		out_tile->patternUPtr = Serialization::DeserializeITilePattern(iStream);
-
-		const std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
-		bool valid = fileEndingCheck == GetFileEnding();
-		if (!valid) {
-			delete out_tile;
-			std::cout << "File ending check failed." << std::endl;
-		}
-
-		return valid;
+		return true;
 	}
 
 	void Tile::Serialize(std::ostream& oStream) const {
@@ -46,7 +38,6 @@ namespace Tiles {
 		Serialization::Serialize(oStream, DisplayTexture);
 		Serialization::writeToStream(oStream, static_cast<int>(TileType));
 		Serialization::Serialize(oStream, patternUPtr.get());
-		Serialization::Serialize(oStream, GetFileEnding());
 	}
 
 	bool Tile::ImGuiEditTile(Tile* tempFile) {
@@ -56,7 +47,7 @@ namespace Tiles {
 
 		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name)) {
 			std::error_code error;
-			fileNameAlreadyExists = std::filesystem::exists(tempFile->GetRelativePath(), error);
+			fileNameAlreadyExists = std::filesystem::exists(tempFile->GetRelativeAssetPath(), error);
 			hasError = error.value() != 0;
 			errorMessage = error.message();
 		}
@@ -93,7 +84,8 @@ namespace Tiles {
 
 		if (ImGui::Button("Save")) {
 			if (Name != tempFile->Name) {
-				this->Rename(tempFile->Name);
+				throw std::exception("rename not implemented correctly");
+				this->Rename(tempFile->Name); /// TODO:: rename requires full asset path
 			}
 			//move tempfile into this one
 			if (this != tempFile) *this = std::move(*tempFile);

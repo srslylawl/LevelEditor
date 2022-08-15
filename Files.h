@@ -28,7 +28,7 @@ namespace Files {
 		const auto subStringPos = result.find(currentPath);
 		if (subStringPos != std::string::npos)
 			result.erase(subStringPos, currentPath.length());
-		//std::cout << "GetRelativePath for " << absolutePath << ":" << std::endl;
+		//std::cout << "GetRelativeAssetPath for " << absolutePath << ":" << std::endl;
 		//std::cout << "CurrentPath: " << currentPath << std::endl;
 		//std::cout << "Result: " << result << std::endl;
 		return result;

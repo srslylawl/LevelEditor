@@ -7,30 +7,39 @@
 #include "Texture.h"
 #include "ImGuiHelper.h"
 
+using namespace Rendering;
 
-void TextureSheet::CreateNew(Rendering::Texture* mainTexture, AssetHeader& out_header) {
-	const auto* sheet = new TextureSheet(mainTexture, AssetId::CreateNewAssetId());
-	out_header.aId = sheet->AssetId;
+bool TextureSheet::CreateNew(const std::filesystem::path& relativePathToImageFile, TextureSheet*& out_TextureSheet, AssetHeader& out_header) {
+	Texture* mainTex;
+	if (!Texture::CreateNew(relativePathToImageFile, false, true, mainTex, out_header)) {
+		return false;
+	}
+	auto assetPath = relativePathToImageFile;
+	assetPath.append(AssetHeader::GetFileExtension(AssetType::TextureSheet));
+	out_TextureSheet = new TextureSheet(mainTex, assetPath, AssetId::CreateNewAssetId());
+	out_header.aId = out_TextureSheet->AssetId;
 	out_header.aType = AssetType::TextureSheet;
-	out_header.relativeAssetPath = sheet->GetRelativePath();
-	sheet->SaveToFile();
+	out_header.relativeAssetPath = out_TextureSheet->GetRelativeAssetPath();
+	out_TextureSheet->SaveToFile();
+
+	return true;
 }
 
 bool TextureSheet::Deserialize(std::istream& iStream, const AssetHeader& header, TextureSheet*& out_textureSheet) {
 	using namespace Serialization;
+	//embedded here is the metadata of its mainTexture
+	AssetHeader textureHeader;
+	if(!AssetHeader::Read(iStream, &textureHeader)) {
+		std::cout << "Unable to read header of mainTexture asset of textureSheet " << header.relativeAssetPath << std::endl;
+		return false;
+	}
+	Texture* mainTexture;
+	if(!Texture::Deserialize(iStream, textureHeader, mainTexture)) {
+		std::cout << "Unable to deserialize mainTexture asset - unable to load textureSheet " << header.relativeAssetPath << std::endl;
+		return false;
+	}
 	std::string name = DeserializeStdString(iStream);
-	::AssetId mainTexId;
-	if(!TryDeserializeAssetId(iStream, mainTexId)) {
-		std::cout << "Unable to find mainTexture asset id: '" << name << "' - unable to load TextureSheet" << std::endl;
-		return false;
-	}
-	Rendering::Texture* mainTexture;
-	if (!Resources::TryGetTexture(mainTexId, mainTexture)) {
-		std::cout << "Unable to find mainTexture: '" << mainTexId.ToString() << "' - unable to load TextureSheet" << std::endl;
-		return false;
-	}
-	out_textureSheet = new TextureSheet(mainTexture, header.aId);
-	out_textureSheet->Name = name;
+	out_textureSheet = new TextureSheet(mainTexture, header.relativeAssetPath, header.aId);
 	size_t subTextureCount = 0;
 	readFromStream(iStream, subTextureCount);
 	if (subTextureCount == 0) {
@@ -42,31 +51,27 @@ bool TextureSheet::Deserialize(std::istream& iStream, const AssetHeader& header,
 	for (size_t i = 0; i < subTextureCount; ++i) {
 		out_textureSheet->SubTextureData.emplace_back(DeserializeSubTextureData(iStream));
 	}
-
-	mainTexture->CreateSubTextures(out_textureSheet->SubTextureData, out_textureSheet->SubTextures);
-
-	std::string fileEndingCheck = DeserializeStdString(iStream);
-
-	bool valid = fileEndingCheck == GetFileEnding();
-	if (!valid) {
+	
+	if(!mainTexture->CreateSubTextures(out_textureSheet->SubTextureData, out_textureSheet->SubTextures)) {
 		delete out_textureSheet;
-		std::cout << "File ending check failed." << std::endl;
+		std::cout << "ERROR: Unable to create texture sheet: failed to create subTextures " << header.relativeAssetPath.string() << std::endl;
+		return false;
 	}
 
-	return valid;
+	return true;
 }
 
 void TextureSheet::Serialize(std::ostream& oStream) const {
 	using namespace Serialization;
+	//Write embedded mainTex metadata first
+	AssetHeader::Write(oStream, mainTexture);
+	mainTexture->Serialize(oStream);
 	Serialization::Serialize(oStream, Name);
-	Serialization::Serialize(oStream, mainTexture->AssetId);
 	writeToStream(oStream, SubTextureData.size());
 
 	for (auto data : SubTextureData) {
 		Serialization::Serialize(oStream, data);
 	}
-
-	Serialization::Serialize(oStream, GetFileEnding());
 }
 
 void TextureSheet::AutoSlice() {
@@ -105,7 +110,7 @@ void TextureSheet::AutoSlice() {
 	SaveToFile();
 }
 
-bool DrawSubSpriteButton(Rendering::Texture*& texture, int buttonSize, bool shouldHighlight = false) {
+bool DrawSubSpriteButton(Texture*& texture, int buttonSize, bool shouldHighlight = false) {
 	using namespace ImGui;
 	//	ImVec2 startPos = GetCursorStartPos();
 

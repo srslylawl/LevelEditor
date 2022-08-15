@@ -4,19 +4,7 @@
 #include <filesystem>
 
 #include "Assets.h"
-#include "Strings.h"
 #include "SubTextureData.h"
-
-namespace Rendering {
-	class Texture;
-}
-
-template<> inline const std::string PersistentAsset<Rendering::Texture>::GetFileEnding() {
-	return ".tex";
-}
-template<> inline const std::string PersistentAsset<Rendering::Texture>::GetParentDirectory() {
-	return Strings::Directory_Sprites;
-}
 
 namespace Rendering {
 	struct ImageProperties {
@@ -38,33 +26,35 @@ namespace Rendering {
 		Texture& operator=(const Texture& other) = delete;
 		Texture& operator=(Texture&& other) noexcept = delete;
 	private:
-		Texture(unsigned int id, const std::string& name, std::string path, ImageProperties imageProperties, ::AssetId assetId, bool isInternal = false);
-
+		Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal = false);
+		//Constructor for Empty Texture
+		Texture() : PersistentAsset(AssetId::CreateNewAssetId(), AssetType::TextureInternal, "Internal\\Empty_Default"), imageProperties(ImageProperties()) {
+		}
 		bool isInternalTexture = false;
 		unsigned int textureId = 0;
 		ImageProperties imageProperties;
-		std::string relativeFilePath;
+		std::string pathToImageFile;
 
 		const char* subTextureSuffix = "_subTexture_";
 
-		static bool LoadImageData(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically = true);
 
+		static bool LoadImageData(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically = true);
 		static void BindToGPUAndFreeData(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char*& imageData);
 		void SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, Texture*& out_TexturePtr) const;
 
 		inline static Texture* empty = nullptr;
-		static bool Create(const std::string& relativePath, Texture*& out_texture, bool isInternal, ::AssetId assetId);
-		static Texture* CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::string& relativePath,
-		                               const ::AssetId& assetId, bool isInternal);
+		static bool Create(const std::filesystem::path& relativePathToImageFile, Texture*& out_texture, bool isInternal, ::AssetId assetId);
+		bool LoadAndBind(const std::string& relativePathToImageFile, ImageProperties& out_imgProps, unsigned out_textureId);
+		static Texture* CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::filesystem::path& relativePathToImageFile,
+									   const ::AssetId& assetId, bool isInternal);
 		void RefreshFromDataAndFree(unsigned char* rawImageData, const ImageProperties& imgProps);
 
 	public:
 		ImageProperties GetImageProperties() const;
 		unsigned int GetTextureID() const;
 
-		static bool CreateNew(const std::string& relativePath, bool isInternal, bool isPartOfTextureSheet, Texture*& out_texture, AssetHeader&
-		                      out_assetHeader);
-		static bool Load(const std::string& relativePath, Texture*& out_texture, ::AssetId assetId, bool isInternal);
+		static bool CreateNew(const std::filesystem::path& relativePathToImageFile, bool isInternal, bool isPartOfTextureSheet, Texture*& out_texture, AssetHeader&
+							  out_assetHeader);
 		bool CreateSubTextures(const std::vector<SubTextureData>& subTextureData, std::vector<Texture*>& out_textures) const;
 		static bool CanCreateFromPath(const char* path);
 		bool IsInternal() const {
@@ -73,9 +63,7 @@ namespace Rendering {
 
 
 		static Texture* Empty() {
-			if (empty == nullptr) {
-				empty = new Texture(0, "Empty_Default", "", ImageProperties(), AssetId::CreateNewAssetId());
-			}
+			if (empty == nullptr) empty = new Texture();
 			return empty;
 		}
 
@@ -86,19 +74,8 @@ namespace Rendering {
 
 		~Texture() override;
 
-
-		std::string GetImageFilePath() const { return std::string(isInternalTexture ? Strings::Directory_Resources_Icons : Strings::Directory_Sprites) + "\\" + Name; }
-		std::string GetRelativePath() const override {
-			if (!isInternalTexture) return PersistentAsset<Texture>::GetRelativePath();
-			return std::string(Strings::Directory_Resources_Icons) + "\\" + Name + AssetHeader::FileExtension;
-		}
-
-		std::string GetRelativePath(const std::string& nameOverride) const override {
-			if (!isInternalTexture) return PersistentAsset<Texture>::GetRelativePath();
-			return std::string(Strings::Directory_Resources_Icons) + "\\" + nameOverride + AssetHeader::FileExtension;
+		std::string GetImageFilePath() const {
+			return pathToImageFile;
 		}
 	};
 }
-
-
-

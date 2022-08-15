@@ -59,7 +59,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 		if (IsItemHovered()) {
 			BeginTooltip();
 			if (variantTex != nullptr) {
-				TextUnformatted(variantTex->GetRelativePath().c_str());
+				TextUnformatted(variantTex->Name.c_str());
 			}
 			TextUnformatted("Press 'X' while hovering to remove");
 			EndTooltip();

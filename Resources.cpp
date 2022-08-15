@@ -7,6 +7,7 @@
 #include "Tile.h"
 #include "Files.h"
 #include "Mesh.h"
+#include "Strings.h"
 #include "TextureSheet.h"
 
 
@@ -45,12 +46,12 @@ void Resources::AssignOwnership(Rendering::Texture* texture) {
 	map[texture->IsInternal() ? texture->GetImageFilePath() : texture->AssetId] = texture;
 	// Internal textures are referenced by their path
 
-	AssetsIdReferences[texture->AssetId.ToString()] = texture->relativeFilePath;
+	AssetsIdReferences[texture->AssetId.ToString()] = texture->GetImageFilePath();
 }
 
-void Resources::AssignOwnership(TextureSheet* sheet) {
+void Resources::AssignOwnership(Rendering::TextureSheet* sheet) {
 	TextureSheets[sheet->AssetId] = sheet;
-	AssetsIdReferences[sheet->AssetId] = sheet->GetRelativePath();
+	AssetsIdReferences[sheet->AssetId] = sheet->GetRelativeAssetPath().string();
 }
 
 void Resources::AssignOwnership(Mesh::StaticMesh* mesh) {
@@ -136,22 +137,32 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 		// create a texture meta file depending on which folder its in
 		if (!isRelevantFolder) continue;
 		// create texture meta file
-		Rendering::Texture* tex = nullptr;
 		AssetHeader header;
-		if (!Rendering::Texture::CreateNew(*it, isInternalSpriteSubFolder, isTextureSheetFolder, tex, header)) {
-			std::cout << "ERROR: Unable to create texture from path: " << *it << std::endl;
-			continue;
+		if (isTextureSheetFolder) {
+			Rendering::TextureSheet* _;
+			if (!Rendering::TextureSheet::CreateNew(*it, _, header)) {
+				std::cout << "ERROR: Unable to create textureSheet from path: " << *it << std::endl;
+				continue;
+			}
 		}
-		if (isTextureSheetFolder) TextureSheet::CreateNew(tex, header);
-
+		else {
+			Rendering::Texture* tex = nullptr;
+			if (!Rendering::Texture::CreateNew(*it, isInternalSpriteSubFolder, isTextureSheetFolder, tex, header)) {
+				std::cout << "ERROR: Unable to create texture from path: " << *it << std::endl;
+				continue;
+			}
+		}
+		if (out_Assets != nullptr) {
+			out_Assets->push_back(header);
+		}
 		//Debug
 #if _DEBUG
 		////dbg
 		//AssetHeader TESTHEADER;
 		auto fullpath = Files::GetAbsolutePath(header.relativeAssetPath.string());
 		if (isTextureSheetFolder) {
-			TextureSheet* texsheet;
-			if (!TextureSheet::LoadFromFile(header.relativeAssetPath.string().c_str(), texsheet)) {
+			Rendering::TextureSheet* texsheet;
+			if (!Rendering::TextureSheet::LoadFromFile(header.relativeAssetPath.string().c_str(), texsheet)) {
 				throw std::exception("Unable to load recently created texturesheet");
 			}
 		}
@@ -164,9 +175,7 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 		}
 		////enddbg
 #endif
-		if (out_Assets != nullptr) {
-			out_Assets->push_back(header);
-		}
+
 	}
 }
 
@@ -181,8 +190,8 @@ bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 		return true;
 	}
 
-	TextureSheet* t = nullptr;
-	if (!TextureSheet::LoadFromFile(relative_path, t)) {
+	Rendering::TextureSheet* t = nullptr;
+	if (!Rendering::TextureSheet::LoadFromFile(relative_path, t)) {
 		std::cout << "Unable to load Texturesheet: " << relative_path << std::endl;
 		return false;
 	}
@@ -265,7 +274,7 @@ bool Resources::TryGetTile(const std::string& assetId, Tiles::Tile*& out_tile) {
 	return out_tile != nullptr;
 }
 
-bool Resources::TryGetTextureSheet(const std::string& assetId, TextureSheet*& out_textureSheet) {
+bool Resources::TryGetTextureSheet(const std::string& assetId, Rendering::TextureSheet*& out_textureSheet) {
 	out_textureSheet = nullptr;
 	if (const auto it = TextureSheets.find(assetId); it != TextureSheets.end()) out_textureSheet = it->second;
 

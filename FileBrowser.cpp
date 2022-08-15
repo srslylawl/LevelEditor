@@ -191,13 +191,13 @@ void FileBrowser::RefreshCurrentDirectory() {
 			}
 			case AssetType::TextureSheet:
 			{
-				TextureSheet* textureSheet;
+				Rendering::TextureSheet* textureSheet;
 				if (!Resources::TryGetTextureSheet(header.aId, textureSheet)) {
 					std::cout << "ERROR: Unable to get textureSheet: " << header.relativeAssetPath.string().c_str() << std::endl;
 					continue;
 				}
-				if (textureSheet->GetMainTexture() != nullptr) {
-					fileBrowserFile.Texture = textureSheet->GetMainTexture();
+				if (const auto mainTex = textureSheet->GetMainTexture(); mainTex != nullptr) {
+					fileBrowserFile.Texture = mainTex;
 				}
 				fileBrowserFile.Data = textureSheet;
 				break;

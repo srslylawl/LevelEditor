@@ -2,8 +2,8 @@
 #include "Serialization.h"
 #include "TileMapManager.h"
 
-Level::Level(std::string name) : PersistentAsset(AssetId::CreateNewAssetId(), AssetType::Level, name) {
-	TileMapManagerUPTR = std::make_unique<Tiles::TileMapManager>();
+Level::Level(std::string name) : PersistentAsset(AssetId::CreateNewAssetId(), AssetType::Level, "") {
+	TileMapManagerUPtr = std::make_unique<Tiles::TileMapManager>();
 }
 
 bool Level::Deserialize(std::istream& iStream, const AssetHeader& header, Level*& out_Level) {
@@ -13,13 +13,8 @@ bool Level::Deserialize(std::istream& iStream, const AssetHeader& header, Level*
 	for (int i = 0; i < tileMapCount; ++i) {
 		Tiles::TileMap* tileMap = nullptr;
 		if (Tiles::TileMap::Deserialize(iStream, tileMap)) {
-			levelUPTR->TileMapManagerUPTR->tileMaps.push_back(tileMap);
+			levelUPTR->TileMapManagerUPtr->tileMaps.push_back(tileMap);
 		}
-	}
-	std::string fileEndingCheck = Serialization::DeserializeStdString(iStream);
-	if (fileEndingCheck != GetFileEnding()) {
-		std::cout << "Unable to deserialize tileMap: file ending check failed" << std::endl;
-		return false;
 	}
 	out_Level = levelUPTR.release();
 	return true;
@@ -27,9 +22,9 @@ bool Level::Deserialize(std::istream& iStream, const AssetHeader& header, Level*
 
 Level* Level::CreateDefaultLevel() {
 	Level* level = new Level("untitled");
-	level->TileMapManagerUPTR->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
-	level->TileMapManagerUPTR->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(1, 2)));
-	level->TileMapManagerUPTR->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
+	level->TileMapManagerUPtr->tileMaps.push_back(new Tiles::TileMap("Floor", Tiles::TileMapType::Floor));
+	level->TileMapManagerUPtr->tileMaps.push_back(new Tiles::TileMap("Wall", Tiles::TileMapType::Wall, glm::ivec2(1, 2)));
+	level->TileMapManagerUPtr->tileMaps.push_back(new Tiles::TileMap("Ceiling", Tiles::TileMapType::Ceiling));
 
 	return level;
 }
@@ -37,11 +32,9 @@ Level* Level::CreateDefaultLevel() {
 void Level::Serialize(std::ostream& oStream) const {
 	Serialization::Serialize(oStream, Name);
 
-	size_t tileMapCount = TileMapManagerUPTR->tileMaps.size();
+	size_t tileMapCount = TileMapManagerUPtr->tileMaps.size();
 	Serialization::writeToStream(oStream, tileMapCount);
-	for (const auto& tileMap : TileMapManagerUPTR->tileMaps) {
+	for (const auto& tileMap : TileMapManagerUPtr->tileMaps) {
 		tileMap->Serialize(oStream);
 	}
-
-	Serialization::Serialize(oStream, GetFileEnding());
 }

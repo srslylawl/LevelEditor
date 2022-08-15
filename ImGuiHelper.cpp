@@ -36,7 +36,7 @@ namespace ImGuiHelper {
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
 			ImGui::SetDragDropPayload("Texture", &texture, sizeof(void*));
 			Image(texture->GetTextureID());
-			ImGui::TextUnformatted(texture->GetRelativePath().c_str());
+			ImGui::TextUnformatted(texture->Name.c_str());
 			ImGui::EndDragDropSource();
 		}
 	}

@@ -19,11 +19,11 @@ void Tiles::TileMap::RefreshSurroundingTileInstances(const glm::ivec2 position) 
 }
 
 void Tiles::TileMap::ReduceTileReferences(const Tile* tile) {
-	auto path = tile->GetRelativePath();
-	--tileReferences[path];
+	auto id = tile->AssetId.ToString();
+	--tileReferences[id];
 
-	if (tileReferences[path] == 0) {
-		tileReferences.erase(path);
+	if (tileReferences[id] == 0) {
+		tileReferences.erase(id);
 	}
 }
 
@@ -40,7 +40,7 @@ void Tiles::TileMap::SetTile(const Tile* tile, glm::ivec2 grid_position) {
 	else {
 		//New tile at this position
 		data.emplace(grid_position, ti);
-		++tileReferences[tile->GetRelativePath()];
+		++tileReferences[tile->GetAssetId().ToString()];
 	}
 
 
@@ -153,17 +153,9 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 			int mask = 0; Serialization::readFromStream(iStream, mask);
 			const Tile* tile = tileIndexTable[tileIndex];
 			tileMapUPTR->data.emplace(position, TileInstance(tile, static_cast<SurroundingTileFlags>(mask), position));
-			++tileMapUPTR->tileReferences[tile->GetRelativePath()];
+			++tileMapUPTR->tileReferences[tile->GetAssetId().ToString()];
 		}
 	}
-
-	std::string tileMapStringVerification("tileMap");
-	std::string isVerified = Serialization::DeserializeStdString(iStream);
-	if (isVerified != tileMapStringVerification) {
-		std::cout << "Failed to deserialize tilemap, string verification failed" << std::endl;
-		return false;
-	}
-
 	out_tileMap = tileMapUPTR.release();
 	return true;
 }

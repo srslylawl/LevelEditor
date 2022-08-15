@@ -41,13 +41,11 @@ bool FileEditWindow<Tiles::Tile>::EditFile() {
 }
 
 template <class T>
-FileEditWindow<T>::FileEditWindow(std::unique_ptr<T> tempCopy, const std::function<void()> onClose) : fileData(tempCopy.get()), temporaryFileCopy(std::move(tempCopy)) {
-	IFileEditWindow::onClose = onClose;
+FileEditWindow<T>::FileEditWindow(std::unique_ptr<T> tempCopy, const std::function<void()> onClose) : IFileEditWindow(onClose), fileData(tempCopy.get()), temporaryFileCopy(std::move(tempCopy)) {
 }
 
 template <class T>
-FileEditWindow<T>::FileEditWindow(T* data, const std::function<void()> onClose) : fileData(data), temporaryFileCopy(std::make_unique<T>(*data)) {
-	IFileEditWindow::onClose = onClose;
+FileEditWindow<T>::FileEditWindow(T* data, const std::function<void()> onClose) : IFileEditWindow(onClose), fileData(data), temporaryFileCopy(std::make_unique<T>(*data)) {
 }
 
 template <class T>

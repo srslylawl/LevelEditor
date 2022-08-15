@@ -29,13 +29,13 @@ inline bool ImageProperties::SetColorProfile() {
 	return true;
 }
 
-Texture::Texture(const unsigned int id, const std::string& name, std::string path, ImageProperties imageProperties, ::AssetId assetId, bool isInternal) :
-	PersistentAsset(assetId, isInternal ? AssetType::TextureInternal : AssetType::Texture, name),
+Texture::Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal) :
+	PersistentAsset(assetId, isInternal ? AssetType::TextureInternal : AssetType::Texture, relativePathToImageFile),
 	isInternalTexture(isInternal),
 	textureId(id),
 	imageProperties(imageProperties),
-	relativeFilePath(std::move(path)) {
-	std::cout << "Created Texture " << this->Name << ": Path: " << this->relativeFilePath << " assetId: " << AssetId.ToString() << std::endl;
+	pathToImageFile(relativePathToImageFile.string()) {
+	std::cout << "Created Texture " << this->Name << ": Path: " << relativePathToImageFile.string() << " assetId: " << AssetId.ToString() << std::endl;
 	Resources::AssignOwnership(this);
 }
 
@@ -74,50 +74,50 @@ unsigned Texture::GetTextureID() const {
 	return textureId;
 }
 
-bool Texture::Create(const std::string& relativePath, Texture*& out_texture, bool isInternal, ::AssetId assetId) {
+bool Texture::Create(const std::filesystem::path& relativePathToImageFile, Texture*& out_texture, bool isInternal, ::AssetId assetId) {
 	ImageProperties imgProps{};
 	unsigned char* rawImageData = nullptr;
-	if (!LoadImageData(relativePath, imgProps, rawImageData)) return false;
-	out_texture = CreateFromData(rawImageData, imgProps, relativePath, assetId, isInternal);
+	if (!LoadImageData(relativePathToImageFile.string(), imgProps, rawImageData)) return false;
+	out_texture = CreateFromData(rawImageData, imgProps, relativePathToImageFile, assetId, isInternal);
 	return true;
 }
 
-Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::string& relativePath, const ::AssetId& assetId, bool isInternal) {
+bool Texture::LoadAndBind(const std::string& relativePathToImageFile, ImageProperties& out_imgProps, unsigned int out_textureId) {
+	unsigned char* rawImageData = nullptr;
+	if (!LoadImageData(relativePathToImageFile, out_imgProps, rawImageData)) return false;
+	glGenTextures(1, &out_textureId);
+	BindToGPUAndFreeData(textureId, out_imgProps, rawImageData);
+	return true;
+}
+
+Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::filesystem::path& relativePathToImageFile, const ::AssetId& assetId, bool isInternal) {
 	unsigned int textureId;
 	glGenTextures(1, &textureId);
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
-
-	const std::filesystem::path p = relativePath;
-	const std::string fileName = p.filename().string();
-	std::cout << "Image " << relativePath.c_str() << " bound to textureID: " << textureId << std::endl;
-	return new Texture(textureId, p.filename().string(), relativePath, imgProps, assetId, isInternal);
+	std::cout << "Image " << relativePathToImageFile.c_str() << " bound to textureID: " << textureId << std::endl;
+	return new Texture(textureId, relativePathToImageFile, imgProps, assetId, isInternal);
 }
 
 void Texture::RefreshFromDataAndFree(unsigned char* rawImageData, const ImageProperties& imgProps) {
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
-	std::cout << "Image " << relativeFilePath.c_str() << " refreshed to textureID: " << textureId << std::endl;
+	std::cout << "Image " << Name << " refreshed to textureID: " << textureId << std::endl;
 }
 
-bool Texture::CreateNew(const std::string& relativePath, bool isInternal, bool isPartOfTextureSheet, Texture*& out_texture, AssetHeader& out_assetHeader) {
-	if (!Create(relativePath, out_texture, isInternal, AssetId::CreateNewAssetId())) {
+bool Texture::CreateNew(const std::filesystem::path& relativePathToImageFile, bool isInternal, bool isPartOfTextureSheet, Texture*& out_texture, AssetHeader& out_assetHeader) {
+	if (!Create(relativePathToImageFile, out_texture, isInternal, AssetId::CreateNewAssetId())) {
 		return false;
 	}
 	out_assetHeader.aType = isInternal ? AssetType::TextureInternal : AssetType::Texture;
 	out_assetHeader.aId = out_texture->AssetId;
 	//TODO: relativeAssetPath is wrong here
-	out_assetHeader.relativeAssetPath = relativePath;
+	out_assetHeader.relativeAssetPath = relativePathToImageFile;
 	if (!isPartOfTextureSheet) {
 		//don't save meta file information when its a tileSheet
-		out_assetHeader.relativeAssetPath = out_texture->GetRelativePath();
+		out_assetHeader.relativeAssetPath = out_texture->GetRelativeAssetPath();
 		out_texture->SaveToFile();
 	}
 	return true;
 }
-
-bool Texture::Load(const std::string& relativePath, Texture*& out_texture, ::AssetId assetId, bool isInternal) {
-	return Create(relativePath, out_texture, isInternal, assetId);
-}
-
 
 void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, Texture*& out_TexturePtr) const {
 	const size_t pixelByteSize = imProps.channelCount;
@@ -154,7 +154,7 @@ void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImagePr
 		return;
 	}
 
-	out_TexturePtr = CreateFromData(rawSubTextureData, subTexImgProps, relativeFilePath, subTextureData.assetId, false);
+	out_TexturePtr = CreateFromData(rawSubTextureData, subTexImgProps, GetImageFilePath(), subTextureData.assetId, false);
 }
 
 bool Texture::CreateSubTextures(const std::vector<SubTextureData>& subTextureData, std::vector<Texture*>& out_textures) const {
@@ -166,17 +166,17 @@ bool Texture::CreateSubTextures(const std::vector<SubTextureData>& subTextureDat
 	unsigned char* rawImageData = nullptr;
 	ImageProperties imageProps{};
 	//load without flip so yOffset is from the top instead of the bottom as expected
-	if (!LoadImageData(GetRelativePath(), imageProps, rawImageData, false)) return false;
+	if (!LoadImageData(GetImageFilePath(), imageProps, rawImageData, false)) return false;
 
 	for (const auto& sData : subTextureData) {
 		if (imageProps.width < sData.xOffset + sData.width || imageProps.height < sData.yOffset + sData.height) {
-			std::cout << "ERROR: Can't create SubTexture from " << GetRelativePath() << " :" << "SubTexture does not fit within Texture!" << std::endl;
+			std::cout << "ERROR: Can't create SubTexture from " << GetRelativeAssetPath() << " :" << "SubTexture does not fit within Texture!" << std::endl;
 			free(rawImageData);
 			return false;
 		}
 	}
 
-	const std::filesystem::path p = GetRelativePath();
+	const std::filesystem::path p = GetRelativeAssetPath();
 	const std::filesystem::path parentPath = p.parent_path();
 
 	int subTextureCount = 0;
@@ -202,16 +202,12 @@ bool Texture::CanCreateFromPath(const char* absolutePath) {
 }
 
 void Texture::Serialize(std::ostream& oStream) const {
-	//write bool
 	Serialization::writeToStream(oStream, isInternalTexture);
-	//write string
 	Serialization::Serialize(oStream, GetImageFilePath());
 }
 
 bool Texture::Deserialize(std::istream& iStream, const AssetHeader& header, Texture*& out_texture) {
-	//read bool
 	bool isInternal = false; Serialization::readFromStream(iStream, isInternal);
-	//read string
 	const std::string imageFilePath = Serialization::DeserializeStdString(iStream);
 	return Create(imageFilePath, out_texture, isInternal, header.aId);
 }
@@ -222,7 +218,7 @@ bool Texture::Refresh() {
 		return false;
 	}
 	unsigned char* rawImageData = nullptr;
-	if (!LoadImageData(relativeFilePath, imageProperties, rawImageData)) return false;
+	if (!LoadImageData(GetImageFilePath(), imageProperties, rawImageData)) return false;
 	RefreshFromDataAndFree(rawImageData, imageProperties);
 
 	return true;

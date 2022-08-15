@@ -12,13 +12,13 @@ public:
 	virtual bool RenderImGui() = 0;
 
 	bool setFocus = false;
-	std::function<void()> onClose = nullptr;
+	std::function<void()> OnClose = nullptr;
 
 	static void RenderAll() {
 		for (auto it = activeWindows.begin(); it != activeWindows.end();) {
 			if (!it->get()->RenderImGui()) {
-				if (it->get()->onClose != nullptr) {
-					it->get()->onClose();
+				if (it->get()->OnClose != nullptr) {
+					it->get()->OnClose();
 				}
 				it = activeWindows.erase(it);
 				continue;
@@ -26,6 +26,8 @@ public:
 			++it;
 		}
 	}
+
+	explicit IFileEditWindow(std::function<void()> onClose) : OnClose(std::move(onClose)) {}
 };
 
 template<class T>
