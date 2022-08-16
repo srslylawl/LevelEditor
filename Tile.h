@@ -49,7 +49,7 @@ namespace  Tiles {
 		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath) : PersistentAsset(assetId, AssetType::Tile, relativeFilePath) {
 			SetPatternFromType();
 		}
-		Tile() : Tile(::AssetId(), "") {
+		Tile() : Tile(AssetId::CreateNewAssetId(), "") {
 			SetPatternFromType();
 		}
 		~Tile() override = default;

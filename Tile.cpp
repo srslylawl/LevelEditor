@@ -41,17 +41,7 @@ namespace Tiles {
 	}
 
 	bool Tile::ImGuiEditTile(Tile* tempFile) {
-		static bool hasError = false;
-		static std::string errorMessage;
-		static bool fileNameAlreadyExists = false;
-
-		if (ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name)) {
-			std::error_code error;
-			fileNameAlreadyExists = std::filesystem::exists(tempFile->GetRelativeAssetPath(), error);
-			hasError = error.value() != 0;
-			errorMessage = error.message();
-		}
-
+		ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name);
 		const char* const items[] = { "Simple", "AutoTile", "AutoWall" };
 		if (ImGui::Combo("Type", (int*)&tempFile->TileType, items, 3)) {
 			tempFile->SetPatternFromType();
@@ -69,18 +59,17 @@ namespace Tiles {
 			}
 			ImGui::EndDragDropTarget();
 		}
-
-		
 		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
 		tempFile->patternUPtr->RenderDearImGui();
 
 		ImGui::Separator();
-		if (hasError) ImGui::TextUnformatted(("Error: " + errorMessage).c_str());
-		if (fileNameAlreadyExists) ImGui::TextUnformatted("Tile with same name already exists.");
-
-		bool disableSave = tempFile->Name.empty() || hasError || fileNameAlreadyExists;
-		if (disableSave) ImGui::BeginDisabled();
+		std::string errorMessage;
+		const bool disableSave = !tempFile->CanSave(errorMessage, Name == tempFile->Name);
+		if (disableSave) {
+			ImGui::TextUnformatted(errorMessage.c_str());
+			ImGui::BeginDisabled();
+		}
 
 		if (ImGui::Button("Save")) {
 			if (Name != tempFile->Name) {
@@ -90,9 +79,6 @@ namespace Tiles {
 			//move tempfile into this one
 			if (this != tempFile) *this = std::move(*tempFile);
 			SaveToFile();
-			fileNameAlreadyExists = false;
-			hasError = false;
-
 			return true;
 		}
 		if (disableSave) ImGui::EndDisabled();

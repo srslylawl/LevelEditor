@@ -142,6 +142,7 @@ void Rendering::MainWindow::SaveCurrentLevel(std::string nameOverride) {
 	if (!nameOverride.empty()) loadedLevel->Name = nameOverride;
 	loadedLevel->SaveToFile();
 	SetWindowDirtyFlag(false);
+	SetWindowTitle(loadedLevel->Name);
 }
 void MainWindow::Render() {
 	// clear color, depth and stencil buffers
@@ -205,7 +206,7 @@ void MainWindow::RenderImGui() {
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		return tile == gridToolBar->GetSelectedTile();
 	}, onFileEdit, [](FileBrowser* browser) {
-		FileEditWindow<Tiles::Tile>::NewFileCreationWindow([browser] {
+		FileEditWindow<Tiles::Tile>::NewFileCreationWindow(browser->GetCurrentDirectory(), [browser] {
 			browser->RefreshCurrentDirectory();
 		});
 	});
@@ -254,8 +255,12 @@ void MainWindow::RenderImGui() {
 				}
 			}
 			if (ImGui::MenuItem("Save", "CTRL + S")) {
-				if (!loadedLevel->Name.empty() && loadedLevel->Name != "untitled") SaveCurrentLevel();
-				else saveLevelDialogue = true;
+				std::string errorMsg;
+				if (!loadedLevel->CanSave(errorMsg)) {
+					saveLevelDialogue = true;
+					std::cout << errorMsg << std::endl;
+				}
+				else loadedLevel->SaveToFile();
 			}
 			if (ImGui::MenuItem("Save as...")) {
 				saveLevelDialogue = true;
@@ -273,41 +278,24 @@ void MainWindow::RenderImGui() {
 		if (saveLevelDialogue) {
 			ImGuiHelper::CenterNextWindow(ImVec2(0, 0), ImGuiCond_Appearing);
 			if (Begin("Saving - Enter a name for current Level:", &saveLevelDialogue, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
-				static std::string buffer;
-				static bool allowSave = !buffer.empty() && buffer != "untitled";
-				static bool hasError = false;
-				static std::string errorMessage;
-
-				if (ImGui::InputTextWithHint("Name", "cool_level_69", &buffer)) {
-					std::error_code error;
-					std::string filePathStr = Strings::Directory_Levels;
-					filePathStr += "\\";
-					filePathStr += buffer;
-					filePathStr += AssetHeader::FileExtension;
-					bool exists = std::filesystem::exists(filePathStr, error);
-					hasError = error.value() != 0 || exists;
-					errorMessage = error.value() != 0 ? error.message() : "A file with that name already exists.";
-					allowSave = !hasError && !buffer.empty() && buffer != "untitled";
-				}
+				std::string errorMessage;
+				InputTextWithHint("Name", "cool_level_69", &loadedLevel->Name);
+				bool hasError = !loadedLevel->CanSave(errorMessage, false);
 				if (hasError) {
 					ImGui::TextUnformatted(errorMessage.c_str());
 				}
 
-				if (!allowSave) BeginDisabled();
+				if (hasError) BeginDisabled();
 				bool savePressed = Button("Save");
-				if (!allowSave) EndDisabled();
+				if (hasError) EndDisabled();
 				SameLine();
 				bool quitPressed = Button("Cancel");
 
 				if (savePressed || quitPressed) {
 					if (savePressed) {
-						SaveCurrentLevel(buffer);
+						SaveCurrentLevel("");
 					}
 					//Reset everything
-					buffer.clear();
-					allowSave = false;
-					hasError = false;
-					errorMessage.clear();
 					saveLevelDialogue = false;
 				}
 			}

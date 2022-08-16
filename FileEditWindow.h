@@ -30,6 +30,7 @@ public:
 	explicit IFileEditWindow(std::function<void()> onClose) : OnClose(std::move(onClose)) {}
 };
 
+
 template<class T>
 class FileEditWindow : public IFileEditWindow {
 	T* fileData = nullptr;
@@ -43,7 +44,7 @@ public:
 	FileEditWindow(T* data, std::function<void()> onClose = nullptr);
 	//Holds reference to file and will create a temporary copy that can be edited while the window is open.
 	static void NewEditWindow(T* data, const std::function<void()> onClose = nullptr);
-	static void NewFileCreationWindow(const std::function<void()> onClose = nullptr);
+	static void NewFileCreationWindow(const std::filesystem::path& directory, const std::function<void()> onClose = nullptr);
 };
 
 

@@ -12,7 +12,7 @@ namespace Files {
 
 	bool OpenFileDialog(std::string& out_filePath, const char* filter) {
 		std::string fileName;
-		fileName.reserve(1024);
+		fileName.resize(1024);
 
 		OPENFILENAMEA ofn;
 		ZeroMemory(&fileName[0], sizeof(char)*1024);
@@ -27,7 +27,7 @@ namespace Files {
 
 		if (!GetOpenFileNameA(&ofn)) {
 			std::string buffer;
-			buffer.reserve(1024);
+			buffer.resize(1024);
 			std::string error;
 			switch (CommDlgExtendedError())
 			{

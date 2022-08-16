@@ -94,7 +94,7 @@ Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImagePropert
 	unsigned int textureId;
 	glGenTextures(1, &textureId);
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
-	std::cout << "Image " << relativePathToImageFile.c_str() << " bound to textureID: " << textureId << std::endl;
+	std::cout << "Image " << relativePathToImageFile.string().c_str() << " bound to textureID: " << textureId << std::endl;
 	return new Texture(textureId, relativePathToImageFile, imgProps, assetId, isInternal);
 }
 

@@ -88,6 +88,7 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 			LoadDirectory(entry.path().string().c_str(), refresh, includeSubdirectories, out_Assets);
 			continue;
 		}
+
 		if (!entry.is_regular_file() || entry.is_symlink()) continue;
 		AssetHeader aHeader;
 		if (AssetHeader::TryReadHeaderFromFile(entry.path(), &aHeader)) {
@@ -97,7 +98,10 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 			}
 
 			// Load asset if its a raw file
-			TryLoadAssetFromHeader(aHeader, refresh);
+			if (!AssetIsLoaded(aHeader.aId)) {
+				TryLoadAssetFromHeader(aHeader, refresh);
+			}
+			if(out_Assets != nullptr) out_Assets->push_back(aHeader);
 			continue;
 		}
 
@@ -155,26 +159,25 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 		if (out_Assets != nullptr) {
 			out_Assets->push_back(header);
 		}
-		//Debug
-#if _DEBUG
-		////dbg
-		//AssetHeader TESTHEADER;
-		auto fullpath = Files::GetAbsolutePath(header.relativeAssetPath.string());
-		if (isTextureSheetFolder) {
-			Rendering::TextureSheet* texsheet;
-			if (!Rendering::TextureSheet::LoadFromFile(header.relativeAssetPath.string().c_str(), texsheet)) {
-				throw std::exception("Unable to load recently created texturesheet");
-			}
-		}
-
-		if (isInternalSpriteSubFolder || isSpriteSubFolder) {
-			Rendering::Texture* t = nullptr;
-			if (!Rendering::Texture::LoadFromFile(header.relativeAssetPath.string().c_str(), t)) {
-				throw std::exception("Unable to load recently created texture file");
-			}
-		}
-		////enddbg
-#endif
+		//#if _DEBUG
+		//		////dbg
+		//		//AssetHeader TESTHEADER;
+		//		auto fullpath = Files::GetAbsolutePath(header.relativeAssetPath.string());
+		//		if (isTextureSheetFolder) {
+		//			Rendering::TextureSheet* texsheet;
+		//			if (!Rendering::TextureSheet::LoadFromFile(header.relativeAssetPath.string().c_str(), texsheet)) {
+		//				throw std::exception("Unable to load recently created texturesheet");
+		//			}
+		//		}
+		//
+		//		if (isInternalSpriteSubFolder || isSpriteSubFolder) {
+		//			Rendering::Texture* t = nullptr;
+		//			if (!Rendering::Texture::LoadFromFile(header.relativeAssetPath.string().c_str(), t)) {
+		//				throw std::exception("Unable to load recently created texture file");
+		//			}
+		//		}
+		//		////enddbg
+		//#endif
 
 	}
 }

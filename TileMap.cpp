@@ -121,7 +121,7 @@ void Tiles::TileMap::Render() const {
 }
 
 bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
-	auto tileMapUPTR = std::make_unique<Tiles::TileMap>();
+	auto tileMapUPTR = std::make_unique<TileMap>();
 	tileMapUPTR->Name = Serialization::DeserializeStdString(iStream);
 	int type = 0; Serialization::readFromStream(iStream, type);
 	tileMapUPTR->Type = static_cast<TileMapType>(type);
@@ -197,6 +197,4 @@ void Tiles::TileMap::Serialize(std::ostream& oStream) const {
 			Serialization::writeToStream(oStream, static_cast<int>(tileInstance.GetMask()));
 		}
 	}
-	std::string tileMapStringVerification("tileMap");
-	Serialization::Serialize(oStream, tileMapStringVerification);
 }

@@ -37,5 +37,6 @@ public:
 	void RefreshCurrentDirectory();
 	void ChangeDirectory(const std::filesystem::path& new_directory);
 	void ReturnToPreviousDirectory();
+	std::filesystem::path GetCurrentDirectory() { return currentDirectory; }
 };
 

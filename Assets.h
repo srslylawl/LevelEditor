@@ -61,14 +61,18 @@ struct AssetHeader {
 				return ".asset";
 			case AssetType::Tile:
 				return ".tile";
-			case AssetType::Level: 
+			case AssetType::Level:
 				return ".level";
 			default: throw std::exception("unhandled default case");
 		}
 	}
 
+	static bool IsAssetFileExtension(const std::string& extension) {
+		return extension == ".asset" || extension == ".tile" || extension == ".level";
+	}
+
 	static bool TryReadHeaderFromFile(const std::filesystem::path& absolutePath, AssetHeader* out_header) {
-		if (!absolutePath.has_extension()) return false;
+		if (!absolutePath.has_extension() || !IsAssetFileExtension(absolutePath.extension().string())) return false;
 		out_header->relativeAssetPath = Files::GetRelativePath(absolutePath);
 		std::ifstream file(absolutePath);
 		if (!file) {
@@ -80,7 +84,7 @@ struct AssetHeader {
 		const bool success = Read(file, out_header);
 		file.close();
 		if (!success) {
-			std::cerr << "unable to deserialize header" << std::endl;
+			std::cerr << "unable to deserialize header for " << absolutePath << std::endl;
 			return false;
 		}
 
@@ -129,8 +133,13 @@ public:
 	}
 	std::filesystem::path ParentPath;
 
+	//Deduces ParentPath and Name from AssetPath
 	PersistentAsset(::AssetId assetId, const ::AssetType type, const std::filesystem::path assetPath) :
 		Serialization::Serializable<T>(assetPath.filename().string()), AssetId(assetId), AssetType(type), ParentPath(assetPath.parent_path()) {
+	}
+
+	PersistentAsset(::AssetId assetId, const ::AssetType type, const std::filesystem::path parentPath, const std::string name) :
+		Serialization::Serializable<T>(name), AssetId(assetId), AssetType(type), ParentPath(parentPath) {
 	}
 
 	virtual std::filesystem::path GetRelativeAssetPath() const {
@@ -156,6 +165,10 @@ public:
 		}
 		if (error.value() != 0) {
 			out_errorMsg = error.message();
+			return false;
+		}
+		if (ParentPath.empty()) {
+			out_errorMsg = "Missing Parent Path";
 			return false;
 		}
 
@@ -186,7 +199,7 @@ public:
 
 	// Loads a Serializable Class from File and allocates on Free Store (has to be deleted manually) -- note: replace with unique_ptr for ownership clarity?
 	static bool LoadFromFile(const char* relativePathToFile, T*& out) {
-		std::cout << "Reading path: " << relativePathToFile << std::endl;
+		//std::cout << "Reading path: " << relativePathToFile << std::endl;
 		std::ifstream file(Files::GetAbsolutePath(relativePathToFile), std::iostream::binary);
 		if (!file) return false; // Check for error
 

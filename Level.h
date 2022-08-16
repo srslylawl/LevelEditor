@@ -14,6 +14,8 @@ public:
 
 	static Level* CreateDefaultLevel();
 
+	bool CanSave(std::string& out_errorMsg, bool allowOverwrite = true) const override;
+
 	static bool Deserialize(std::istream& iStream, const AssetHeader& header, Level*& out_Level);
 	void Serialize(std::ostream& oStream) const override;
 };
