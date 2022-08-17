@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
 #include <glm/vec2.hpp>
 
 #include "Assets.h"
+#include "FileEditWindow.h"
 #include "TilePatterns.h"
 
 namespace  Tiles {
@@ -14,7 +14,7 @@ namespace  Tiles {
 		AutoWall
 	};
 
-	class Tile : public PersistentAsset<Tile> {
+	class Tile : public PersistentAsset<Tile>, public IEditable {
 		std::unique_ptr<ITilePattern> patternUPtr;
 		void SetPatternFromType() {
 			switch (TileType) {
@@ -29,12 +29,8 @@ namespace  Tiles {
 			}
 		}
 	public:
-		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, [&other]{
-			std::filesystem::path p = other.ParentPath;
-			p.append(other.Name + AssetHeader::GetFileExtension(AssetType::Tile));
-			return p;
-		}()), DisplayTexture(other.DisplayTexture), TileType(other.TileType){
-			patternUPtr = other.patternUPtr->Clone();
+		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, other.ParentPath, other.Name),
+		                          patternUPtr(other.patternUPtr->Clone()), DisplayTexture(other.DisplayTexture), TileType(other.TileType) {
 		}
 		Tile& operator=(const Tile& other) {
 			PersistentAsset::operator=(other);
@@ -46,7 +42,7 @@ namespace  Tiles {
 
 		Tile(Tile&& other) = default;
 		Tile& operator=(Tile&& other) = default;
-		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath) : PersistentAsset(assetId, AssetType::Tile, relativeFilePath) {
+		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath) : PersistentAsset(assetId, AssetType::Tile, relativeFilePath.parent_path(), relativeFilePath.filename().replace_extension().string()) {
 			SetPatternFromType();
 		}
 		Tile() : Tile(AssetId::CreateNewAssetId(), "") {
@@ -67,7 +63,17 @@ namespace  Tiles {
 		void Serialize(std::ostream& oStream) const override;
 		static bool Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile);
 
-		bool ImGuiEditTile(Tile* tempFile);
+		bool RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) override;
+		static std::unique_ptr<IEditable> CreateNew(std::filesystem::path directory){
+			auto ptr = std::make_unique<Tile>();
+			ptr->ParentPath = std::move(directory);
+			return ptr;
+		}
+
+		std::filesystem::path IEditableGetAssetPath() override {
+			return GetRelativeAssetPath();
+		}
+
 	};
 
 }

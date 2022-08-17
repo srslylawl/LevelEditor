@@ -10,7 +10,6 @@
 #include "Strings.h"
 #include "TextureSheet.h"
 
-
 inline bool LoadTex(const char* relative_path, const bool refresh, std::map<std::string, Rendering::Texture*>& map, Rendering::Texture*& out_texture, bool isInternal) {
 	out_texture = nullptr;
 
@@ -35,7 +34,6 @@ bool Resources::LoadTexture(const char* relative_path, Rendering::Texture*& out_
 	return LoadTex(relative_path, refresh, Textures, out_texture, false);
 }
 
-
 bool Resources::LoadInternalTexture(const char* relative_path, const bool refresh) {
 	Rendering::Texture* _;
 	return LoadTex(relative_path, refresh, InternalTextures, _, true);
@@ -47,6 +45,14 @@ void Resources::AssignOwnership(Rendering::Texture* texture) {
 	// Internal textures are referenced by their path
 
 	AssetsIdReferences[texture->AssetId.ToString()] = texture->GetImageFilePath();
+}
+
+void Resources::ReleaseOwnership(const Rendering::Texture* texture, bool deleteObject) {
+	auto& map = texture->IsInternal() ? InternalTextures : Textures;
+	map.erase(texture->AssetId);
+	AssetsIdReferences.erase(texture->AssetId);
+	if (deleteObject)
+		delete texture;
 }
 
 void Resources::AssignOwnership(Rendering::TextureSheet* sheet) {
@@ -101,7 +107,7 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 			if (!AssetIsLoaded(aHeader.aId)) {
 				TryLoadAssetFromHeader(aHeader, refresh);
 			}
-			if(out_Assets != nullptr) out_Assets->push_back(aHeader);
+			if (out_Assets != nullptr) out_Assets->push_back(aHeader);
 			continue;
 		}
 
@@ -181,8 +187,6 @@ void Resources::LoadDirectory(const char* directory, bool refresh, bool includeS
 
 	}
 }
-
-
 
 bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 	const auto tsIt = TextureSheets.find(relative_path);
@@ -296,18 +300,9 @@ void FreeMap(PointerMap pMap) {
 		delete pair.second;
 }
 
-
 void Resources::FreeAll() {
 	FreeCollection(Meshes);
-	for (auto& pair : Textures)
-		delete pair.second;
-
-	for (auto& pair : Tiles)
-		delete pair.second;
-
-	for (auto& pair : TextureSheets) {
-		delete pair.second;
-	}
-
+	FreeMap(Textures);
+	FreeMap(Tiles);
+	FreeMap(TextureSheets);
 }
-

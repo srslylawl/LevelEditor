@@ -12,8 +12,8 @@
 #include "Tile.h"
 
 
-FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile)> onFileClick,
-						 std::function<bool(FileBrowserFile)> shouldHighlight,
+FileBrowser::FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile&)> onFileClick,
+						 std::function<bool(FileBrowserFile&)> shouldHighlight,
 						 std::function<void(FileBrowserFile&)> onFileEdit,
 						 std::function<void(FileBrowser*)> onNewFile) :
 	name(std::move(title)),

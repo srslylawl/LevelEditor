@@ -17,9 +17,11 @@ namespace ImGuiHelper {
 		drawList->AddRect(pos, max, color);
 		const ImRect bb(pos, max);
 
-		ImGui::PushID(id);
+		//ImGui::PushID(id);
 		const ImGuiID imGuiId = window->GetID(id);
-		ImGui::PopID();
+		//ImGui::PopID();
+		if(!ImGui::ItemAdd(bb, imGuiId))
+			return false;
 		bool isHovered, isHeld;
 		bool pressed = ImGui::ButtonBehavior(bb, imGuiId, &isHovered, &isHeld);
 		if(isHovered) {

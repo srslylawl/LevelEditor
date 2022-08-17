@@ -15,7 +15,6 @@ bool TextureSheet::CreateNew(const std::filesystem::path& relativePathToImageFil
 		return false;
 	}
 	auto assetPath = relativePathToImageFile;
-	assetPath.append(AssetHeader::GetFileExtension(AssetType::TextureSheet));
 	out_TextureSheet = new TextureSheet(mainTex, assetPath, AssetId::CreateNewAssetId());
 	out_header.aId = out_TextureSheet->AssetId;
 	out_header.aType = AssetType::TextureSheet;
@@ -29,30 +28,29 @@ bool TextureSheet::Deserialize(std::istream& iStream, const AssetHeader& header,
 	using namespace Serialization;
 	//embedded here is the metadata of its mainTexture
 	AssetHeader textureHeader;
-	if(!AssetHeader::Read(iStream, &textureHeader)) {
+	if (!AssetHeader::Read(iStream, &textureHeader)) {
 		std::cout << "Unable to read header of mainTexture asset of textureSheet " << header.relativeAssetPath << std::endl;
 		return false;
 	}
 	Texture* mainTexture;
-	if(!Texture::Deserialize(iStream, textureHeader, mainTexture)) {
+	if (!Texture::Deserialize(iStream, textureHeader, mainTexture)) {
 		std::cout << "Unable to deserialize mainTexture asset - unable to load textureSheet " << header.relativeAssetPath << std::endl;
 		return false;
 	}
-	std::string name = DeserializeStdString(iStream);
-	out_textureSheet = new TextureSheet(mainTexture, header.relativeAssetPath, header.aId);
+	const auto imgFilePath = mainTexture->GetImageFilePath();
+	out_textureSheet = new TextureSheet(mainTexture, imgFilePath, header.aId);
 	size_t subTextureCount = 0;
 	readFromStream(iStream, subTextureCount);
 	if (subTextureCount == 0) {
 		return true;
 	}
-
 	out_textureSheet->SubTextureData.reserve(subTextureCount);
 
 	for (size_t i = 0; i < subTextureCount; ++i) {
 		out_textureSheet->SubTextureData.emplace_back(DeserializeSubTextureData(iStream));
 	}
-	
-	if(!mainTexture->CreateSubTextures(out_textureSheet->SubTextureData, out_textureSheet->SubTextures)) {
+
+	if (!mainTexture->CreateSubTextures(out_textureSheet->SubTextureData, out_textureSheet->SubTextures)) {
 		delete out_textureSheet;
 		std::cout << "ERROR: Unable to create texture sheet: failed to create subTextures " << header.relativeAssetPath.string() << std::endl;
 		return false;
@@ -66,7 +64,6 @@ void TextureSheet::Serialize(std::ostream& oStream) const {
 	//Write embedded mainTex metadata first
 	AssetHeader::Write(oStream, mainTexture);
 	mainTexture->Serialize(oStream);
-	Serialization::Serialize(oStream, Name);
 	writeToStream(oStream, SubTextureData.size());
 
 	for (auto data : SubTextureData) {
@@ -77,32 +74,40 @@ void TextureSheet::Serialize(std::ostream& oStream) const {
 void TextureSheet::AutoSlice() {
 	auto props = mainTexture->GetImageProperties();
 
-	if (props.height % spriteSize != 0) {
-		std::cout << "TextureSheet's HEIGHT is not divisible by spriteSize, abort." << std::endl;
-		return;
+	if (props.height % sliceHeight != 0) {
+		std::cout << "TextureSheet's HEIGHT is not divisible by sliceHeight, will ignore edges." << std::endl;
 	}
-	if (props.width % spriteSize != 0) {
-		std::cout << "TextureSheet's WIDTH is not divisible by SpriteSize, abort." << std::endl;
-		return;
+	if (props.width % sliceWidth != 0) {
+		std::cout << "TextureSheet's WIDTH is not divisible by sliceWidth, will ignore edges." << std::endl;
 	}
-	const size_t x = props.width / spriteSize;
-	const size_t y = props.height / spriteSize;
-
-	//TODO: dont delete textures as we might be able to re-use some of them when slicing multiple times
-	for (auto& subTexture : SubTextures) {
-		delete subTexture;
+	const size_t x = props.width / sliceWidth;
+	const size_t y = props.height / sliceHeight;
+	const size_t newSubTextureCount = x * y;
+	const size_t oldSubTextureCount = SubTextureData.size();
+	// don't delete all textures as we might be able to re-use some of them when slicing multiple times
+	if (oldSubTextureCount > newSubTextureCount) {
+		for (auto index = newSubTextureCount - 1; index < oldSubTextureCount; ++index) {
+			auto tex = SubTextures[index];
+			Resources::ReleaseOwnership(tex, true);
+		}
 	}
-	SubTextures.clear();
-	SubTextureData.clear();
-	SubTextures.reserve(x * y);
-	SubTextures.reserve(x * y);
+	SubTextures.resize(newSubTextureCount);
+	SubTextures.resize(newSubTextureCount);
 
-
+	int i = 0;
 	for (int row = 0; row < y; ++row) {
 		for (int column = 0; column < x; ++column) {
-			int xOffset = column * spriteSize;
-			int yOffset = row * spriteSize;
-			SubTextureData.emplace_back(xOffset, yOffset, spriteSize, spriteSize);
+			const int xOffset = column * sliceWidth;
+			const int yOffset = row * sliceHeight;
+			SubTextureData[i].xOffset = xOffset;
+			SubTextureData[i].yOffset = yOffset;
+			SubTextureData[i].width = sliceWidth;
+			SubTextureData[i].width = sliceHeight;
+			if (i >= oldSubTextureCount) {
+				SubTextureData[i].assetId = AssetId::CreateNewAssetId();
+			}
+			//SubTextureData.emplace_back(xOffset, yOffset, sliceWidth, sliceHeight);
+			++i;
 		}
 	}
 
@@ -137,17 +142,50 @@ bool DrawSubSpriteButton(Texture*& texture, int buttonSize, bool shouldHighlight
 	return clicked;
 }
 
-void TextureSheet::RenderImGuiWindow() {
+bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) {
 	using namespace ImGui;
 	// Assuming this is inside some window
 	auto props = mainTexture->GetImageProperties();
 	std::string text(mainTexture->Name + " " + std::to_string(props.width) + " x " + std::to_string(props.height));
 	TextUnformatted(text.c_str());
-	static int zoomLevel = 1;
 	SliderInt("Zoom", &zoomLevel, 1, 10);
 	SameLine();
 	if (Button("Save")) {
 		SaveToFile();
+		return true;
+	}
+	SameLine();
+	if(Button("Cancel")) {
+		if(isNewFile) return true;
+		TextureSheet* t;
+		if(!LoadFromFile(GetRelativeAssetPath().string().c_str(), t)) {
+			std::cerr << "Unable to load textureSheet when cancelling editing " << GetRelativeAssetPath() << std::endl;
+			return true;
+		}
+
+		*this = std::move(*t);
+		return true;
+	}
+	if (TreeNode("AutoSlice")) {
+		InputInt("Sprite Width", &sliceWidth);
+		InputInt("Sprite Height", &sliceHeight);
+		if (BeginPopup("AutoSlice Confirmation")) {
+			TextUnformatted("Are you sure? - This will overwrite any manual changes.");
+			if (Button("Don't overwrite my changes!")) {
+				CloseCurrentPopup();
+			}
+			SameLine();
+			if (Button("Yes, AutoSlice it!")) {
+				AutoSlice();
+			}
+			EndPopup();
+		}
+
+
+		if (Button("AutoSlice")) {
+			OpenPopup("AutoSlice Confirmation");
+		}
+		TreePop();
 	}
 
 	const auto startPos = GetCursorScreenPos();
@@ -159,9 +197,16 @@ void TextureSheet::RenderImGuiWindow() {
 		bool isHovered = false;
 		bool isHeld = false;
 		ImGuiHelper::RectButton(pos, ImVec2(data.width * zoomLevel, data.height * zoomLevel), std::to_string(i).c_str(), &isHovered, &isHeld);
+		//if(isHeld)
+			ImGuiHelper::DragSourceTexture(SubTextures[i]);
 		if (isHovered) {
 			BeginTooltip();
+			TextUnformatted(SubTextures[i]->Name.c_str());
+			Separator();
+			BeginDisabled(true);
+			TextUnformatted("Click and drag to assign texture elsewhere.");
 			TextUnformatted("Press 'X' to delete.");
+			EndDisabled();
 			EndTooltip();
 
 			if (IsKeyPressed(ImGuiKey_X, false)) {
@@ -171,10 +216,13 @@ void TextureSheet::RenderImGuiWindow() {
 	}
 
 	if (removeAtPos > -1) {
+		auto texIt = SubTextures.begin() + removeAtPos;
+		Resources::ReleaseOwnership(*texIt, true);
+		SubTextures.erase(texIt);
 		SubTextureData.erase(SubTextureData.begin() + removeAtPos);
-		SubTextures.erase(SubTextures.begin() + removeAtPos);
 	}
 
+	return false;
 
 	//size_t total = SubTextures.size();
 	//size_t rows = total * spriteSize / mainTexture->GetImageProperties().height;
@@ -189,3 +237,4 @@ void TextureSheet::RenderImGuiWindow() {
 }
 
 TextureSheet::~TextureSheet() = default;
+

@@ -216,14 +216,11 @@ public:
 		return success && out != nullptr;
 	}
 
-	void Rename(const std::string& new_Path) const {
-		const std::filesystem::path newPath = new_Path;
+	void Rename(const std::filesystem::path oldPath, const std::filesystem::path newPath) {
 		if (!exists(newPath.parent_path())) {
 			create_directory(newPath.parent_path());
 		}
-		std::filesystem::rename(GetRelativeAssetPath(), newPath);
+		std::filesystem::rename(oldPath, newPath);
 	}
-
-
 };
 

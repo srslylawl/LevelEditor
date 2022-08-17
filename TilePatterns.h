@@ -117,7 +117,7 @@ namespace Tiles {
 		void RenderDearImGui() override;
 
 		std::unique_ptr<ITilePattern> Clone() const override {
-			return std::make_unique<SimpleTilePattern>(*this);
+			return std::make_unique<SimpleTilePattern>(*this); //Intellisense sometimes marks this with an error, but its wrong as this line compiles and works fine.
 		}
 
 		uint8_t GetTypeByte() const override {

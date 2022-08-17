@@ -190,9 +190,9 @@ void MainWindow::RenderImGui() {
 	// Main Cam Controls
 	Camera::Main->DearImGuiWindow();
 
-	auto onFileEdit = [](FileBrowserFile& file) {
+	auto onTileEdit = [](FileBrowserFile& file) {
 		if (file.AssetHeader.aType == AssetType::Tile) {
-			FileEditWindow<Tiles::Tile>::NewEditWindow(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
+			FileEditWindow::New(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
 		}
 	};
 
@@ -205,11 +205,17 @@ void MainWindow::RenderImGui() {
 		if (file.AssetHeader.aType != AssetType::Tile) return false;
 		const auto tile = static_cast<Tiles::Tile*>(file.Data);
 		return tile == gridToolBar->GetSelectedTile();
-	}, onFileEdit, [](FileBrowser* browser) {
-		FileEditWindow<Tiles::Tile>::NewFileCreationWindow(browser->GetCurrentDirectory(), [browser] {
+	}, onTileEdit, [](FileBrowser* browser) {
+		FileCreationWindow::New<Tiles::Tile>(browser->GetCurrentDirectory(), [browser] {
 			browser->RefreshCurrentDirectory();
 		});
 	});
+
+	auto onTexSheetEdit = [](FileBrowserFile& file) {
+		if (file.AssetHeader.aType == AssetType::TextureSheet) {
+			FileEditWindow::New(static_cast<Rendering::TextureSheet*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
+		}
+	};
 
 	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
 		if (file.AssetHeader.aType != AssetType::Texture) return;
@@ -217,16 +223,7 @@ void MainWindow::RenderImGui() {
 		std::cout << "Pressed: " << p.c_str() << std::endl;
 	});
 
-	static TextureSheet* selectedTextureSheet = nullptr;
-
-	constexpr char selectedTexSheetPopupID[] = "SelectedTextureSheet";
-	static bool openTexSheetPopup = false;
-
-	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", [](const FileBrowserFile& file) {
-		if (file.AssetHeader.aType != AssetType::TextureSheet) return;
-		selectedTextureSheet = static_cast<TextureSheet*>(file.Data);
-		openTexSheetPopup = true;
-	});
+	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", onTexSheetEdit, nullptr, onTexSheetEdit);
 
 	static bool saveLevelDialogue = false;
 
@@ -268,13 +265,6 @@ void MainWindow::RenderImGui() {
 			ImGui::EndMenu();
 		}
 
-
-
-		static bool openSpriteSheetEditor = false;
-		if (MenuItem("SpriteSheetEditor")) {
-			openSpriteSheetEditor = true;
-		}
-
 		if (saveLevelDialogue) {
 			ImGuiHelper::CenterNextWindow(ImVec2(0, 0), ImGuiCond_Appearing);
 			if (Begin("Saving - Enter a name for current Level:", &saveLevelDialogue, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
@@ -298,41 +288,6 @@ void MainWindow::RenderImGui() {
 					//Reset everything
 					saveLevelDialogue = false;
 				}
-			}
-			End();
-		}
-
-		if (openSpriteSheetEditor) {
-			if (Begin("TextureSheet Editor", &openSpriteSheetEditor, ImGuiWindowFlags_AlwaysAutoResize)) {
-				static unsigned int texID = 0;
-				static int offsetX = 0;
-				static int offsetY = 0;
-				static int width = 0;
-				static int height = 0;
-				static TextureSheet* sheet = nullptr;
-				ImGuiHelper::Image(texID, ImVec2(128, 128));
-				if (ImGui::BeginDragDropTarget()) {
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TextureSheet")) {
-						sheet = *static_cast<TextureSheet**>(payload->Data);
-						texID = sheet->GetMainTexture()->GetTextureID();
-						width = sheet->GetMainTexture()->GetImageProperties().width;
-						height = sheet->GetMainTexture()->GetImageProperties().height;
-					}
-					ImGui::EndDragDropTarget();
-				}
-				ImGui::InputInt("Offset X", &offsetX);
-				ImGui::InputInt("Offset Y", &offsetY);
-				ImGui::InputInt("Width", &width);
-				ImGui::InputInt("Height", &height);
-
-				static unsigned int newTextureId = 0;
-
-				ImGuiHelper::Image(newTextureId, ImVec2(128, 128));
-				if (sheet != nullptr && Button("Auto Slice")) {
-					sheet->AutoSlice();
-					spriteFileBrowser.RefreshCurrentDirectory();
-				}
-
 			}
 			End();
 		}
@@ -453,19 +408,7 @@ void MainWindow::RenderImGui() {
 	spriteFileBrowser.RenderRearImGuiWindow();
 	textureSheetFileBrowser.RenderRearImGuiWindow();
 
-	IFileEditWindow::RenderAll();
-
-	if (selectedTextureSheet != nullptr) {
-		if (openTexSheetPopup) {
-			OpenPopup(selectedTexSheetPopupID);
-			openTexSheetPopup = false;
-		}
-
-		if (BeginPopup(selectedTexSheetPopupID)) {
-			selectedTextureSheet->RenderImGuiWindow();
-			EndPopup();
-		}
-	}
+	FileEditWindow::RenderAll();
 
 	// ############################### ImGui logic above this line #################################
 	// Required to render ImGuI

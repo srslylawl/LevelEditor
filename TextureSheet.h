@@ -1,19 +1,32 @@
 #pragma once
 #include "Assets.h"
+#include "FileEditWindow.h"
 #include "Texture.h"
 
 namespace Rendering {
 	struct SubTextureData;
 
 	//Represents a Texture that holds multiple individual sprites
-	class TextureSheet : public PersistentAsset<TextureSheet> {
+	class TextureSheet : public PersistentAsset<TextureSheet>, public IEditable {
 	public:
 		TextureSheet(const TextureSheet& other) = delete;
-		TextureSheet(TextureSheet&& other) noexcept = delete;
 		TextureSheet& operator=(const TextureSheet& other) = delete;
-		TextureSheet& operator=(TextureSheet&& other) noexcept = delete;
+
+		TextureSheet(TextureSheet&& other) noexcept = default;
+		TextureSheet& operator=(TextureSheet&& other) noexcept {
+			if(this == &other) return *this;
+			mainTexture = other.mainTexture;
+			sliceHeight = other.sliceHeight;
+			sliceWidth = other.sliceWidth;
+			SubTextures = std::move(other.SubTextures);
+			SubTextureData = std::move(other.SubTextureData);
+
+			return *this;
+		}
 	private:
-		const int spriteSize = 16; // in Pixels
+		int sliceWidth = 16; // in Pixels
+		int sliceHeight = 16; // in Pixels
+		int zoomLevel = 2;
 		Texture* mainTexture;
 		TextureSheet(Texture* mainTexture, const std::filesystem::path& relativePathToAsset, const ::AssetId& assetId) :
 			PersistentAsset<TextureSheet>(assetId, AssetType::TextureSheet, relativePathToAsset), mainTexture(mainTexture) {}
@@ -28,8 +41,9 @@ namespace Rendering {
 
 		Texture* GetMainTexture() const { return mainTexture; }
 		void AutoSlice();
-		void RenderImGuiWindow();
 
 		~TextureSheet() override;
+		bool RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) override;
+		std::filesystem::path IEditableGetAssetPath() override { return GetRelativeAssetPath(); }
 	};
 }

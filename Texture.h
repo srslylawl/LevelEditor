@@ -26,7 +26,7 @@ namespace Rendering {
 		Texture& operator=(const Texture& other) = delete;
 		Texture& operator=(Texture&& other) noexcept = delete;
 	private:
-		Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal = false);
+		Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal = false, std::string nameSuffix = "");
 		//Constructor for Empty Texture
 		Texture() : PersistentAsset(AssetId::CreateNewAssetId(), AssetType::TextureInternal, "Internal\\Empty_Default"), imageProperties(ImageProperties()) {
 		}
@@ -40,13 +40,14 @@ namespace Rendering {
 
 		static bool LoadImageData(const std::string& relative_path, ImageProperties& out_imageProperties, unsigned char*& out_rawData, bool flipVertically = true);
 		static void BindToGPUAndFreeData(const unsigned int& texture_id, const ImageProperties& imageProperties, unsigned char*& imageData);
-		void SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, Texture*& out_TexturePtr) const;
+		void SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, const int
+		                             subTextureCount, Texture*& out_TexturePtr) const;
 
 		inline static Texture* empty = nullptr;
 		static bool Create(const std::filesystem::path& relativePathToImageFile, Texture*& out_texture, bool isInternal, ::AssetId assetId);
 		bool LoadAndBind(const std::string& relativePathToImageFile, ImageProperties& out_imgProps, unsigned out_textureId);
 		static Texture* CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::filesystem::path& relativePathToImageFile,
-									   const ::AssetId& assetId, bool isInternal);
+									   const ::AssetId& assetId, bool isInternal, std::string nameSuffix = "");
 		void RefreshFromDataAndFree(unsigned char* rawImageData, const ImageProperties& imgProps);
 
 	public:

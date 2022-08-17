@@ -21,9 +21,8 @@ namespace Tiles {
 	}
 
 	bool Tile::Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile) {
-		const std::string name = Serialization::DeserializeStdString(iStream);
 		out_tile = new Tile(header.aId, header.relativeAssetPath);
-		if(!Serialization::TryDeserializeAssetId(iStream, out_tile->DisplayTexture)) {
+		if (!Serialization::TryDeserializeAssetId(iStream, out_tile->DisplayTexture)) {
 			delete out_tile;
 			return false;
 		}
@@ -34,17 +33,16 @@ namespace Tiles {
 	}
 
 	void Tile::Serialize(std::ostream& oStream) const {
-		Serialization::Serialize(oStream, Name);
 		Serialization::Serialize(oStream, DisplayTexture);
 		Serialization::writeToStream(oStream, static_cast<int>(TileType));
 		Serialization::Serialize(oStream, patternUPtr.get());
 	}
 
-	bool Tile::ImGuiEditTile(Tile* tempFile) {
-		ImGui::InputTextWithHint("Name", "<enter tile name>", &tempFile->Name);
+	bool Tile::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) {
+		ImGui::InputTextWithHint("Name", "<enter tile name>", &Name);
 		const char* const items[] = { "Simple", "AutoTile", "AutoWall" };
-		if (ImGui::Combo("Type", (int*)&tempFile->TileType, items, 3)) {
-			tempFile->SetPatternFromType();
+		if (ImGui::Combo("Type", (int*)&TileType, items, 3)) {
+			SetPatternFromType();
 		}
 		ImGui::SameLine(); ImGuiHelper::TextWithToolTip("", "AutoTiles and walls will automatically change their displayed texture based on the tiles around them.");
 
@@ -55,35 +53,44 @@ namespace Tiles {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture")) {
 				const Rendering::Texture* t = *static_cast<const Rendering::Texture**>(payload->Data);
-				tempFile->DisplayTexture = t->AssetId;
+				DisplayTexture = t->AssetId;
 			}
 			ImGui::EndDragDropTarget();
 		}
 		ImGuiHelper::TextWithToolTip("Tile Textures", "Drag and drop textures from 'Sprites' folder or any texture sheet");
 
-		tempFile->patternUPtr->RenderDearImGui();
+		patternUPtr->RenderDearImGui();
 
 		ImGui::Separator();
 		std::string errorMessage;
-		const bool disableSave = !tempFile->CanSave(errorMessage, Name == tempFile->Name);
+		const bool disableSave = !CanSave(errorMessage, true);
 		if (disableSave) {
 			ImGui::TextUnformatted(errorMessage.c_str());
 			ImGui::BeginDisabled();
 		}
 
 		if (ImGui::Button("Save")) {
-			if (Name != tempFile->Name) {
-				throw std::exception("rename not implemented correctly");
-				this->Rename(tempFile->Name); /// TODO:: rename requires full asset path
+			if (!isNewFile && GetRelativeAssetPath() != editWindow->oldPath) {
+				this->Rename(editWindow->oldPath, GetRelativeAssetPath());
 			}
-			//move tempfile into this one
-			if (this != tempFile) *this = std::move(*tempFile);
 			SaveToFile();
 			return true;
 		}
 		if (disableSave) ImGui::EndDisabled();
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel")) return true;
+		if (ImGui::Button("Cancel")) {
+			//reload from disk if its not a new file
+			if (isNewFile) return true;
+
+			Tile* old;
+			if (!LoadFromFile(editWindow->oldPath.string().c_str(), old)) {
+				std::cerr << "Unable to load old tile when discarding changes: " << editWindow->oldPath.string() << std::endl;
+				return true;
+			}
+			*this = std::move(*old);
+
+			return true;
+		}
 
 
 		return false;

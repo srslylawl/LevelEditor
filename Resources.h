@@ -47,6 +47,7 @@ public:
 	                          std::vector<AssetHeader>* out_Assets = nullptr);
 	static void AssignOwnership(Rendering::TextureSheet* sheet);
 	static void AssignOwnership(Rendering::Texture* texture);
+	static void ReleaseOwnership(const Rendering::Texture* texture, bool deleteObject = false);
 	static void AssignOwnership(Mesh::StaticMesh* mesh);
 
 

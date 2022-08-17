@@ -29,12 +29,13 @@ inline bool ImageProperties::SetColorProfile() {
 	return true;
 }
 
-Texture::Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal) :
+Texture::Texture(unsigned int id, const std::filesystem::path& relativePathToImageFile, ImageProperties imageProperties, ::AssetId assetId, bool isInternal, std::string nameSuffix) :
 	PersistentAsset(assetId, isInternal ? AssetType::TextureInternal : AssetType::Texture, relativePathToImageFile),
 	isInternalTexture(isInternal),
 	textureId(id),
 	imageProperties(imageProperties),
 	pathToImageFile(relativePathToImageFile.string()) {
+	Name += nameSuffix;
 	std::cout << "Created Texture " << this->Name << ": Path: " << relativePathToImageFile.string() << " assetId: " << AssetId.ToString() << std::endl;
 	Resources::AssignOwnership(this);
 }
@@ -90,12 +91,12 @@ bool Texture::LoadAndBind(const std::string& relativePathToImageFile, ImagePrope
 	return true;
 }
 
-Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::filesystem::path& relativePathToImageFile, const ::AssetId& assetId, bool isInternal) {
+Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImageProperties& imgProps, const std::filesystem::path& relativePathToImageFile, const ::AssetId& assetId, bool isInternal, std::string nameSuffix) {
 	unsigned int textureId;
 	glGenTextures(1, &textureId);
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
-	std::cout << "Image " << relativePathToImageFile.string().c_str() << " bound to textureID: " << textureId << std::endl;
-	return new Texture(textureId, relativePathToImageFile, imgProps, assetId, isInternal);
+	std::cout << "Image " << relativePathToImageFile.filename().string() << nameSuffix << " bound to textureID: " << textureId << std::endl;
+	return new Texture(textureId, relativePathToImageFile, imgProps, assetId, isInternal, nameSuffix);
 }
 
 void Texture::RefreshFromDataAndFree(unsigned char* rawImageData, const ImageProperties& imgProps) {
@@ -109,17 +110,17 @@ bool Texture::CreateNew(const std::filesystem::path& relativePathToImageFile, bo
 	}
 	out_assetHeader.aType = isInternal ? AssetType::TextureInternal : AssetType::Texture;
 	out_assetHeader.aId = out_texture->AssetId;
-	//TODO: relativeAssetPath is wrong here
-	out_assetHeader.relativeAssetPath = relativePathToImageFile;
+	//TODO: verify relativeAssetPath
+	out_assetHeader.relativeAssetPath = out_texture->GetRelativeAssetPath();
+
 	if (!isPartOfTextureSheet) {
 		//don't save meta file information when its a tileSheet
-		out_assetHeader.relativeAssetPath = out_texture->GetRelativeAssetPath();
 		out_texture->SaveToFile();
 	}
 	return true;
 }
 
-void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, Texture*& out_TexturePtr) const {
+void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImageProperties& imProps, const SubTextureData& subTextureData, const int subTextureCount, Texture*& out_TexturePtr) const {
 	const size_t pixelByteSize = imProps.channelCount;
 	const size_t originRowByteSize = pixelByteSize * imProps.width;
 
@@ -148,13 +149,12 @@ void Texture::SliceSubTextureFromData(unsigned char* rawImageData, const ImagePr
 
 	//if asset id exists, refresh it instead of creating a new one
 	if (Resources::AssetIsLoaded(subTextureData.assetId)) {
-		Texture* t = nullptr;
-		if (!Resources::TryGetTexture(AssetId, t)) throw std::exception("unable to get loaded texture");
-		t->RefreshFromDataAndFree(rawSubTextureData, subTexImgProps);
+		if (!Resources::TryGetTexture(subTextureData.assetId, out_TexturePtr)) throw std::exception("unable to get loaded texture");
+		out_TexturePtr->RefreshFromDataAndFree(rawSubTextureData, subTexImgProps);
 		return;
 	}
-
-	out_TexturePtr = CreateFromData(rawSubTextureData, subTexImgProps, GetImageFilePath(), subTextureData.assetId, false);
+	const std::string nameSuffix = subTextureSuffix + std::to_string(subTextureCount);
+	out_TexturePtr = CreateFromData(rawSubTextureData, subTexImgProps, GetImageFilePath(), subTextureData.assetId, false, nameSuffix);
 }
 
 bool Texture::CreateSubTextures(const std::vector<SubTextureData>& subTextureData, std::vector<Texture*>& out_textures) const {
@@ -182,8 +182,7 @@ bool Texture::CreateSubTextures(const std::vector<SubTextureData>& subTextureDat
 	int subTextureCount = 0;
 	for (const auto& sData : subTextureData) {
 		Texture* tPtr = nullptr;
-		const std::string fileName = p.stem().string() + subTextureSuffix + std::to_string(subTextureCount++) + p.extension().string();
-		SliceSubTextureFromData(rawImageData, imageProps, sData, tPtr);
+		SliceSubTextureFromData(rawImageData, imageProps, sData, subTextureCount++, tPtr);
 		out_textures.push_back(tPtr);
 		//std::cout << "SubTextureData " << newPath.string().c_str() << " bound to textureID: " << tPtr->GetTextureID() << std::endl;
 	}
@@ -224,6 +223,7 @@ bool Texture::Refresh() {
 	return true;
 }
 
+// Texture should be deleted through Resources::ReleaseOwnership, to make sure to remove it from resources
 Texture::~Texture() {
 	glDeleteTextures(1, &textureId);
 	std::cout << "Image " << Name << " deleted." << std::endl;
