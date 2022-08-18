@@ -176,9 +176,6 @@ bool Texture::CreateSubTextures(const std::vector<SubTextureData>& subTextureDat
 		}
 	}
 
-	const std::filesystem::path p = GetRelativeAssetPath();
-	const std::filesystem::path parentPath = p.parent_path();
-
 	int subTextureCount = 0;
 	for (const auto& sData : subTextureData) {
 		Texture* tPtr = nullptr;

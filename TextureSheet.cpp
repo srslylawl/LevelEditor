@@ -155,10 +155,10 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 		return true;
 	}
 	SameLine();
-	if(Button("Cancel")) {
-		if(isNewFile) return true;
+	if (Button("Cancel")) {
+		if (isNewFile) return true;
 		TextureSheet* t;
-		if(!LoadFromFile(GetRelativeAssetPath().string().c_str(), t)) {
+		if (!LoadFromFile(GetRelativeAssetPath().string().c_str(), t)) {
 			std::cerr << "Unable to load textureSheet when cancelling editing " << GetRelativeAssetPath() << std::endl;
 			return true;
 		}
@@ -192,19 +192,20 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 	ImGuiHelper::Image(mainTexture->GetTextureID(), ImVec2(mainTexture->GetImageProperties().width * zoomLevel, mainTexture->GetImageProperties().height * zoomLevel));
 	int removeAtPos = -1;
 	for (size_t i = 0; i < SubTextureData.size(); ++i) {
-		auto data = SubTextureData[i];
+		auto& data = SubTextureData[i];
 		auto pos = ImVec2(startPos.x + data.xOffset * zoomLevel, startPos.y + data.yOffset * zoomLevel);
 		bool isHovered = false;
 		bool isHeld = false;
 		ImGuiHelper::RectButton(pos, ImVec2(data.width * zoomLevel, data.height * zoomLevel), std::to_string(i).c_str(), &isHovered, &isHeld);
-		//if(isHeld)
-			ImGuiHelper::DragSourceTexture(SubTextures[i]);
+		ImGuiHelper::DragSourceTexture(SubTextures[i]);
+
 		if (isHovered) {
 			BeginTooltip();
 			TextUnformatted(SubTextures[i]->Name.c_str());
 			Separator();
 			BeginDisabled(true);
 			TextUnformatted("Click and drag to assign texture elsewhere.");
+			TextUnformatted("Right-Click to edit");
 			TextUnformatted("Press 'X' to delete.");
 			EndDisabled();
 			EndTooltip();
@@ -212,6 +213,27 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 			if (IsKeyPressed(ImGuiKey_X, false)) {
 				removeAtPos = i;
 			}
+
+		}
+		if (BeginPopupContextItem()) {
+			//Edit this sprite
+			BeginDisabled();
+			TextUnformatted("Hit 'Modify' to apply changes and generate texture.");
+			EndDisabled();
+			TextUnformatted("Offset:");
+			InputInt("x", &data.xOffset);
+			InputInt("y", &data.yOffset);
+			TextUnformatted("Size:");
+			InputInt("width", &data.width);
+			InputInt("height", &data.height);
+			if (Button("Modify")) {
+				//Ugly
+				std::vector<Rendering::SubTextureData> stData{ SubTextureData[i] };
+				std::vector<Rendering::Texture*> stTex{ SubTextures[i] };
+				mainTexture->CreateSubTextures(stData, stTex);
+				SubTextureData[i] = stData[0];
+			}
+			EndPopup();
 		}
 	}
 

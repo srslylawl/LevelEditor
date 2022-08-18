@@ -17,9 +17,7 @@ namespace ImGuiHelper {
 		drawList->AddRect(pos, max, color);
 		const ImRect bb(pos, max);
 
-		//ImGui::PushID(id);
 		const ImGuiID imGuiId = window->GetID(id);
-		//ImGui::PopID();
 		if(!ImGui::ItemAdd(bb, imGuiId))
 			return false;
 		bool isHovered, isHeld;
