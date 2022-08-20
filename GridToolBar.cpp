@@ -11,7 +11,8 @@ namespace GridTools {
 	GridToolBar::GridToolBar() {
 		tools = {
 			{GridToolType::Place, new PlacerTool(this)},
-			{GridToolType::Erase, new EraserTool(this)}
+			{GridToolType::Erase, new EraserTool(this)},
+			{GridToolType::Select, new class SelectTool(this)}
 		};
 	}
 

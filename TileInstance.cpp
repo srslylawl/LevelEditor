@@ -8,7 +8,7 @@ namespace Tiles {
 
 	bool TileInstance::HasSameTileAtPos(const glm::ivec2 position, const TileMap* tileMap) const {
 		TileInstance* tileInstance = nullptr;
-		if(tileMap->TryGetTile(position, tileInstance)) {
+		if (tileMap->TryGetTile(position, tileInstance)) {
 			bool same = tileInstance->parent == this->parent;
 			return same;
 		}
@@ -34,8 +34,20 @@ namespace Tiles {
 		Rendering::Texture* t = Rendering::Texture::Empty();
 		auto slot = parent->GetPattern()->GetTileSlot(surroundingTileMask);
 		if (slot && !slot->TileSprites.empty()) {
-			//TODO: get by probability and position instead of just last element
-			const TextureVariant& variant = slot->TileSprites.back();
+
+			int spriteCount = slot->TileSprites.size();
+			if (spriteCount == 1) {
+				const TextureVariant& variant = slot->TileSprites.back();
+				Resources::TryGetTexture(variant.TextureId, t);
+				return t;
+			}
+
+			//seed random 
+			const unsigned seed = position.x ^ 91028309 ^ position.y;
+			srand(seed);
+			int pos = rand() % spriteCount;
+
+			const TextureVariant& variant = slot->TileSprites[pos];
 			Resources::TryGetTexture(variant.TextureId, t);
 		}
 

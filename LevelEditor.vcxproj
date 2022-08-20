@@ -137,8 +137,7 @@
     <PostBuildEvent>
       <Message>
       </Message>
-      <Command>xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
-@echo "Moved all Shaders from "$(ProjectDir)Shaders\*.*" to "$(TargetDir)Shaders".</Command>
+      <Command>xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -166,8 +165,7 @@
     <PostBuildEvent>
       <Message>
       </Message>
-      <Command>xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"
-@echo "Moved all Shaders from "$(ProjectDir)Shaders\*.*" to "$(TargetDir)Shaders".</Command>
+      <Command>xcopy /y /d /i "$(ProjectDir)Shaders\*.*" "$(TargetDir)Shaders"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

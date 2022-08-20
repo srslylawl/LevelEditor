@@ -33,5 +33,13 @@ namespace GridTools {
 		void OnDeselect() override {}
 		bool OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
 	};
+
+	class SelectTool : public GridTool {
+	public:
+		explicit SelectTool(GridToolBar* gridToolBar) : GridTool(gridToolBar) {}
+		void OnSelect() override {}
+		void OnDeselect() override {}
+		bool OnInteract(const InputMouseEvent* event, const glm::ivec2& position, bool& isStale) override;
+	};
 }
 

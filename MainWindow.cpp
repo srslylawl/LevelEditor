@@ -75,6 +75,8 @@ bool MainWindow::Initialize() {
 	LoadLevel(level);
 
 	// Load Resources
+	Files::VerifyDirectory(Strings::Directory_Resources);
+
 	if (Files::VerifyDirectory(Strings::Directory_Resources_Icons))
 		Resources::LoadDirectory(Strings::Directory_Resources_Icons, false, true);
 	if (Files::VerifyDirectory(Strings::Directory_Sprites))
