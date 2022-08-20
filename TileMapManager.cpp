@@ -113,8 +113,14 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 		if (deleteMap) {
 			auto it = tileMaps.begin() + deleteIndex;
 			if (it != tileMaps.end()) {
+				bool isActiveTileMap = activeTileMap == *it;
 				delete* it;
 				tileMaps.erase(it);
+				if (isActiveTileMap) {
+					SetActiveTileMap(tileMaps[0]);
+					selectedIndex = 0;
+
+				}
 			}
 		}
 
