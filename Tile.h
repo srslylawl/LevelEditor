@@ -16,38 +16,14 @@ namespace  Tiles {
 
 	class Tile : public PersistentAsset<Tile>, public IEditable {
 		std::unique_ptr<ITilePattern> patternUPtr;
-		void SetPatternFromType() {
-			switch (TileType) {
-				case TileType::Simple:
-					patternUPtr = std::make_unique<SimpleTilePattern>();
-					break;
-				case TileType::AutoTile:
-					patternUPtr = std::make_unique<AutoTilePattern>();
-					break;
-				case TileType::AutoWall:
-					break;
-			}
-		}
+		void SetPatternFromType();
 	public:
-		Tile(const Tile& other) : PersistentAsset(other.AssetId, AssetType::Tile, other.ParentPath, other.Name),
-		                          patternUPtr(other.patternUPtr->Clone()), DisplayTexture(other.DisplayTexture), TileType(other.TileType) {
-		}
-		Tile& operator=(const Tile& other) {
-			PersistentAsset::operator=(other);
-			DisplayTexture = other.DisplayTexture;
-			TileType = other.TileType;
-			patternUPtr = other.patternUPtr->Clone();
-			return *this;
-		}
-
+		Tile(const Tile& other);
 		Tile(Tile&& other) = default;
-		Tile& operator=(Tile&& other) = default;
-		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath) : PersistentAsset(assetId, AssetType::Tile, relativeFilePath.parent_path(), relativeFilePath.filename().replace_extension().string()) {
-			SetPatternFromType();
-		}
-		Tile() : Tile(AssetId::CreateNewAssetId(), "") {
-			SetPatternFromType();
-		}
+		Tile& operator=(Tile&& other) noexcept;
+		Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath);
+
+		Tile();
 		~Tile() override = default;
 
 		::AssetId DisplayTexture;
@@ -64,6 +40,7 @@ namespace  Tiles {
 		static bool Deserialize(std::istream& iStream, const AssetHeader& header, Tile*& out_tile);
 
 		bool RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) override;
+
 		static std::unique_ptr<IEditable> CreateNew(std::filesystem::path directory){
 			auto ptr = std::make_unique<Tile>();
 			ptr->ParentPath = std::move(directory);

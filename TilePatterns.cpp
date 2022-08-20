@@ -19,7 +19,7 @@ const Tiles::TileSlot* Tiles::AutoTilePattern::GetTileSlot(const SurroundingTile
 	return nullptr;
 }
 
-void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int pattern, std::function<void(Rendering::Texture*)> onDropTexture) {
+void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int pattern, std::function<void(Rendering::Texture*)> onDropTexture, ImVec2 size = ImVec2(32, 32)) {
 	using namespace ImGui;
 	unsigned int texId = 0;
 	Rendering::Texture* tex = nullptr;
@@ -30,7 +30,7 @@ void DrawTileSlotButton(Tiles::TileSlot* tileSlot, const char* description, int 
 		}
 	}
 	std::string id = "ImageId" + std::to_string(pattern);
-	ImGuiHelper::Image(texId, ImVec2(32, 32), id.c_str());
+	ImGuiHelper::Image(texId, size, id.c_str());
 	ImGuiHelper::DropTargetTexture(onDropTexture);
 	ImGuiHelper::DragSourceTexture(tex);
 
@@ -120,6 +120,55 @@ void Tiles::SimpleTilePattern::RenderDearImGui() {
 }
 
 void Tiles::AutoWallPattern::RenderDearImGui() {
+	auto wrapDrawTileSlotButton = [this](const AutoWallPatternFlag& pattern, const char* description) {
+		TileSlot* tileSlot = nullptr;
+		if (auto it = this->TileSlots.find(pattern); it != TileSlots.end())
+			tileSlot = &it->second;
+
+		DrawTileSlotButton(tileSlot, description, (int)pattern,
+						   [this, &pattern](Rendering::Texture* t) {
+			AddTextureVariant(static_cast<int>(pattern), t->AssetId);
+		}, ImVec2(32, 64));
+	};
+
+	//Single Wall
+	wrapDrawTileSlotButton(AutoWallPatternFlag::SOLO, "Standalone Wall");
+
+	//Other
+	wrapDrawTileSlotButton(AutoWallPatternFlag::LEFT, "Left Wall");
+	ImGui::SameLine();
+	wrapDrawTileSlotButton(AutoWallPatternFlag::CENTER, "Center(Middle) Wall");
+	ImGui::SameLine();
+	wrapDrawTileSlotButton(AutoWallPatternFlag::RIGHT, "Right Wall");
+}
+
+Tiles::AutoWallPatternFlag Tiles::AutoWallPattern::PatternFromSurroundingTiles(const SurroundingTileFlags& mask) {
+	const bool hasLeft = hasFlag(mask, SurroundingTileFlags::LEFT);
+	const bool hasRight = hasFlag(mask, SurroundingTileFlags::RIGHT);
+
+	if(hasLeft && hasRight) {
+		return AutoWallPatternFlag::CENTER;
+	}
+
+	if(hasLeft && !hasRight) {
+		return AutoWallPatternFlag::RIGHT;
+	}
+
+	if(hasRight && !hasLeft) {
+		return AutoWallPatternFlag::LEFT;
+	}
+
+	return AutoWallPatternFlag::SOLO;
+}
+
+const Tiles::TileSlot* Tiles::AutoWallPattern::GetTileSlot(const SurroundingTileFlags& mask) const {
+
+	const auto pattern = PatternFromSurroundingTiles(mask);
+
+	const auto it = TileSlots.find(pattern);
+	if (it != TileSlots.end()) return &it->second;
+
+	return nullptr;
 	
 }
 

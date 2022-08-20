@@ -71,7 +71,7 @@ namespace Rendering {
 		void Serialize(std::ostream& oStream) const override;
 		static bool Deserialize(std::istream& iStream, const AssetHeader& header, Texture*& out_texture);
 
-		bool Refresh();
+		bool Refresh(const std::string& path = "");
 
 		~Texture() override;
 

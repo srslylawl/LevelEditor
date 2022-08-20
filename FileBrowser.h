@@ -33,7 +33,7 @@ public:
 	FileBrowser(const char* start_directory, std::string title, std::function<void(FileBrowserFile&)> onFileClick = nullptr,
 	            std::function<bool(FileBrowserFile&)> shouldHighlight = nullptr, std::function<void(FileBrowserFile&)> onFileEdit = nullptr,
 	            std::function<void(FileBrowser*)> onNewFile = nullptr);
-	void RenderRearImGuiWindow();
+	void RenderImGuiWindow();
 	void RefreshCurrentDirectory();
 	void ChangeDirectory(const std::filesystem::path& new_directory);
 	void ReturnToPreviousDirectory();

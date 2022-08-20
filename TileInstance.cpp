@@ -8,7 +8,11 @@ namespace Tiles {
 
 	bool TileInstance::HasSameTileAtPos(const glm::ivec2 position, const TileMap* tileMap) const {
 		TileInstance* tileInstance = nullptr;
-		return tileMap->TryGetTile(position, tileInstance) && tileInstance->parent == this->parent;
+		if(tileMap->TryGetTile(position, tileInstance)) {
+			bool same = tileInstance->parent == this->parent;
+			return same;
+		}
+		return false;
 	}
 
 	SurroundingTileFlags TileInstance::GetMaskFromSurroundingTiles(const glm::ivec2 position, const TileMap* tileMap) const {
@@ -29,8 +33,9 @@ namespace Tiles {
 	Rendering::Texture* TileInstance::GetTextureFromMask(const glm::ivec2 position) const {
 		Rendering::Texture* t = Rendering::Texture::Empty();
 		auto slot = parent->GetPattern()->GetTileSlot(surroundingTileMask);
-		if (slot) {
-			const TextureVariant& variant = slot->TileSprites.back(); //TODO: get by probability and position instead
+		if (slot && !slot->TileSprites.empty()) {
+			//TODO: get by probability and position instead of just last element
+			const TextureVariant& variant = slot->TileSprites.back();
 			Resources::TryGetTexture(variant.TextureId, t);
 		}
 

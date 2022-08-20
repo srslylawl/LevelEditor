@@ -36,7 +36,10 @@ Texture::Texture(unsigned int id, const std::filesystem::path& relativePathToIma
 	imageProperties(imageProperties),
 	pathToImageFile(relativePathToImageFile.string()) {
 	Name += nameSuffix;
+#ifdef _DEBUG
 	std::cout << "Created Texture " << this->Name << ": Path: " << relativePathToImageFile.string() << " assetId: " << AssetId.ToString() << std::endl;
+#endif
+
 	Resources::AssignOwnership(this);
 }
 
@@ -95,13 +98,19 @@ Texture* Texture::CreateFromData(unsigned char* rawImageData, const ImagePropert
 	unsigned int textureId;
 	glGenTextures(1, &textureId);
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
+#ifdef _DEBUG
 	std::cout << "Image " << relativePathToImageFile.filename().string() << nameSuffix << " bound to textureID: " << textureId << std::endl;
+#endif
+
 	return new Texture(textureId, relativePathToImageFile, imgProps, assetId, isInternal, nameSuffix);
 }
 
 void Texture::RefreshFromDataAndFree(unsigned char* rawImageData, const ImageProperties& imgProps) {
 	BindToGPUAndFreeData(textureId, imgProps, rawImageData);
+#ifdef _DEBUG
 	std::cout << "Image " << Name << " refreshed to textureID: " << textureId << std::endl;
+#endif
+
 }
 
 bool Texture::CreateNew(const std::filesystem::path& relativePathToImageFile, bool isInternal, bool isPartOfTextureSheet, Texture*& out_texture, AssetHeader& out_assetHeader) {
@@ -205,16 +214,30 @@ void Texture::Serialize(std::ostream& oStream) const {
 bool Texture::Deserialize(std::istream& iStream, const AssetHeader& header, Texture*& out_texture) {
 	bool isInternal = false; Serialization::readFromStream(iStream, isInternal);
 	const std::string imageFilePath = Serialization::DeserializeStdString(iStream);
-	return Create(imageFilePath, out_texture, isInternal, header.aId);
+	//check if it already exists
+	if (!Resources::AssetIsLoaded(header.aId)) {
+		return Create(imageFilePath, out_texture, isInternal, header.aId);
+	}
+
+	if(!Resources::TryGetTexture(header.aId, out_texture)) {
+		std::cerr << "Error while deserializing texture: already loaded but cant get from resources." << std::endl;
+		return false;
+	}
+
+	return out_texture->Refresh(imageFilePath);
 }
 
-bool Texture::Refresh() {
+bool Texture::Refresh(const std::string& path) {
 	if (this == empty) {
+#ifdef _DEBUG
 		std::cout << "Tried to refresh empty texture" << std::endl;
+#endif
 		return false;
 	}
 	unsigned char* rawImageData = nullptr;
-	if (!LoadImageData(GetImageFilePath(), imageProperties, rawImageData)) return false;
+
+	const auto& imagePath = path.empty() ? GetImageFilePath() : path;
+	if (!LoadImageData(imagePath, imageProperties, rawImageData)) return false;
 	RefreshFromDataAndFree(rawImageData, imageProperties);
 
 	return true;
@@ -223,5 +246,7 @@ bool Texture::Refresh() {
 // Texture should be deleted through Resources::ReleaseOwnership, to make sure to remove it from resources
 Texture::~Texture() {
 	glDeleteTextures(1, &textureId);
+#ifdef _DEBUG
 	std::cout << "Image " << Name << " deleted." << std::endl;
+#endif
 }

@@ -13,6 +13,7 @@ namespace Rendering {
 
 		SubTextureData(int xOffset, int yOffset, int width, int height);
 		SubTextureData(int xOffset, int yOffset, int width, int height, AssetId assetId);
+		SubTextureData() : SubTextureData(0, 0, 16, 16) {}
 	};
 }
 

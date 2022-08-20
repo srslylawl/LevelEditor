@@ -7,6 +7,8 @@
 #include "Resources.h"
 #include "Tile.h"
 
+#include "ImGuiHelper.h"
+
 void Tiles::TileMap::RefreshSurroundingTileInstances(const glm::ivec2 position) {
 	TileInstance* t = nullptr;
 	for (int x = -1; x <= 1; ++x) {
@@ -107,17 +109,25 @@ void Tiles::TileMap::Render() const {
 	// TODO: GPU instancing and pack textures in atlas to render in one draw call as this is highly inefficient
 	for (const auto& pair : data) {
 		// offset by half in every axis
-		auto offset = vec3(floor(pair.first.x) + GridDimensions.x / 2.0f, floor(pair.first.y) + GridDimensions.y / 2.0f, 0.01);
+		auto offset = vec3(floor(pair.first.x) + TileDimensions.x / 2.0f, floor(pair.first.y) + TileDimensions.y / 2.0f, 0.01);
 
 		mat4 modelM = translate(mat4(1.0f), offset);
-		if (GridDimensions != ivec2(1, 1)) {
-			modelM = scale(modelM, vec3(GridDimensions, 1));
+		if (TileDimensions != ivec2(1, 1)) {
+			modelM = scale(modelM, vec3(TileDimensions, 1));
 		}
 		Rendering::Renderer::defaultShader->setMat4("model", modelM);
 
 		glBindTexture(GL_TEXTURE_2D, pair.second.GetActiveTextureId());
 		Mesh::StaticMesh::GetDefaultQuad()->Draw();
 	}
+}
+
+void Tiles::TileMap::RenderImGui() {
+	using namespace ImGui;
+
+	InputText("Name", &Name);
+	SliderInt2("Tile Dimensions", &TileDimensions[0], 1, 5);
+	SliderInt2("Grid Dimensions", &GridDimensions[0], 1, 5);
 }
 
 bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
@@ -127,6 +137,8 @@ bool Tiles::TileMap::Deserialize(std::istream& iStream, TileMap*& out_tileMap) {
 	tileMapUPTR->Type = static_cast<TileMapType>(type);
 	Serialization::readFromStream(iStream, tileMapUPTR->GridDimensions.x);
 	Serialization::readFromStream(iStream, tileMapUPTR->GridDimensions.y);
+	Serialization::readFromStream(iStream, tileMapUPTR->TileDimensions.x);
+	Serialization::readFromStream(iStream, tileMapUPTR->TileDimensions.y);
 
 	size_t tileCount = 0; Serialization::readFromStream(iStream, tileCount);
 	if (tileCount > 0) {
@@ -165,6 +177,8 @@ void Tiles::TileMap::Serialize(std::ostream& oStream) const {
 	int type = (int)Type; Serialization::writeToStream(oStream, type);
 	Serialization::writeToStream(oStream, GridDimensions.x);
 	Serialization::writeToStream(oStream, GridDimensions.y);
+	Serialization::writeToStream(oStream, TileDimensions.x);
+	Serialization::writeToStream(oStream, TileDimensions.y);
 
 	auto tileCount = data.size();
 	Serialization::writeToStream(oStream, tileCount);

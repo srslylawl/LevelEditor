@@ -43,11 +43,14 @@ namespace Tiles {
 
 		TileMapType Type;
 		glm::ivec2 GridDimensions;
+		glm::ivec2 TileDimensions;
 
 		TileMap() : TileMap("") { }
-		explicit TileMap(std::string name, TileMapType type = TileMapType::Any, glm::ivec2 gridDimensions = glm::ivec2(1,1)) : Serializable(name), Type(type), GridDimensions(gridDimensions) { }
+		explicit TileMap(std::string name, TileMapType type = TileMapType::Any, glm::ivec2 tileDimensions = glm::ivec2(1,1), glm::ivec2 gridDimensions = glm::ivec2(1,1)) : Serializable(name), Type(type), GridDimensions(gridDimensions), TileDimensions(tileDimensions) { }
 
 		void Render() const override;
+
+		void RenderImGui();
 
 		static bool Deserialize(std::istream& iStream, TileMap*& out_tileMap);
 		void Serialize(std::ostream& oStream) const override;

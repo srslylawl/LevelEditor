@@ -16,6 +16,7 @@ bool TextureSheet::CreateNew(const std::filesystem::path& relativePathToImageFil
 	}
 	auto assetPath = relativePathToImageFile;
 	out_TextureSheet = new TextureSheet(mainTex, assetPath, AssetId::CreateNewAssetId());
+	out_TextureSheet->AutoSlice();
 	out_header.aId = out_TextureSheet->AssetId;
 	out_header.aType = AssetType::TextureSheet;
 	out_header.relativeAssetPath = out_TextureSheet->GetRelativeAssetPath();
@@ -91,8 +92,8 @@ void TextureSheet::AutoSlice() {
 			Resources::ReleaseOwnership(tex, true);
 		}
 	}
-	SubTextures.resize(newSubTextureCount);
-	SubTextures.resize(newSubTextureCount);
+	SubTextureData.resize(newSubTextureCount);
+	SubTextures.clear(); //clear because we receive new pointers and simply need to keep the asset ids
 
 	int i = 0;
 	for (int row = 0; row < y; ++row) {
@@ -102,7 +103,7 @@ void TextureSheet::AutoSlice() {
 			SubTextureData[i].xOffset = xOffset;
 			SubTextureData[i].yOffset = yOffset;
 			SubTextureData[i].width = sliceWidth;
-			SubTextureData[i].width = sliceHeight;
+			SubTextureData[i].height = sliceHeight;
 			if (i >= oldSubTextureCount) {
 				SubTextureData[i].assetId = AssetId::CreateNewAssetId();
 			}
@@ -112,7 +113,7 @@ void TextureSheet::AutoSlice() {
 	}
 
 	mainTexture->CreateSubTextures(SubTextureData, SubTextures);
-	SaveToFile();
+	//SaveToFile();
 }
 
 bool DrawSubSpriteButton(Texture*& texture, int buttonSize, bool shouldHighlight = false) {
@@ -162,8 +163,8 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 			std::cerr << "Unable to load textureSheet when cancelling editing " << GetRelativeAssetPath() << std::endl;
 			return true;
 		}
-
 		*this = std::move(*t);
+		delete t;
 		return true;
 	}
 	if (TreeNode("AutoSlice")) {
@@ -187,9 +188,44 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 		}
 		TreePop();
 	}
+	static std::unique_ptr<struct SubTextureData> tempDataUPtr;
+	if (Button("Create New Sprite")) {
+		if (!tempDataUPtr) {
+			tempDataUPtr = std::make_unique<struct SubTextureData>(0, 0, 16, 16);
+		}
+		OpenPopup("CreateNewSprite");
+	}
 
 	const auto startPos = GetCursorScreenPos();
 	ImGuiHelper::Image(mainTexture->GetTextureID(), ImVec2(mainTexture->GetImageProperties().width * zoomLevel, mainTexture->GetImageProperties().height * zoomLevel));
+
+	bool renderTempData = false;
+	if (BeginPopup("CreateNewSprite")) {
+		renderTempData = true;
+		BeginDisabled();
+		TextUnformatted("Hit 'Create' to apply changes and generate texture.");
+		EndDisabled();
+		TextUnformatted("Offset:");
+		InputInt("x", &tempDataUPtr->xOffset);
+		InputInt("y", &tempDataUPtr->yOffset);
+		TextUnformatted("Size:");
+		InputInt("width", &tempDataUPtr->width);
+		InputInt("height", &tempDataUPtr->height);
+		if (Button("Create")) {
+			//Ugly
+			std::vector<Rendering::SubTextureData> stData{ *tempDataUPtr };
+			std::vector<Rendering::Texture*> stTex;
+			mainTexture->CreateSubTextures(stData, stTex);
+			SubTextureData.emplace_back(*tempDataUPtr.release());
+			SubTextures.emplace_back(stTex[0]);
+			tempDataUPtr = nullptr;
+			renderTempData = false;
+			CloseCurrentPopup();
+		}
+
+		EndPopup();
+	}
+
 	int removeAtPos = -1;
 	for (size_t i = 0; i < SubTextureData.size(); ++i) {
 		auto& data = SubTextureData[i];
@@ -229,12 +265,19 @@ bool TextureSheet::RenderEditWindow(FileEditWindow* editWindow, bool isNewFile) 
 			if (Button("Modify")) {
 				//Ugly
 				std::vector<Rendering::SubTextureData> stData{ SubTextureData[i] };
-				std::vector<Rendering::Texture*> stTex{ SubTextures[i] };
+				std::vector<Rendering::Texture*> stTex;
 				mainTexture->CreateSubTextures(stData, stTex);
 				SubTextureData[i] = stData[0];
+				CloseCurrentPopup();
 			}
 			EndPopup();
 		}
+	}
+
+	if(renderTempData) {
+		auto pos = ImVec2(startPos.x + tempDataUPtr->xOffset * zoomLevel, startPos.y + tempDataUPtr->yOffset * zoomLevel);
+		bool isHovered, isHeld;
+		ImGuiHelper::RectButton(pos, ImVec2(tempDataUPtr->width * zoomLevel, tempDataUPtr->height * zoomLevel), "tempData", &isHovered, &isHeld);
 	}
 
 	if (removeAtPos > -1) {

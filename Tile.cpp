@@ -11,6 +11,41 @@
 #include "TileMap.h"
 
 namespace Tiles {
+	void Tile::SetPatternFromType() {
+		switch (TileType) {
+		case TileType::Simple:
+			patternUPtr = std::make_unique<SimpleTilePattern>();
+			break;
+		case TileType::AutoTile:
+			patternUPtr = std::make_unique<AutoTilePattern>();
+			break;
+		case TileType::AutoWall:
+			patternUPtr = std::make_unique<AutoWallPattern>();
+			break;
+		}
+	}
+
+	Tile::Tile(const Tile& other): PersistentAsset(other.AssetId, AssetType::Tile, other.ParentPath, other.Name),
+	                               patternUPtr(other.patternUPtr->Clone()), DisplayTexture(other.DisplayTexture), TileType(other.TileType) {
+	}
+
+	Tile& Tile::operator=(Tile&& other) noexcept {
+		if(this == &other) return *this;
+		PersistentAsset::operator=(other);
+		DisplayTexture = std::move(other.DisplayTexture);
+		TileType = other.TileType;
+		patternUPtr = std::move(other.patternUPtr);
+		return *this;
+	}
+
+	Tile::Tile(::AssetId assetId, const std::filesystem::path& relativeFilePath): PersistentAsset(assetId, AssetType::Tile, relativeFilePath.parent_path(), relativeFilePath.filename().replace_extension().string()) {
+		SetPatternFromType();
+	}
+
+	Tile::Tile(): Tile(AssetId::CreateNewAssetId(), "") {
+		SetPatternFromType();
+	}
+
 	void Tile::TileMapSet(TileMap* tileMap, glm::vec2 position) const {
 		tileMap->SetTile(this, position);
 	}
@@ -88,7 +123,7 @@ namespace Tiles {
 				return true;
 			}
 			*this = std::move(*old);
-
+			delete old;
 			return true;
 		}
 

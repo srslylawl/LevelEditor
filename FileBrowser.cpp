@@ -92,7 +92,7 @@ bool DrawFileButton(const Rendering::Texture* texture, const int elementCount, c
 	return clicked;
 }
 
-void FileBrowser::RenderRearImGuiWindow() {
+void FileBrowser::RenderImGuiWindow() {
 	using namespace ImGui;
 	constexpr ImGuiWindowFlags fileBrowserFlags = ImGuiWindowFlags_AlwaysAutoResize;
 	std::string imguiID = "FileBrowser_" + std::to_string(fileBrowserID);

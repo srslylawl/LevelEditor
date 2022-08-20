@@ -24,6 +24,8 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 		int tileMapCount = tileMaps.size();
 		static int selectedIndex = 0;
 		bool reorder = false;
+		bool deleteMap = false;
+		int deleteIndex = 0;
 		int reorderFirst = 0;
 		int reorderSecond = 0;
 		if (BeginTable("###TileMapListBox", 5, ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY, ImVec2(GetWindowSize().x - 30, 150))) {
@@ -39,9 +41,26 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 				Tiles::TileMap* currentTileMap = tileMaps[i];
 				TextUnformatted(std::to_string(i + 1).c_str());
 				TableNextColumn();
-				if (Selectable(currentTileMap->Name.c_str(), isSelected)) {
+				std::string label = currentTileMap->Name + "###" + std::to_string(i);
+				if (Selectable(label.c_str(), isSelected)) {
 					selectedIndex = i;
 					SetActiveTileMap(currentTileMap);
+				}
+				if (BeginPopupContextItem(0, ImGuiPopupFlags_MouseButtonRight)) {
+					currentTileMap->RenderImGui();
+					EndPopup();
+				}
+				bool moreThanOneTileMapRemaining = tileMaps.size() > 1;
+				if (IsItemHovered()) { //having no tileMaps active at all does not render a grid and looks weird
+					BeginTooltip();
+					TextUnformatted("Right-Click to edit");
+					if (moreThanOneTileMapRemaining) TextUnformatted("Press 'X' to delete tileMap and it's contents.");
+					EndTooltip();
+
+					if (moreThanOneTileMapRemaining && IsKeyPressed(ImGuiKey_X, false)) {
+						deleteMap = true;
+						deleteIndex = i;
+					}
 				}
 				TableNextColumn();
 				bool allowMinus = i > 0;
@@ -82,12 +101,6 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 			EndTable();
 		}
 
-		//if (TreeNode("More...")) {
-		//	Checkbox("Auto-select on tile select <NYI>", &autoSelectTileMapOnTileSelect); SameLine();
-		//	ImGuiHelper::TextWithToolTip("", "When selecting a different tile, will attempt to automatically select the matching type of tileMap");
-		//	TreePop();
-		//}
-
 		if (reorder) {
 			auto temp = tileMaps[reorderFirst];
 			tileMaps[reorderFirst] = tileMaps[reorderSecond];
@@ -96,6 +109,18 @@ void Tiles::TileMapManager::RenderImGuiWindow() {
 		float xPos = main_viewport->Size.x - ImGui::GetWindowSize().x;
 		float yPos = main_viewport->Size.y - main_viewport->WorkSize.y;
 		ImGui::SetWindowPos(ImVec2(xPos, yPos));
+
+		if (deleteMap) {
+			auto it = tileMaps.begin() + deleteIndex;
+			if (it != tileMaps.end()) {
+				delete* it;
+				tileMaps.erase(it);
+			}
+		}
+
+		if (Button("Add TileMap")) {
+			tileMaps.push_back(new TileMap("New TileMap"));
+		}
 	}
 	End();
 	PopStyleVar();

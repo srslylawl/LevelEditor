@@ -1,7 +1,9 @@
 #pragma once
 #include <SDL_video.h>
 #include <string>
+#include <vector>
 
+class FileBrowser;
 class InputMouseEvent;
 struct InputMouseBinding;
 class Level;
@@ -25,6 +27,7 @@ class MainWindow {
 	Level* loadedLevel = nullptr;
 
 	GridTools::GridToolBar* gridToolBar = nullptr;
+	std::vector<FileBrowser*> fileBrowsers;
 
 	void RenderImGui();
 	bool InitSDL();
@@ -33,6 +36,7 @@ class MainWindow {
 	void LoadLevel(Level* level);
 	void UnloadLevel();
 	void SaveCurrentLevel(std::string nameOverride = "");
+	void RefreshFileBrowserDirectories();
 
 public:
 	static SDL_Window* GetSDLWindow() { return SDLWindow; }

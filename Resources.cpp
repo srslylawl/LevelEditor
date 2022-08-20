@@ -207,26 +207,6 @@ bool Resources::LoadTextureSheet(const char* relative_path, bool refresh) {
 	return true;
 }
 
-void Resources::LoadAsset(const char* relativePath, bool refresh) {
-	AssetHeader aHeader;
-	if (!AssetHeader::TryReadHeaderFromFile(Files::GetAbsolutePath(relativePath), &aHeader)) {
-		std::cout << "Unable to load asset: " << relativePath << std::endl;
-		return;
-	}
-
-	if (aHeader.aId.IsEmpty()) {
-		std::cout << "Asset guid empty: " << relativePath << std::endl;
-	}
-
-	if (!refresh && AssetIsLoaded(aHeader.aId)) return;
-
-	if (!TryLoadAssetFromHeader(aHeader, refresh)) {
-		std::cout << "Unable to load asset: " << relativePath << std::endl;
-		return;
-	}
-	AssetsIdReferences[aHeader.aId.ToString()] = relativePath;
-}
-
 bool Resources::AssetIsLoaded(const AssetId& id) {
 	return AssetsIdReferences.find(id.ToString()) != AssetsIdReferences.end();
 }
@@ -248,6 +228,7 @@ bool Resources::LoadTile(const char* relative_path, bool refresh) {
 	}
 
 	Tiles[t->AssetId] = t;
+	AssetsIdReferences[t->AssetId] = relative_path;
 	return true;
 }
 

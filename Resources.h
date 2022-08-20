@@ -40,7 +40,6 @@ public:
 		return InternalTextures;
 	}
 
-	static void LoadAsset(const char* relativePath, bool refresh = false);
 	static bool AssetIsLoaded(const AssetId& id);
 
 	static void LoadDirectory(const char* directory, bool refresh, bool includeSubdirectories,
@@ -49,7 +48,6 @@ public:
 	static void AssignOwnership(Rendering::Texture* texture);
 	static void ReleaseOwnership(const Rendering::Texture* texture, bool deleteObject = false);
 	static void AssignOwnership(Mesh::StaticMesh* mesh);
-
 
 	static bool TryGetTexture(const std::string& assetId, Rendering::Texture*& out_texture);
 	static bool TryGetInternalTexture(const char* relativePath, Rendering::Texture*& out_texture);

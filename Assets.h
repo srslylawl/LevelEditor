@@ -142,6 +142,13 @@ public:
 		Serialization::Serializable<T>(name), AssetId(assetId), AssetType(type), ParentPath(parentPath) {
 	}
 
+	virtual void MoveData(PersistentAsset<T> other) {
+		AssetId = std::move(other.AssetId);
+		AssetType = std::move(other.AssetType);
+		ParentPath = std::move(other.ParentPath);
+		Serialization::Serializable<T>::Name = other.Name;
+	}
+
 	virtual std::filesystem::path GetRelativeAssetPath() const {
 		std::filesystem::path p = ParentPath;
 		p.append(Serialization::Serializable<T>::Name + AssetHeader::GetFileExtension(AssetType));

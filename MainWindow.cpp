@@ -84,6 +84,43 @@ bool MainWindow::Initialize() {
 	if (Files::VerifyDirectory(Strings::Directory_Tiles))
 		Resources::LoadDirectory(Strings::Directory_Tiles, false, true);
 
+
+	auto onTileEdit = [](FileBrowserFile& file) {
+		if (file.AssetHeader.aType == AssetType::Tile) {
+			FileEditWindow::New(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
+		}
+	};
+
+	auto tileFileBrowser = new FileBrowser(Strings::Directory_Tiles, "Tiles",
+										   [this](const FileBrowserFile& file) {
+		if (file.AssetHeader.aType != AssetType::Tile) return;
+		const auto tile = static_cast<Tiles::Tile*>(file.Data);
+		gridToolBar->SetSelectedTile(tile);
+	}, [this](const FileBrowserFile& file) -> bool {
+		if (file.AssetHeader.aType != AssetType::Tile) return false;
+		const auto tile = static_cast<Tiles::Tile*>(file.Data);
+		return tile == gridToolBar->GetSelectedTile();
+	}, onTileEdit, [](FileBrowser* browser) {
+		FileCreationWindow::New<Tiles::Tile>(browser->GetCurrentDirectory(), [browser] {
+			browser->RefreshCurrentDirectory();
+		});
+	});
+
+	auto onTexSheetEdit = [](FileBrowserFile& file) {
+		if (file.AssetHeader.aType == AssetType::TextureSheet) {
+			FileEditWindow::New(static_cast<Rendering::TextureSheet*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
+		}
+	};
+
+	auto spriteFileBrowser = new FileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
+		if (file.AssetHeader.aType != AssetType::Texture) return;
+		auto p = file.AssetHeader.relativeAssetPath.string();
+		std::cout << "Pressed: " << p.c_str() << std::endl;
+	});
+
+	auto textureSheetFileBrowser = new FileBrowser(Strings::Directory_TextureSheets, "TextureSheets", onTexSheetEdit, nullptr, onTexSheetEdit);
+	fileBrowsers = { tileFileBrowser, spriteFileBrowser, textureSheetFileBrowser };
+
 	return true;
 }
 
@@ -144,6 +181,11 @@ void Rendering::MainWindow::SaveCurrentLevel(std::string nameOverride) {
 	SetWindowDirtyFlag(false);
 	SetWindowTitle(loadedLevel->Name);
 }
+
+void MainWindow::RefreshFileBrowserDirectories() {
+	for (const auto& fBrowser : fileBrowsers) fBrowser->RefreshCurrentDirectory();
+}
+
 void MainWindow::Render() {
 	// clear color, depth and stencil buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -161,7 +203,6 @@ void Rendering::MainWindow::SetWindowDirtyFlag(bool dirty) {
 
 	if (!wasAlreadyDirty) SetWindowTitle();
 }
-
 void Rendering::MainWindow::SetWindowTitle(std::string title) {
 	std::string newTitle = windowTitle;
 	if (!title.empty()) {
@@ -190,46 +231,15 @@ void MainWindow::RenderImGui() {
 	// Main Cam Controls
 	Camera::Main->DearImGuiWindow();
 
-	auto onTileEdit = [](FileBrowserFile& file) {
-		if (file.AssetHeader.aType == AssetType::Tile) {
-			FileEditWindow::New(static_cast<Tiles::Tile*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
-		}
-	};
-
-	static FileBrowser tileFileBrowser(Strings::Directory_Tiles, "Tiles",
-									   [this](const FileBrowserFile& file) {
-		if (file.AssetHeader.aType != AssetType::Tile) return;
-		const auto tile = static_cast<Tiles::Tile*>(file.Data);
-		gridToolBar->SetSelectedTile(tile);
-	}, [this](const FileBrowserFile& file) -> bool {
-		if (file.AssetHeader.aType != AssetType::Tile) return false;
-		const auto tile = static_cast<Tiles::Tile*>(file.Data);
-		return tile == gridToolBar->GetSelectedTile();
-	}, onTileEdit, [](FileBrowser* browser) {
-		FileCreationWindow::New<Tiles::Tile>(browser->GetCurrentDirectory(), [browser] {
-			browser->RefreshCurrentDirectory();
-		});
-	});
-
-	auto onTexSheetEdit = [](FileBrowserFile& file) {
-		if (file.AssetHeader.aType == AssetType::TextureSheet) {
-			FileEditWindow::New(static_cast<Rendering::TextureSheet*>(file.Data), [&file] {file.FileBrowser->RefreshCurrentDirectory(); });
-		}
-	};
-
-	static FileBrowser spriteFileBrowser(Strings::Directory_Sprites, "Sprites", [](const FileBrowserFile& file) {
-		if (file.AssetHeader.aType != AssetType::Texture) return;
-		auto p = file.AssetHeader.relativeAssetPath.string();
-		std::cout << "Pressed: " << p.c_str() << std::endl;
-	});
-
-	static FileBrowser textureSheetFileBrowser(Strings::Directory_TextureSheets, "TextureSheets", onTexSheetEdit, nullptr, onTexSheetEdit);
-
 	static bool saveLevelDialogue = false;
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S)) {
 		if (!loadedLevel->Name.empty() && loadedLevel->Name != "untitled") SaveCurrentLevel();
 		else saveLevelDialogue = true;
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_F5)) {
+		RefreshFileBrowserDirectories();
 	}
 
 	// Menu Bar
@@ -364,7 +374,12 @@ void MainWindow::RenderImGui() {
 
 			ImGui::EndMenu();
 		}
+		if(ImGui::MenuItem("Refresh Directories", "F5")) {
+			RefreshFileBrowserDirectories();
+		}
+
 		ImGui::EndMainMenuBar();
+
 	}
 
 	// Grid Tool Window
@@ -404,9 +419,7 @@ void MainWindow::RenderImGui() {
 	End();
 
 	loadedLevel->TileMapManagerUPtr->RenderImGuiWindow();
-	tileFileBrowser.RenderRearImGuiWindow();
-	spriteFileBrowser.RenderRearImGuiWindow();
-	textureSheetFileBrowser.RenderRearImGuiWindow();
+	for (auto& fBrowser : fileBrowsers)  fBrowser->RenderImGuiWindow();
 
 	FileEditWindow::RenderAll();
 
@@ -427,6 +440,7 @@ void MainWindow::OnResized(int width, int height) {
 }
 void MainWindow::Close() {
 	Input::RemoveMouseBinding(binding);
+	for (auto& fBrowser : fileBrowsers) delete fBrowser;
 	Renderer::Exit();
 	SDL_DestroyWindow(SDLWindow);
 	UnloadLevel();
