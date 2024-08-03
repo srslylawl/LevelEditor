@@ -130,6 +130,9 @@
     <ClCompile Include="AssetId.cpp">
       <Filter>Source Files\Files</Filter>
     </ClCompile>
+    <ClCompile Include="DPIScale.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\imgui\imconfig.h">
@@ -275,6 +278,9 @@
     </ClInclude>
     <ClInclude Include="AssetId.h">
       <Filter>Source Files\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DPIScale.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

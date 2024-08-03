@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;winmm.lib;version.lib;Imm32.lib;Setupapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)libs\SDL2\lib\x64\SDL2.lib;$(ProjectDir)libs\SDL2\lib\x64\SDL2main.lib;winmm.lib;version.lib;Imm32.lib;Setupapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%Program Files%Windows Kits\10\Lib;%Program Files%\Windows Kits\10\Lib\10.0.19041.0\um\x64;$(ProjectDir)libs\SDL2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -159,7 +159,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;winmm.lib;version.lib;Imm32.lib;Setupapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)libs\SDL2\lib\x64\SDL2.lib;$(ProjectDir)libs\SDL2\lib\x64\SDL2main.lib;winmm.lib;version.lib;Imm32.lib;Setupapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%Program Files%Windows Kits\10\Lib;%Program Files%\Windows Kits\10\Lib\10.0.19041.0\um\x64;C:\Users\Andreas\Desktop\LevelEditor\libs\SDL2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -169,6 +169,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DPIScale.cpp" />
     <ClCompile Include="FileBrowser.cpp" />
     <ClCompile Include="FileEditWindow.cpp" />
     <ClCompile Include="Files.cpp" />
@@ -205,6 +206,7 @@
   <ItemGroup>
     <ClInclude Include="Assets.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="DPIScale.h" />
     <ClInclude Include="FileBrowser.h" />
     <ClInclude Include="FileBrowserFile.h" />
     <ClInclude Include="FileEditWindow.h" />

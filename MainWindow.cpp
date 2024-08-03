@@ -28,6 +28,7 @@
 #include "TileMapManager.h"
 #include "Tile.h"
 #include "Level.h"
+#include "DPIScale.h"
 
 using namespace Rendering;
 
@@ -153,6 +154,8 @@ bool MainWindow::InitDearImGui() {
 	ImGui_ImplSDL2_InitForOpenGL(SDLWindow, Renderer::gl_context); //Renderer needs to be initialized first
 	const std::string glsl_version = "#version 460";
 	ImGui_ImplOpenGL3_Init(glsl_version.c_str());
+	SetWindowsDPIScaleAware();
+
 
 	return true;
 }
